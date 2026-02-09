@@ -33,7 +33,7 @@ export default function CsvToJsonPage() {
       const tableName = sanitizeTableName(f.name);
       const info = await registerFile(db, f, tableName);
       setMeta(info);
-      await convert(tableName, info);
+      await convert(tableName);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load file");
     } finally {
@@ -41,9 +41,11 @@ export default function CsvToJsonPage() {
     }
   }
 
-  async function convert(tableName?: string, info?: { columns: string[]; rowCount: number; types: string[] }) {
+  async function convert(tableName?: string, fmt?: "array" | "ndjson", pretty?: boolean) {
     if (!db || !file) return;
     const tName = tableName ?? sanitizeTableName(file.name);
+    const useFormat = fmt ?? outputFormat;
+    const usePretty = pretty ?? prettyPrint;
     setLoading(true);
     try {
       const result = await runQuery(db, `SELECT * FROM "${tName}"`);
@@ -54,10 +56,10 @@ export default function CsvToJsonPage() {
       });
 
       let json: string;
-      if (outputFormat === "ndjson") {
+      if (useFormat === "ndjson") {
         json = records.map((r) => JSON.stringify(r)).join("\n");
       } else {
-        json = prettyPrint ? JSON.stringify(records, null, 2) : JSON.stringify(records);
+        json = usePretty ? JSON.stringify(records, null, 2) : JSON.stringify(records);
       }
       setOutput(json);
       setError(null);
@@ -100,7 +102,7 @@ export default function CsvToJsonPage() {
                 <label className="text-xs text-muted-foreground font-bold">Output Format</label>
                 <div className="flex gap-1">
                   {(["array", "ndjson"] as const).map((f) => (
-                    <button key={f} onClick={() => { setOutputFormat(f); setTimeout(() => convert(), 0); }}
+                    <button key={f} onClick={() => { setOutputFormat(f); setTimeout(() => convert(undefined, f), 0); }}
                       className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${outputFormat === f ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
                       {f === "array" ? "JSON Array" : "NDJSON"}
                     </button>
