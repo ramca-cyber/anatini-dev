@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Database, Copy, Download } from "lucide-react";
+import { Database, Copy, Download, FlaskConical } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { registerFile, runQuery, formatBytes, sanitizeTableName, downloadBlob } from "@/lib/duckdb-helpers";
+import { getSampleSchemaCSV } from "@/lib/sample-data";
 import { toast } from "@/hooks/use-toast";
 
 type Dialect = "postgresql" | "mysql" | "bigquery" | "snowflake" | "duckdb";
@@ -96,7 +97,16 @@ export default function SchemaPage() {
   return (
     <ToolPage icon={Database} title="Schema Generator" description="Infer schemas and generate DDL for Postgres, MySQL, BigQuery and more.">
       <div className="space-y-6">
-        {!file && <DropZone accept={[".csv", ".parquet", ".json"]} onFile={handleFile} label="Drop a file to infer schema" />}
+        {!file && (
+          <div className="space-y-3">
+            <DropZone accept={[".csv", ".parquet", ".json"]} onFile={handleFile} label="Drop a file to infer schema" />
+            <div className="flex justify-center">
+              <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => handleFile(getSampleSchemaCSV())}>
+                <FlaskConical className="h-4 w-4 mr-1" /> Try with sample data
+              </Button>
+            </div>
+          </div>
+        )}
         {loading && <LoadingState message="Inferring schema..." />}
         {error && <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
 

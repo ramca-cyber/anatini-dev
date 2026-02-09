@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Braces, Download } from "lucide-react";
+import { Braces, Download, FlaskConical } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
@@ -7,6 +7,7 @@ import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { runQuery, exportToCSV, downloadBlob, formatBytes } from "@/lib/duckdb-helpers";
+import { getSampleJSON } from "@/lib/sample-data";
 import * as duckdb from "@duckdb/duckdb-wasm";
 
 export default function FlattenPage() {
@@ -61,7 +62,14 @@ export default function FlattenPage() {
     >
       <div className="space-y-6">
         {!file && (
-          <DropZone accept={[".json", ".jsonl"]} onFile={handleFile} label="Drop a JSON or JSONL file" />
+          <div className="space-y-3">
+            <DropZone accept={[".json", ".jsonl"]} onFile={handleFile} label="Drop a JSON or JSONL file" />
+            <div className="flex justify-center">
+              <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => handleFile(getSampleJSON())}>
+                <FlaskConical className="h-4 w-4 mr-1" /> Try with sample data
+              </Button>
+            </div>
+          </div>
         )}
 
         {file && preview && (

@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Terminal, Play, Download, Plus, X, Copy, Table2 } from "lucide-react";
+import { Terminal, Play, Download, Plus, X, Copy, Table2, FlaskConical } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
@@ -7,6 +7,7 @@ import { LoadingState } from "@/components/shared/FileInfo";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { registerFile, runQuery, exportToCSV, downloadBlob, sanitizeTableName, type QueryResult } from "@/lib/duckdb-helpers";
+import { getSampleCSV } from "@/lib/sample-data";
 import { toast } from "@/hooks/use-toast";
 
 interface LoadedTable {
@@ -90,7 +91,16 @@ export default function SqlPage() {
           </div>
 
           {showDropZone && (
-            <DropZone accept={[".csv", ".parquet", ".json"]} onFile={handleFile} label="Add a file" />
+            <div className="space-y-3">
+              <DropZone accept={[".csv", ".parquet", ".json"]} onFile={handleFile} label="Add a file" />
+              {tables.length === 0 && (
+                <div className="flex justify-center">
+                  <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => handleFile(getSampleCSV())}>
+                    <FlaskConical className="h-4 w-4 mr-1" /> Try with sample data
+                  </Button>
+                </div>
+              )}
+            </div>
           )}
 
           {tables.map((t) => (

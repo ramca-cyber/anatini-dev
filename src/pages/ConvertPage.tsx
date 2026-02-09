@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FileSpreadsheet, Download, ArrowRightLeft } from "lucide-react";
+import { FileSpreadsheet, Download, ArrowRightLeft, FlaskConical } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
@@ -7,6 +7,7 @@ import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { registerFile, runQuery, exportToCSV, exportToParquet, downloadBlob, formatBytes, sanitizeTableName } from "@/lib/duckdb-helpers";
+import { getSampleCSV } from "@/lib/sample-data";
 
 export default function ConvertPage() {
   const { db } = useDuckDB();
@@ -66,11 +67,18 @@ export default function ConvertPage() {
     >
       <div className="space-y-6">
         {!file && (
-          <DropZone
-            accept={[".csv", ".parquet"]}
-            onFile={handleFile}
-            label="Drop a CSV or Parquet file"
-          />
+          <div className="space-y-3">
+            <DropZone
+              accept={[".csv", ".parquet"]}
+              onFile={handleFile}
+              label="Drop a CSV or Parquet file"
+            />
+            <div className="flex justify-center">
+              <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => handleFile(getSampleCSV())}>
+                <FlaskConical className="h-4 w-4 mr-1" /> Try with sample data
+              </Button>
+            </div>
+          </div>
         )}
 
         {file && meta && (
