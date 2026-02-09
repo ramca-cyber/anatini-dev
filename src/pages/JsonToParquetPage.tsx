@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { getToolSeo } from "@/lib/seo-content";
+import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { Braces, FlaskConical } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
@@ -71,7 +71,7 @@ export default function JsonToParquetPage() {
   }
 
   return (
-    <ToolPage icon={Braces} title="JSON to Parquet" description="Convert JSON files to Parquet with compression options." seoContent={getToolSeo("json-to-parquet")}>
+    <ToolPage icon={Braces} title="JSON to Parquet" description="Convert JSON files to Parquet with compression options." metaDescription={getToolMetaDescription("json-to-parquet")} seoContent={getToolSeo("json-to-parquet")}>
       <div className="space-y-4">
         {!file && (
           <div className="space-y-3">

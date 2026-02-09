@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { getToolSeo } from "@/lib/seo-content";
+import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { Eye, FlaskConical, Search } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
@@ -74,7 +74,7 @@ export default function ParquetViewerPage() {
   const tabs = ["data", "schema", "metadata"] as const;
 
   return (
-    <ToolPage icon={Eye} title="Parquet Viewer" description="Explore Parquet files — data, schema, and metadata." seoContent={getToolSeo("parquet-viewer")}>
+    <ToolPage icon={Eye} title="Parquet Viewer" description="Explore Parquet files — data, schema, and metadata." metaDescription={getToolMetaDescription("parquet-viewer")} seoContent={getToolSeo("parquet-viewer")}>
       <div className="space-y-4">
         {!file && (
           <div className="space-y-3">

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Bird, Menu, X, Shield, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/shared/ThemeToggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -112,12 +113,13 @@ export function Navbar() {
         </div>
 
         {/* Privacy badge + mobile toggle */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <div className="hidden items-center gap-1.5 rounded-full border border-border bg-secondary px-3 py-1 text-xs text-muted-foreground sm:flex">
             <span className="h-1.5 w-1.5 rounded-full bg-success" />
             <Shield className="h-3 w-3" />
             100% Offline
           </div>
+          <ThemeToggle />
 
           <Button
             variant="ghost"

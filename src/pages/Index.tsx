@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useEffect } from "react";
+import { PageMeta } from "@/components/shared/PageMeta";
 import {
   ArrowRight, FileSpreadsheet, Braces, Terminal, BarChart3, Database,
   FileJson, Table, Eye, Code, FileText, Zap, Lock, Globe, Shield,
@@ -69,14 +69,14 @@ function ToolCard({ path, title, description, icon: Icon }: { path: string; titl
 }
 
 export default function Index() {
-  useEffect(() => {
-    const prev = document.title;
-    document.title = "Anatini.dev — Free, Offline Data Tools for Developers";
-    return () => { document.title = prev; };
-  }, []);
-
   return (
     <>
+      <PageMeta
+        title="Anatini.dev — Free, Offline Data Tools for Developers"
+        description="15+ free, offline data tools powered by DuckDB-WASM. Convert CSV, Parquet, JSON, Excel. Query with SQL. Profile datasets. All in your browser."
+      />
+
+
       {/* JSON-LD */}
       <script
         type="application/ld+json"

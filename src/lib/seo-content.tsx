@@ -1,7 +1,8 @@
 import { SeoFaq } from "@/components/shared/SeoFaq";
 
-const seoData: Record<string, { whatIs: { title: string; content: string }; howToUse: string; faqs: { question: string; answer: string }[] }> = {
+const seoData: Record<string, { whatIs: { title: string; content: string }; howToUse: string; metaDescription: string; faqs: { question: string; answer: string }[] }> = {
   "csv-to-parquet": {
+    metaDescription: "Convert CSV files to Apache Parquet format with Snappy or Zstd compression. Free, offline, runs in your browser with DuckDB-WASM.",
     whatIs: { title: "What is Parquet?", content: "Apache Parquet is a columnar storage format optimized for analytical workloads. It offers efficient compression, encoding schemes, and supports complex nested data structures. Parquet files are significantly smaller than equivalent CSV files and much faster to query." },
     howToUse: "Drop or click to upload a CSV file. Optionally adjust the delimiter, header, and compression settings. Click 'Convert to Parquet' to download the converted file. The conversion runs entirely in your browser using DuckDB-WASM — no data is uploaded anywhere.",
     faqs: [
@@ -12,6 +13,7 @@ const seoData: Record<string, { whatIs: { title: string; content: string }; howT
     ],
   },
   "parquet-to-csv": {
+    metaDescription: "Export Apache Parquet files to CSV format. Free, offline browser tool powered by DuckDB-WASM. No uploads required.",
     whatIs: { title: "What is CSV?", content: "CSV (Comma-Separated Values) is a plain text format for tabular data. Each line represents a row, with values separated by commas (or other delimiters). CSV is universally supported but lacks schema information and compression." },
     howToUse: "Upload a Parquet file and the tool will automatically parse it and show a preview. Click 'Convert to CSV' to download. You can customize the delimiter and quote style in the options panel.",
     faqs: [
@@ -21,6 +23,7 @@ const seoData: Record<string, { whatIs: { title: string; content: string }; howT
     ],
   },
   "csv-to-json": {
+    metaDescription: "Convert CSV files to JSON Array or NDJSON format. Free, offline tool with pretty-print and download. No data leaves your browser.",
     whatIs: { title: "What is JSON?", content: "JSON (JavaScript Object Notation) is a lightweight data interchange format. It's human-readable, widely supported by APIs and programming languages, and supports nested structures like objects and arrays." },
     howToUse: "Upload a CSV file, choose your output format (JSON Array or NDJSON), toggle pretty printing, and the conversion happens automatically. Copy or download the result.",
     faqs: [
@@ -30,6 +33,7 @@ const seoData: Record<string, { whatIs: { title: string; content: string }; howT
     ],
   },
   "json-to-csv": {
+    metaDescription: "Convert JSON and NDJSON files to CSV format. Flatten nested objects into tabular data. Free, offline browser tool.",
     whatIs: { title: "What is JSON to CSV conversion?", content: "Converting JSON to CSV flattens structured, potentially nested data into a flat tabular format with rows and columns. This is useful for importing data into spreadsheets, databases, or any tool that works with tabular data." },
     howToUse: "Drop a JSON or JSONL file. The tool automatically parses and flattens the data into a table. Switch between Table and Raw CSV views. Download the result as a CSV file.",
     faqs: [
@@ -39,6 +43,7 @@ const seoData: Record<string, { whatIs: { title: string; content: string }; howT
     ],
   },
   "json-to-parquet": {
+    metaDescription: "Convert JSON files to Parquet with Snappy or Zstd compression. Reduce file size by 50-90%. Free, offline browser tool.",
     whatIs: { title: "Why convert JSON to Parquet?", content: "Parquet is a columnar format that offers dramatically better compression and query performance compared to JSON. Converting JSON to Parquet can reduce file sizes by 50-90% while enabling fast analytical queries." },
     howToUse: "Upload a JSON or JSONL file, select your preferred compression method (Snappy, Zstd, or None), and click Convert. The tool shows the schema, conversion time, and compression ratio.",
     faqs: [
@@ -48,6 +53,7 @@ const seoData: Record<string, { whatIs: { title: string; content: string }; howT
     ],
   },
   "parquet-to-json": {
+    metaDescription: "Convert Parquet files to JSON Array or NDJSON. Preserves nested types. Free, offline browser tool powered by DuckDB-WASM.",
     whatIs: { title: "Why convert Parquet to JSON?", content: "JSON is the universal data interchange format, readable by virtually every language and tool. Converting Parquet to JSON makes columnar data accessible to web apps, APIs, and tools that don't support Parquet natively." },
     howToUse: "Upload a Parquet file, choose your output format (JSON Array or NDJSON), toggle pretty-printing, and click Convert. The tool shows a data preview and conversion stats including timing and size change.",
     faqs: [
@@ -58,6 +64,7 @@ const seoData: Record<string, { whatIs: { title: string; content: string }; howT
     ],
   },
   "excel-csv-converter": {
+    metaDescription: "Convert Excel (XLSX, XLS) to CSV and CSV to Excel. Multi-sheet support. Free, offline browser tool. No uploads.",
     whatIs: { title: "What is Excel to CSV conversion?", content: "Excel files (.xlsx, .xls) store data in a binary format with support for multiple sheets, formulas, and formatting. CSV is a simpler plain-text format. Converting between them lets you use data across different tools and workflows." },
     howToUse: "Drop an Excel or CSV file. For Excel files, select the sheet to convert and download as CSV. For CSV files, convert to Excel format. Multi-sheet workbooks are fully supported.",
     faqs: [
@@ -68,6 +75,7 @@ const seoData: Record<string, { whatIs: { title: string; content: string }; howT
     ],
   },
   "csv-viewer": {
+    metaDescription: "View CSV files in a sortable, searchable table with column statistics. Free, offline browser tool. No uploads required.",
     whatIs: { title: "What is a CSV Viewer?", content: "A CSV viewer displays comma-separated data in a structured table format, making it easy to browse, search, and understand your data without opening a spreadsheet application. This viewer runs entirely in your browser with no uploads required." },
     howToUse: "Upload a CSV file to instantly see it in a sortable, searchable table. Click any column header to sort and view quick statistics (count, distinct values, min, max). Use the search bar to filter rows. Click 'Open in SQL Playground' to query the data with SQL.",
     faqs: [
@@ -77,6 +85,7 @@ const seoData: Record<string, { whatIs: { title: string; content: string }; howT
     ],
   },
   "parquet-viewer": {
+    metaDescription: "View Parquet file data, schema, and metadata in your browser. Export to CSV or JSON. Free, offline tool.",
     whatIs: { title: "What is a Parquet Viewer?", content: "A Parquet viewer lets you inspect the contents of Apache Parquet files — a columnar format commonly used in data engineering and analytics. This viewer shows data, schema (column types), and file metadata like row groups and compression." },
     howToUse: "Upload a Parquet file to explore three tabs: Data (searchable table preview), Schema (column names and types), and Metadata (file-level details like row groups and compression). Export to CSV or JSON directly from the viewer.",
     faqs: [
@@ -86,6 +95,7 @@ const seoData: Record<string, { whatIs: { title: string; content: string }; howT
     ],
   },
   "json-formatter": {
+    metaDescription: "Format, minify, validate, and sort JSON with tree view. Free, offline JSON formatter in your browser.",
     whatIs: { title: "What is a JSON Formatter?", content: "A JSON formatter takes raw or minified JSON and displays it in a human-readable format with proper indentation. It can also minify JSON (remove whitespace), validate syntax, sort keys alphabetically, and display data as an interactive tree." },
     howToUse: "Paste or type JSON in the input area. Click Format to pretty-print with your chosen indentation, Minify to compress, or Validate to check syntax. Switch between Formatted and Tree views. Copy or download the result.",
     faqs: [
@@ -96,6 +106,7 @@ const seoData: Record<string, { whatIs: { title: string; content: string }; howT
     ],
   },
   "sql-playground": {
+    metaDescription: "Run SQL queries on local CSV, Parquet, and JSON files with full DuckDB syntax. JOINs, CTEs, window functions. Free, offline.",
     whatIs: { title: "What is the SQL Playground?", content: "The SQL Playground lets you write and execute SQL queries against local files (CSV, Parquet, JSON) using DuckDB's full SQL dialect — entirely in your browser. DuckDB supports window functions, CTEs, joins, aggregations, and more." },
     howToUse: "Load one or more files (CSV, Parquet, JSON), then write SQL queries referencing them as tables. Click Run to execute. Results appear in a data table below. Export results as CSV, Parquet, or JSON.",
     faqs: [
@@ -106,6 +117,7 @@ const seoData: Record<string, { whatIs: { title: string; content: string }; howT
     ],
   },
   "data-profiler": {
+    metaDescription: "Profile datasets to discover nulls, duplicates, outliers, and data quality issues. Free, offline browser tool.",
     whatIs: { title: "What is Data Profiling?", content: "Data profiling analyzes a dataset to discover its structure, content, and quality. It reveals null counts, duplicate rates, value distributions, outliers, and data type information — essential for understanding new datasets and catching quality issues early." },
     howToUse: "Upload a CSV, Parquet, or JSON file. The profiler automatically analyzes every column, showing null counts, distinct values, min/max, and common patterns. Use the overview tab for a summary or drill into individual columns.",
     faqs: [
@@ -115,6 +127,7 @@ const seoData: Record<string, { whatIs: { title: string; content: string }; howT
     ],
   },
   "json-flattener": {
+    metaDescription: "Flatten deeply nested JSON into tabular format. Configurable separators and array handling. Free, offline tool.",
     whatIs: { title: "What is JSON Flattening?", content: "JSON flattening transforms deeply nested JSON objects into a flat, tabular structure. Nested keys are concatenated with a separator (e.g., address.city becomes a column name). This makes nested data compatible with spreadsheets, databases, and analytical tools." },
     howToUse: "Upload a JSON or JSONL file. Choose your separator (dot, underscore), naming convention, and array handling preferences. The tool recursively expands nested objects and arrays into flat columns, displayed in a data table. Download the result as CSV.",
     faqs: [
@@ -124,6 +137,7 @@ const seoData: Record<string, { whatIs: { title: string; content: string }; howT
     ],
   },
   "schema-generator": {
+    metaDescription: "Generate CREATE TABLE DDL for PostgreSQL, MySQL, BigQuery, Snowflake from your data. Free, offline schema generator.",
     whatIs: { title: "What is a Schema Generator?", content: "A schema generator inspects your data and produces DDL (Data Definition Language) statements — CREATE TABLE SQL — for various database systems. It infers column types from your data and maps them to the target dialect's type system." },
     howToUse: "Upload a CSV, Parquet, or JSON file. The tool infers types for each column and generates CREATE TABLE statements. Choose your target dialect (PostgreSQL, MySQL, BigQuery, Snowflake, DuckDB). Copy or download the DDL.",
     faqs: [
@@ -133,6 +147,7 @@ const seoData: Record<string, { whatIs: { title: string; content: string }; howT
     ],
   },
   "csv-to-sql": {
+    metaDescription: "Generate CREATE TABLE and INSERT statements from CSV files. PostgreSQL, MySQL, SQLite, BigQuery dialects. Free, offline.",
     whatIs: { title: "What is CSV to SQL?", content: "CSV to SQL generates executable SQL statements (CREATE TABLE + INSERT) from your CSV data. This is useful for importing data into databases, creating seed scripts, or migrating data between systems." },
     howToUse: "Upload a CSV file. Choose your target dialect, table name, batch size, and whether to include DROP TABLE. The tool generates a complete SQL script with CREATE TABLE and batched INSERT statements. Download or copy the output.",
     faqs: [
@@ -143,6 +158,7 @@ const seoData: Record<string, { whatIs: { title: string; content: string }; howT
     ],
   },
   "diff": {
+    metaDescription: "Compare two dataset versions side-by-side. Identify added, removed, and modified rows. Free, offline diff tool.",
     whatIs: { title: "What is Dataset Diff?", content: "Dataset diff compares two versions of a dataset side-by-side to identify added, removed, and modified rows. It's essential for tracking data changes, validating ETL pipelines, and auditing data transformations." },
     howToUse: "Upload two files (before and after). Select a key column to match rows between versions. The tool highlights added (green), removed (red), and modified (yellow) rows. Filter by change type and download the diff report.",
     faqs: [
@@ -157,4 +173,8 @@ export function getToolSeo(toolId: string) {
   const data = seoData[toolId];
   if (!data) return null;
   return <SeoFaq whatIs={data.whatIs} howToUse={data.howToUse} faqs={data.faqs} />;
+}
+
+export function getToolMetaDescription(toolId: string): string | undefined {
+  return seoData[toolId]?.metaDescription;
 }
