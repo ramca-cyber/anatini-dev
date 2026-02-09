@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { getToolSeo } from "@/lib/seo-content";
+import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { FileSpreadsheet, ArrowRightLeft, FlaskConical, Settings2, ChevronDown, ChevronUp } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
@@ -68,7 +68,7 @@ export default function CsvToParquetPage() {
   }
 
   return (
-    <ToolPage icon={FileSpreadsheet} title="CSV to Parquet" description="Convert CSV files to columnar Parquet format with compression." pageTitle="CSV to Parquet — Free, Offline | Anatini.dev" seoContent={getToolSeo("csv-to-parquet")}>
+    <ToolPage icon={FileSpreadsheet} title="CSV to Parquet" description="Convert CSV files to columnar Parquet format with compression." pageTitle="CSV to Parquet — Free, Offline | Anatini.dev" metaDescription={getToolMetaDescription("csv-to-parquet")} seoContent={getToolSeo("csv-to-parquet")}>
       <div className="space-y-4">
         {!file && (
           <div className="space-y-3">

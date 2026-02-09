@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { getToolSeo } from "@/lib/seo-content";
+import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { Braces, Download, FlaskConical, Eye, Columns } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
@@ -167,7 +167,7 @@ export default function FlattenPage() {
 
   return (
     <ToolPage icon={Braces} title="JSON Flattener" description="Flatten nested JSON/JSONL into tabular format for analysis."
-      pageTitle="Flatten JSON Online — Free, Offline | Anatini.dev" seoContent={getToolSeo("json-flattener")}>
+      pageTitle="Flatten JSON Online — Free, Offline | Anatini.dev" metaDescription={getToolMetaDescription("json-flattener")} seoContent={getToolSeo("json-flattener")}>
       <div className="space-y-6">
         {!file && (
           <div className="space-y-3">

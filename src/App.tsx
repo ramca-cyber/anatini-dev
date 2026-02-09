@@ -71,7 +71,9 @@ const App = () => (
 
               <Route path="/about" element={<About />} />
             </Route>
-            <Route path="*" element={<NotFound />} />
+            <Route element={<Layout />}>
+              <Route path="*" element={<NotFound />} />
+            </Route>
           </Routes>
         </BrowserRouter>
       </DuckDBProvider>

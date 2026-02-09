@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { getToolSeo } from "@/lib/seo-content";
+import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { Braces, ArrowRightLeft, FlaskConical } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
@@ -87,7 +87,7 @@ export default function ParquetToJsonPage() {
   }
 
   return (
-    <ToolPage icon={Braces} title="Parquet to JSON" description="Export Parquet files to JSON or NDJSON format." pageTitle="Parquet to JSON — Free, Offline | Anatini.dev" seoContent={getToolSeo("parquet-to-json")}>
+    <ToolPage icon={Braces} title="Parquet to JSON" description="Export Parquet files to JSON or NDJSON format." pageTitle="Parquet to JSON — Free, Offline | Anatini.dev" metaDescription={getToolMetaDescription("parquet-to-json")} seoContent={getToolSeo("parquet-to-json")}>
       <div className="space-y-4">
         {!file && (
           <div className="space-y-3">

@@ -5,7 +5,7 @@ export default function About() {
     <div className="container max-w-3xl py-16">
       <div className="flex items-center gap-3 mb-8">
         <Bird className="h-8 w-8 text-primary" />
-        <h1 className="text-3xl font-bold">About DuckTools</h1>
+        <h1 className="text-3xl font-bold">About Anatini.dev</h1>
       </div>
 
       <div className="space-y-10">
@@ -15,7 +15,7 @@ export default function About() {
             <h2 className="text-xl font-semibold">Privacy First</h2>
           </div>
           <p className="text-muted-foreground leading-relaxed">
-            DuckTools is a collection of browser-based data tools that process everything locally. 
+            Anatini.dev is a collection of browser-based data tools that process everything locally. 
             No data ever leaves your machine — there's no backend, no analytics, no tracking. 
             Every computation happens via WebAssembly right in your browser tab.
           </p>

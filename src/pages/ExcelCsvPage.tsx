@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { getToolSeo } from "@/lib/seo-content";
+import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { FileText, FlaskConical } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
@@ -105,7 +105,7 @@ export default function ExcelCsvPage() {
   }
 
   return (
-    <ToolPage icon={FileText} title="Excel ↔ CSV Converter" description="Convert between Excel and CSV with multi-sheet support." seoContent={getToolSeo("excel-csv-converter")}>
+    <ToolPage icon={FileText} title="Excel ↔ CSV Converter" description="Convert between Excel and CSV with multi-sheet support." metaDescription={getToolMetaDescription("excel-csv-converter")} seoContent={getToolSeo("excel-csv-converter")}>
       <div className="space-y-4">
         {!file && (
           <div className="space-y-3">

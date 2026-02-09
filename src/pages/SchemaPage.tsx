@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { getToolSeo } from "@/lib/seo-content";
+import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { Database, Copy, Download, FlaskConical } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
@@ -122,7 +122,7 @@ export default function SchemaPage() {
 
   return (
     <ToolPage icon={Database} title="Schema Generator" description="Infer schemas and generate DDL for Postgres, MySQL, BigQuery and more."
-      pageTitle="Schema Generator — Infer DDL Online | Anatini.dev" seoContent={getToolSeo("schema-generator")}>
+      pageTitle="Schema Generator — Infer DDL Online | Anatini.dev" metaDescription={getToolMetaDescription("schema-generator")} seoContent={getToolSeo("schema-generator")}>
       <div className="space-y-6">
         {!file && (
           <div className="space-y-3">
