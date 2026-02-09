@@ -1,0 +1,129 @@
+import { useState } from "react";
+import { FileJson, FlaskConical } from "lucide-react";
+import { ToolPage } from "@/components/shared/ToolPage";
+import { DropZone } from "@/components/shared/DropZone";
+import { CodeBlock } from "@/components/shared/CodeBlock";
+import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
+import { Button } from "@/components/ui/button";
+import { useDuckDB } from "@/contexts/DuckDBContext";
+import { registerFile, runQuery, downloadBlob, formatBytes, sanitizeTableName } from "@/lib/duckdb-helpers";
+import { getSampleCSV } from "@/lib/sample-data";
+
+export default function CsvToJsonPage() {
+  const { db } = useDuckDB();
+  const [file, setFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [meta, setMeta] = useState<{ columns: string[]; rowCount: number; types: string[] } | null>(null);
+  const [output, setOutput] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  // Options
+  const [delimiter, setDelimiter] = useState(",");
+  const [outputFormat, setOutputFormat] = useState<"array" | "ndjson">("array");
+  const [prettyPrint, setPrettyPrint] = useState(true);
+
+  async function handleFile(f: File) {
+    if (!db) return;
+    setFile(f);
+    setLoading(true);
+    setError(null);
+    setOutput("");
+    try {
+      const tableName = sanitizeTableName(f.name);
+      const info = await registerFile(db, f, tableName);
+      setMeta(info);
+      await convert(tableName, info);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load file");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function convert(tableName?: string, info?: { columns: string[]; rowCount: number; types: string[] }) {
+    if (!db || !file) return;
+    const tName = tableName ?? sanitizeTableName(file.name);
+    setLoading(true);
+    try {
+      const result = await runQuery(db, `SELECT * FROM "${tName}"`);
+      const records = result.rows.map((row) => {
+        const obj: Record<string, unknown> = {};
+        result.columns.forEach((col, i) => { obj[col] = row[i]; });
+        return obj;
+      });
+
+      let json: string;
+      if (outputFormat === "ndjson") {
+        json = records.map((r) => JSON.stringify(r)).join("\n");
+      } else {
+        json = prettyPrint ? JSON.stringify(records, null, 2) : JSON.stringify(records);
+      }
+      setOutput(json);
+      setError(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Conversion failed");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleDownload() {
+    const ext = outputFormat === "ndjson" ? "jsonl" : "json";
+    downloadBlob(output, `${file?.name.replace(/\.[^.]+$/, "")}.${ext}`, "application/json");
+  }
+
+  return (
+    <ToolPage icon={FileJson} title="CSV to JSON" description="Convert CSV files to JSON array or NDJSON format.">
+      <div className="space-y-4">
+        {!file && (
+          <div className="space-y-3">
+            <DropZone accept={[".csv", ".tsv"]} onFile={handleFile} label="Drop a CSV file" />
+            <div className="flex justify-center">
+              <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => handleFile(getSampleCSV())}>
+                <FlaskConical className="h-4 w-4 mr-1" /> Try with sample data
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {file && meta && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
+              <Button variant="outline" onClick={() => { setFile(null); setMeta(null); setOutput(""); }}>New file</Button>
+            </div>
+
+            {/* Options */}
+            <div className="flex flex-wrap items-center gap-4 border-2 border-border p-3">
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground font-bold">Output Format</label>
+                <div className="flex gap-1">
+                  {(["array", "ndjson"] as const).map((f) => (
+                    <button key={f} onClick={() => { setOutputFormat(f); setTimeout(() => convert(), 0); }}
+                      className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${outputFormat === f ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
+                      {f === "array" ? "JSON Array" : "NDJSON"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {outputFormat === "array" && (
+                <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <input type="checkbox" checked={prettyPrint} onChange={(e) => setPrettyPrint(e.target.checked)} />
+                  Pretty print
+                </label>
+              )}
+              <Button size="sm" onClick={() => convert()}>Re-convert</Button>
+            </div>
+          </div>
+        )}
+
+        {loading && <LoadingState message="Converting..." />}
+        {error && <div className="border-2 border-destructive bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+
+        {output && (
+          <CodeBlock code={output} fileName={`output.${outputFormat === "ndjson" ? "jsonl" : "json"}`} onDownload={handleDownload} />
+        )}
+      </div>
+    </ToolPage>
+  );
+}
