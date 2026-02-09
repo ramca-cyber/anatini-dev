@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BarChart3, AlertTriangle, AlertCircle, Info, FlaskConical } from "lucide-react";
+import { BarChart3, AlertTriangle, AlertCircle, Info, FlaskConical, Download, FileText, FileJson, FileSpreadsheet } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
@@ -7,8 +7,9 @@ import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDuckDB } from "@/contexts/DuckDBContext";
-import { registerFile, runQuery, formatBytes, sanitizeTableName, type QueryResult } from "@/lib/duckdb-helpers";
+import { registerFile, runQuery, formatBytes, sanitizeTableName, downloadBlob } from "@/lib/duckdb-helpers";
 import { getSampleProfilerCSV } from "@/lib/sample-data";
+import { toast } from "@/hooks/use-toast";
 
 interface ColumnProfile {
   name: string;
@@ -45,7 +46,6 @@ export default function ProfilerPage() {
       const tableName = sanitizeTableName(f.name);
       const info = await registerFile(db, f, tableName);
 
-      // Column profiling
       const profiles: ColumnProfile[] = [];
       let totalNulls = 0;
       const totalCells = info.rowCount * info.columns.length;
@@ -75,9 +75,7 @@ export default function ProfilerPage() {
         } catch {}
 
         profiles.push({
-          name: col,
-          type: info.types[i],
-          nullCount,
+          name: col, type: info.types[i], nullCount,
           nullPct: info.rowCount > 0 ? (nullCount / info.rowCount) * 100 : 0,
           distinctCount,
           min: statsRes.rows[0][2] ? String(statsRes.rows[0][2]) : undefined,
@@ -90,7 +88,6 @@ export default function ProfilerPage() {
       const nullRate = totalCells > 0 ? (totalNulls / totalCells) * 100 : 0;
       setOverview({ rowCount: info.rowCount, colCount: info.columns.length, nullRate });
 
-      // Generate findings
       const fList: Finding[] = [];
       for (const p of profiles) {
         if (p.nullPct > 50) fList.push({ level: "critical", title: `High null rate in "${p.name}"`, description: `${p.nullPct.toFixed(1)}% of values are null.` });
@@ -104,6 +101,72 @@ export default function ProfilerPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function exportJSON() {
+    const report = {
+      file: file?.name,
+      generatedAt: new Date().toISOString(),
+      overview,
+      columns: columns.map((c) => ({
+        name: c.name, type: c.type, nullCount: c.nullCount, nullPct: c.nullPct,
+        distinctCount: c.distinctCount, min: c.min, max: c.max, topValues: c.topValues,
+      })),
+      findings,
+    };
+    downloadBlob(JSON.stringify(report, null, 2), `${file?.name ?? "profile"}_report.json`, "application/json");
+    toast({ title: "JSON report downloaded" });
+  }
+
+  function exportCSV() {
+    const header = "Column,Type,Nulls,Null %,Distinct,Min,Max\n";
+    const rows = columns.map((c) =>
+      [c.name, c.type, c.nullCount, c.nullPct.toFixed(1), c.distinctCount, c.min ?? "", c.max ?? ""]
+        .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+        .join(",")
+    ).join("\n");
+    downloadBlob(header + rows, `${file?.name ?? "profile"}_summary.csv`, "text/csv");
+    toast({ title: "CSV summary downloaded" });
+  }
+
+  function exportHTML() {
+    const html = `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Profile Report — ${file?.name ?? "Dataset"}</title>
+<style>
+  body{font-family:system-ui,sans-serif;background:#0d1117;color:#e6edf3;max-width:900px;margin:0 auto;padding:2rem}
+  h1{color:#58d5e3}h2{color:#8b949e;border-bottom:1px solid #21262d;padding-bottom:.5rem}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin:1rem 0}
+  .card{background:#161b22;border:1px solid #21262d;border-radius:8px;padding:1rem}
+  .card .label{font-size:.75rem;color:#8b949e}.card .value{font-size:1.5rem;font-weight:700;margin-top:.25rem}
+  table{width:100%;border-collapse:collapse;margin:1rem 0}th,td{text-align:left;padding:.5rem .75rem;border-bottom:1px solid #21262d}
+  th{background:#161b22;color:#8b949e;font-size:.75rem;text-transform:uppercase}
+  td{font-family:'JetBrains Mono',monospace;font-size:.8rem}
+  .finding{padding:1rem;border-radius:8px;margin:.5rem 0;border-left:4px solid}
+  .critical{background:#3d1115;border-color:#f85149;color:#f85149}
+  .warning{background:#3d2e00;border-color:#d29922;color:#d29922}
+  .info{background:#0d1d30;border-color:#58d5e3;color:#58d5e3}
+  .finding .title{font-weight:600}.finding .desc{opacity:.8;font-size:.9rem;margin-top:.25rem}
+  .footer{text-align:center;color:#484f58;margin-top:3rem;font-size:.8rem}
+</style></head><body>
+<h1>📊 Profile Report</h1>
+<p style="color:#8b949e">File: <strong>${file?.name}</strong> · Generated: ${new Date().toLocaleString()}</p>
+<h2>Overview</h2>
+<div class="cards">
+  <div class="card"><div class="label">Rows</div><div class="value">${overview?.rowCount.toLocaleString()}</div></div>
+  <div class="card"><div class="label">Columns</div><div class="value">${overview?.colCount}</div></div>
+  <div class="card"><div class="label">Null Rate</div><div class="value">${overview?.nullRate.toFixed(1)}%</div></div>
+  <div class="card"><div class="label">Findings</div><div class="value">${findings.length}</div></div>
+</div>
+<h2>Columns</h2>
+<table><thead><tr><th>Column</th><th>Type</th><th>Nulls</th><th>Null %</th><th>Distinct</th><th>Min</th><th>Max</th></tr></thead>
+<tbody>${columns.map((c) => `<tr><td>${c.name}</td><td>${c.type}</td><td>${c.nullCount}</td><td>${c.nullPct.toFixed(1)}%</td><td>${c.distinctCount}</td><td>${c.min ?? "∅"}</td><td>${c.max ?? "∅"}</td></tr>`).join("")}</tbody></table>
+<h2>Findings (${findings.length})</h2>
+${findings.length === 0 ? "<p>No findings — data looks clean!</p>" : findings.map((f) => `<div class="finding ${f.level}"><div class="title">${f.title}</div><div class="desc">${f.description}</div></div>`).join("")}
+<div class="footer">Generated by DuckTools · 100% offline</div>
+</body></html>`;
+    downloadBlob(html, `${file?.name ?? "profile"}_report.html`, "text/html");
+    toast({ title: "HTML report downloaded" });
   }
 
   const levelIcon = { critical: AlertCircle, warning: AlertTriangle, info: Info };
@@ -137,6 +200,7 @@ export default function ProfilerPage() {
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="columns">Columns</TabsTrigger>
                 <TabsTrigger value="findings">Findings ({findings.length})</TabsTrigger>
+                <TabsTrigger value="export">Export</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="space-y-4 pt-4">
@@ -177,6 +241,32 @@ export default function ProfilerPage() {
                     </div>
                   );
                 })}
+              </TabsContent>
+
+              <TabsContent value="export" className="pt-4">
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <button onClick={exportHTML} className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-6 transition-all hover:border-primary/40 hover:-translate-y-0.5">
+                    <FileText className="h-8 w-8 text-primary" />
+                    <div className="text-center">
+                      <div className="font-medium">HTML Report</div>
+                      <div className="text-xs text-muted-foreground">Styled, standalone report you can share</div>
+                    </div>
+                  </button>
+                  <button onClick={exportJSON} className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-6 transition-all hover:border-primary/40 hover:-translate-y-0.5">
+                    <FileJson className="h-8 w-8 text-primary" />
+                    <div className="text-center">
+                      <div className="font-medium">JSON Report</div>
+                      <div className="text-xs text-muted-foreground">Machine-readable full profile data</div>
+                    </div>
+                  </button>
+                  <button onClick={exportCSV} className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-6 transition-all hover:border-primary/40 hover:-translate-y-0.5">
+                    <FileSpreadsheet className="h-8 w-8 text-primary" />
+                    <div className="text-center">
+                      <div className="font-medium">CSV Summary</div>
+                      <div className="text-xs text-muted-foreground">Column stats as a spreadsheet</div>
+                    </div>
+                  </button>
+                </div>
               </TabsContent>
             </Tabs>
           </>

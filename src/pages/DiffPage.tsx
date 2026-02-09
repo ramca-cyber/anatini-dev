@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { registerFile, runQuery, exportToCSV, downloadBlob, formatBytes, sanitizeTableName } from "@/lib/duckdb-helpers";
 import { getSampleCSVBefore, getSampleCSVAfter } from "@/lib/sample-data";
+import { toast } from "@/hooks/use-toast";
 
 export default function DiffPage() {
   const { db } = useDuckDB();
@@ -19,6 +20,7 @@ export default function DiffPage() {
   const [afterMeta, setAfterMeta] = useState<{ rowCount: number; columns: string[] } | null>(null);
   const [summary, setSummary] = useState<{ added: number; removed: number; common: number } | null>(null);
   const [diffPreview, setDiffPreview] = useState<{ columns: string[]; rows: any[][] } | null>(null);
+  const [diffSql, setDiffSql] = useState("");
 
   async function loadFile(f: File, prefix: string) {
     if (!db) return null;
@@ -74,13 +76,12 @@ export default function DiffPage() {
       const common = Number(commonRes.rows[0][0]);
       setSummary({ added, removed, common });
 
-      // Preview: show added & removed rows with a _diff_status column
-      const preview = await runQuery(db, `
-        SELECT 'added' as _status, t.* FROM (SELECT * FROM "${aTable}" EXCEPT SELECT * FROM "${bTable}") t
-        UNION ALL
-        SELECT 'removed' as _status, t.* FROM (SELECT * FROM "${bTable}" EXCEPT SELECT * FROM "${aTable}") t
-        LIMIT 200
-      `);
+      const sql = `SELECT 'added' as _status, t.* FROM (SELECT * FROM "${aTable}" EXCEPT SELECT * FROM "${bTable}") t
+UNION ALL
+SELECT 'removed' as _status, t.* FROM (SELECT * FROM "${bTable}" EXCEPT SELECT * FROM "${aTable}") t`;
+      setDiffSql(sql);
+
+      const preview = await runQuery(db, sql + " LIMIT 200");
       setDiffPreview(preview);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Diff failed");
@@ -89,12 +90,49 @@ export default function DiffPage() {
     }
   }
 
+  async function handleExportDiffCSV() {
+    if (!db || !diffSql) return;
+    try {
+      const csv = await exportToCSV(db, diffSql);
+      downloadBlob(csv, "diff_results.csv", "text/csv");
+      toast({ title: "Diff CSV downloaded" });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Export failed");
+    }
+  }
+
+  function handleExportDiffJSON() {
+    if (!summary || !diffPreview) return;
+    const report = {
+      generatedAt: new Date().toISOString(),
+      before: beforeFile?.name,
+      after: afterFile?.name,
+      summary,
+      changes: diffPreview.rows.map((row) => {
+        const obj: Record<string, any> = {};
+        diffPreview.columns.forEach((col, i) => { obj[col] = row[i]; });
+        return obj;
+      }),
+    };
+    downloadBlob(
+      JSON.stringify(report, (_k, v) => typeof v === "bigint" ? v.toString() : v, 2),
+      "diff_results.json",
+      "application/json"
+    );
+    toast({ title: "Diff JSON downloaded" });
+  }
+
   const bothLoaded = beforeMeta && afterMeta;
   const neitherLoaded = !beforeFile && !afterFile;
 
   async function loadSampleData() {
     await handleBefore(getSampleCSVBefore());
     await handleAfter(getSampleCSVAfter());
+  }
+
+  function reset() {
+    setBeforeFile(null); setAfterFile(null); setBeforeMeta(null); setAfterMeta(null);
+    setSummary(null); setDiffPreview(null); setDiffSql("");
   }
 
   return (
@@ -130,7 +168,7 @@ export default function DiffPage() {
         {bothLoaded && !summary && (
           <div className="flex gap-2">
             <Button onClick={runDiff} disabled={loading}>Compare</Button>
-            <Button variant="outline" onClick={() => { setBeforeFile(null); setAfterFile(null); setBeforeMeta(null); setAfterMeta(null); setSummary(null); setDiffPreview(null); }}>Reset</Button>
+            <Button variant="outline" onClick={reset}>Reset</Button>
           </div>
         )}
 
@@ -154,11 +192,20 @@ export default function DiffPage() {
               </div>
             </div>
 
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={handleExportDiffCSV}>
+                <Download className="h-4 w-4 mr-1" /> Download CSV
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleExportDiffJSON}>
+                <Download className="h-4 w-4 mr-1" /> Download JSON
+              </Button>
+            </div>
+
             {diffPreview && diffPreview.rows.length > 0 && (
               <DataTable columns={diffPreview.columns} rows={diffPreview.rows} className="max-h-[500px]" />
             )}
 
-            <Button variant="outline" onClick={() => { setBeforeFile(null); setAfterFile(null); setBeforeMeta(null); setAfterMeta(null); setSummary(null); setDiffPreview(null); }}>Reset</Button>
+            <Button variant="outline" onClick={reset}>Reset</Button>
           </>
         )}
       </div>
