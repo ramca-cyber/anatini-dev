@@ -18,6 +18,7 @@ import JsonFormatterPage from "./pages/JsonFormatterPage";
 import CsvToJsonPage from "./pages/CsvToJsonPage";
 import JsonToCsvPage from "./pages/JsonToCsvPage";
 import JsonToParquetPage from "./pages/JsonToParquetPage";
+import ParquetToJsonPage from "./pages/ParquetToJsonPage";
 import ParquetViewerPage from "./pages/ParquetViewerPage";
 import CsvViewerPage from "./pages/CsvViewerPage";
 import CsvToSqlPage from "./pages/CsvToSqlPage";
@@ -43,6 +44,7 @@ const App = () => (
               <Route path="/csv-to-json" element={<CsvToJsonPage />} />
               <Route path="/json-to-csv" element={<JsonToCsvPage />} />
               <Route path="/json-to-parquet" element={<JsonToParquetPage />} />
+              <Route path="/parquet-to-json" element={<ParquetToJsonPage />} />
               <Route path="/excel-csv-converter" element={<ExcelCsvPage />} />
 
               {/* Viewers & Formatters */}
