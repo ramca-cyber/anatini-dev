@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { getToolSeo } from "@/lib/seo-content";
-import { FileText } from "lucide-react";
+import { FileText, FlaskConical } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { Button } from "@/components/ui/button";
 import { downloadBlob, formatBytes } from "@/lib/duckdb-helpers";
+import { generateSampleExcel } from "@/lib/sample-data";
 
 export default function ExcelCsvPage() {
   const [file, setFile] = useState<File | null>(null);
@@ -100,7 +101,14 @@ export default function ExcelCsvPage() {
     <ToolPage icon={FileText} title="Excel ↔ CSV Converter" description="Convert between Excel and CSV with multi-sheet support." seoContent={getToolSeo("excel-csv-converter")}>
       <div className="space-y-4">
         {!file && (
-          <DropZone accept={[".xlsx", ".xls", ".csv", ".tsv"]} onFile={handleFile} label="Drop an Excel or CSV file" />
+          <div className="space-y-3">
+            <DropZone accept={[".xlsx", ".xls", ".csv", ".tsv"]} onFile={handleFile} label="Drop an Excel or CSV file" />
+            <div className="flex justify-center">
+              <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={async () => { const f = await generateSampleExcel(); handleFile(f); }}>
+                <FlaskConical className="h-4 w-4 mr-1" /> Try with sample data
+              </Button>
+            </div>
+          </div>
         )}
 
         {file && (

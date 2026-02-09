@@ -126,3 +126,62 @@ export function getSampleProfilerCSV(): File {
 export function getSampleSchemaCSV(): File {
   return stringToFile(SAMPLE_CSV, "employees.csv", "text/csv");
 }
+
+/**
+ * Generate a sample Parquet file using DuckDB.
+ * Requires a DuckDB instance since Parquet is binary.
+ */
+export async function generateSampleParquet(db: import("@duckdb/duckdb-wasm").AsyncDuckDB): Promise<File> {
+  const conn = await db.connect();
+  try {
+    await conn.query(`CREATE OR REPLACE TABLE _sample_parquet AS SELECT * FROM (VALUES
+      (1, 'Alice Johnson', 'alice@example.com', 32, 'New York', 85000),
+      (2, 'Bob Smith', 'bob@example.com', 28, 'San Francisco', 92000),
+      (3, 'Carol Williams', NULL, 45, 'Chicago', 78000),
+      (4, 'David Brown', 'david@example.com', 35, 'Austin', 95000),
+      (5, 'Eve Davis', 'eve@example.com', 29, 'Seattle', 88000),
+      (6, 'Frank Miller', 'frank@example.com', 41, NULL, 72000),
+      (7, 'Grace Lee', NULL, 38, 'Boston', 91000),
+      (8, 'Henry Wilson', 'henry@example.com', 26, 'Denver', 67000),
+      (9, 'Iris Chen', 'iris@example.com', 33, 'Portland', 83000),
+      (10, 'Jack Taylor', 'jack@example.com', 47, 'Miami', 105000)
+    ) AS t(id, name, email, age, city, salary)`);
+    await conn.query(`COPY _sample_parquet TO '_sample.parquet' (FORMAT PARQUET)`);
+    const buf = await db.copyFileToBuffer("_sample.parquet");
+    await conn.query(`DROP TABLE IF EXISTS _sample_parquet`);
+    return new File([new Uint8Array(buf)], "sample.parquet", { type: "application/octet-stream" });
+  } finally {
+    await conn.close();
+  }
+}
+
+/**
+ * Generate a sample Excel file using SheetJS (xlsx).
+ */
+export async function generateSampleExcel(): Promise<File> {
+  const XLSX = await import("xlsx");
+  const data = [
+    ["id", "name", "email", "age", "city", "salary"],
+    [1, "Alice Johnson", "alice@example.com", 32, "New York", 85000],
+    [2, "Bob Smith", "bob@example.com", 28, "San Francisco", 92000],
+    [3, "Carol Williams", "", 45, "Chicago", 78000],
+    [4, "David Brown", "david@example.com", 35, "Austin", 95000],
+    [5, "Eve Davis", "eve@example.com", 29, "Seattle", 88000],
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Employees");
+  // Add a second sheet
+  const data2 = [
+    ["dept", "budget"],
+    ["Engineering", 500000],
+    ["Marketing", 200000],
+    ["Sales", 300000],
+  ];
+  const ws2 = XLSX.utils.aoa_to_sheet(data2);
+  XLSX.utils.book_append_sheet(wb, ws2, "Departments");
+  const buf = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+  return new File([new Uint8Array(buf)], "sample.xlsx", {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+}
