@@ -4,6 +4,7 @@ import { FileSpreadsheet, ArrowRightLeft, FlaskConical, Settings2, ChevronDown, 
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
+import { RawPreview } from "@/components/shared/RawPreview";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
@@ -16,10 +17,12 @@ export default function CsvToParquetPage() {
   const [loading, setLoading] = useState(false);
   const [meta, setMeta] = useState<{ columns: string[]; rowCount: number; types: string[] } | null>(null);
   const [preview, setPreview] = useState<{ columns: string[]; rows: any[][]; types: string[] } | null>(null);
+  const [rawInput, setRawInput] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showOptions, setShowOptions] = useState(false);
   const [compression, setCompression] = useState<"snappy" | "zstd" | "none">("snappy");
   const [conversionResult, setConversionResult] = useState<{ durationMs: number; outputSize: number } | null>(null);
+  const [view, setView] = useState<"table" | "raw-input">("table");
 
   async function handleFile(f: File) {
     if (!db) return;
@@ -27,8 +30,13 @@ export default function CsvToParquetPage() {
     setLoading(true);
     setError(null);
     setPreview(null);
+    setRawInput(null);
     setConversionResult(null);
+    setView("table");
     try {
+      const text = await f.text();
+      setRawInput(text.slice(0, 50_000));
+
       const tableName = sanitizeTableName(f.name);
       const info = await registerFile(db, f, tableName);
       setMeta(info);
@@ -88,7 +96,7 @@ export default function CsvToParquetPage() {
                 <Button onClick={handleConvert} disabled={loading}>
                   <ArrowRightLeft className="h-4 w-4 mr-1" /> Convert to Parquet
                 </Button>
-                <Button variant="outline" onClick={() => { setFile(null); setMeta(null); setPreview(null); setConversionResult(null); }}>New file</Button>
+                <Button variant="outline" onClick={() => { setFile(null); setMeta(null); setPreview(null); setRawInput(null); setConversionResult(null); }}>New file</Button>
               </div>
             </div>
 
@@ -110,6 +118,16 @@ export default function CsvToParquetPage() {
               </div>
             )}
 
+            {/* View toggle */}
+            <div className="flex gap-2">
+              {([["table", "Table View"], ["raw-input", "Raw Input"]] as const).map(([v, label]) => (
+                <button key={v} onClick={() => setView(v)}
+                  className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${view === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
+                  {label}
+                </button>
+              ))}
+            </div>
+
             {conversionResult && (
               <div className="border-2 border-foreground bg-card p-4 flex items-center gap-6 flex-wrap">
                 <div><div className="text-xs text-muted-foreground">Time</div><div className="text-lg font-bold">{(conversionResult.durationMs / 1000).toFixed(1)}s</div></div>
@@ -117,17 +135,22 @@ export default function CsvToParquetPage() {
                 <div><div className="text-xs text-muted-foreground">Compression</div><div className="text-lg font-bold">{file.size > 0 ? `${Math.round((1 - conversionResult.outputSize / file.size) * 100)}% smaller` : "—"}</div></div>
               </div>
             )}
+
+            <div className="text-xs text-muted-foreground">Output: Binary Parquet file — raw preview not available</div>
           </div>
         )}
 
         {loading && <LoadingState message="Processing..." />}
         {error && <div className="border-2 border-destructive bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
-        {preview && (
+        {preview && view === "table" && (
           <div className="space-y-2">
             <h3 className="text-sm font-medium text-muted-foreground">Preview (first 100 rows)</h3>
             <DataTable columns={preview.columns} rows={preview.rows} types={preview.types} className="max-h-[500px]" />
           </div>
+        )}
+        {view === "raw-input" && (
+          <RawPreview content={rawInput} label="Raw Input" fileName={file?.name} />
         )}
       </div>
     </ToolPage>

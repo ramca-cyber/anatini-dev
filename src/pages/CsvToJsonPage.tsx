@@ -4,6 +4,7 @@ import { FileJson, FlaskConical } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { CodeBlock } from "@/components/shared/CodeBlock";
+import { RawPreview } from "@/components/shared/RawPreview";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
@@ -16,7 +17,9 @@ export default function CsvToJsonPage() {
   const [loading, setLoading] = useState(false);
   const [meta, setMeta] = useState<{ columns: string[]; rowCount: number; types: string[] } | null>(null);
   const [output, setOutput] = useState("");
+  const [rawInput, setRawInput] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [view, setView] = useState<"output" | "raw-input">("output");
 
   // Options
   const [delimiter, setDelimiter] = useState(",");
@@ -29,7 +32,13 @@ export default function CsvToJsonPage() {
     setLoading(true);
     setError(null);
     setOutput("");
+    setRawInput(null);
+    setView("output");
     try {
+      // Read raw input text
+      const text = await f.text();
+      setRawInput(text.slice(0, 50_000));
+
       const tableName = sanitizeTableName(f.name);
       const info = await registerFile(db, f, tableName);
       setMeta(info);
@@ -93,7 +102,7 @@ export default function CsvToJsonPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
-              <Button variant="outline" onClick={() => { setFile(null); setMeta(null); setOutput(""); }}>New file</Button>
+              <Button variant="outline" onClick={() => { setFile(null); setMeta(null); setOutput(""); setRawInput(null); }}>New file</Button>
             </div>
 
             {/* Options */}
@@ -117,14 +126,27 @@ export default function CsvToJsonPage() {
               )}
               <Button size="sm" onClick={() => convert()}>Re-convert</Button>
             </div>
+
+            {/* View toggle */}
+            <div className="flex gap-2">
+              {([["output", "JSON Output"], ["raw-input", "Raw Input"]] as const).map(([v, label]) => (
+                <button key={v} onClick={() => setView(v)}
+                  className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${view === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
         {loading && <LoadingState message="Converting..." />}
         {error && <div className="border-2 border-destructive bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
-        {output && (
+        {output && view === "output" && (
           <CodeBlock code={output} fileName={`output.${outputFormat === "ndjson" ? "jsonl" : "json"}`} onDownload={handleDownload} />
+        )}
+        {view === "raw-input" && (
+          <RawPreview content={rawInput} label="Raw Input" fileName={file?.name} />
         )}
       </div>
     </ToolPage>

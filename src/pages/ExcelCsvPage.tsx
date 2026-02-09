@@ -4,6 +4,7 @@ import { FileText, FlaskConical } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
+import { RawPreview } from "@/components/shared/RawPreview";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { Button } from "@/components/ui/button";
 import { downloadBlob, formatBytes } from "@/lib/duckdb-helpers";
@@ -19,6 +20,8 @@ export default function ExcelCsvPage() {
   const [mode, setMode] = useState<"excel-to-csv" | "csv-to-excel">("excel-to-csv");
   const [xlsx, setXlsx] = useState<any>(null);
   const [workbook, setWorkbook] = useState<any>(null);
+  const [csvOutput, setCsvOutput] = useState<string | null>(null);
+  const [view, setView] = useState<"table" | "raw-output">("table");
 
   async function loadXlsx() {
     if (xlsx) return xlsx;
@@ -33,6 +36,8 @@ export default function ExcelCsvPage() {
     setError(null);
     setPreview(null);
     setSheets([]);
+    setCsvOutput(null);
+    setView("table");
 
     const ext = f.name.split(".").pop()?.toLowerCase();
     try {
@@ -54,6 +59,10 @@ export default function ExcelCsvPage() {
         setSheets(wb.SheetNames);
         setSelectedSheet(wb.SheetNames[0]);
         loadSheet(wb, wb.SheetNames[0], XLSX);
+        // Generate CSV output for raw preview
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const csv = XLSX.utils.sheet_to_csv(ws);
+        setCsvOutput(csv);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load file");
@@ -71,6 +80,11 @@ export default function ExcelCsvPage() {
         columns.map((_, i) => row[i] ?? null)
       );
       setPreview({ columns, rows });
+    }
+    // Update CSV output when sheet changes (excel-to-csv mode)
+    if (mode === "excel-to-csv" || (!file)) {
+      const csv = XLSX.utils.sheet_to_csv(ws);
+      setCsvOutput(csv);
     }
   }
 
@@ -97,6 +111,12 @@ export default function ExcelCsvPage() {
     }
   }
 
+  function handleDownloadCsv() {
+    if (!csvOutput || !file) return;
+    const baseName = file.name.replace(/\.[^.]+$/, "");
+    downloadBlob(csvOutput, `${baseName}_${selectedSheet}.csv`, "text/csv");
+  }
+
   return (
     <ToolPage icon={FileText} title="Excel ↔ CSV Converter" description="Convert between Excel and CSV with multi-sheet support." seoContent={getToolSeo("excel-csv-converter")}>
       <div className="space-y-4">
@@ -119,7 +139,7 @@ export default function ExcelCsvPage() {
                 <Button onClick={handleDownload}>
                   {mode === "excel-to-csv" ? "Download CSV" : "Download Excel"}
                 </Button>
-                <Button variant="outline" onClick={() => { setFile(null); setPreview(null); setSheets([]); setWorkbook(null); }}>New file</Button>
+                <Button variant="outline" onClick={() => { setFile(null); setPreview(null); setSheets([]); setWorkbook(null); setCsvOutput(null); }}>New file</Button>
               </div>
             </div>
 
@@ -141,14 +161,32 @@ export default function ExcelCsvPage() {
             <div className="border-2 border-border p-3 text-xs text-muted-foreground">
               <strong>Direction:</strong> {mode === "excel-to-csv" ? "Excel → CSV" : "CSV → Excel"} · <strong>Sheets:</strong> {sheets.length}
             </div>
+
+            {mode === "excel-to-csv" && (
+              <>
+                <div className="text-xs text-muted-foreground">Input: Binary Excel file — raw preview not available</div>
+                {/* View toggle */}
+                <div className="flex gap-2">
+                  {([["table", "Table View"], ...(csvOutput ? [["raw-output", "Raw CSV Output"]] : [])] as [string, string][]).map(([v, label]) => (
+                    <button key={v} onClick={() => setView(v as any)}
+                      className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${view === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         )}
 
         {loading && <LoadingState message="Processing file..." />}
         {error && <div className="border-2 border-destructive bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
-        {preview && (
+        {preview && view === "table" && (
           <DataTable columns={preview.columns} rows={preview.rows} className="max-h-[500px]" maxRows={200} />
+        )}
+        {csvOutput && view === "raw-output" && mode === "excel-to-csv" && (
+          <RawPreview content={csvOutput} label="Raw CSV Output" fileName="output.csv" onDownload={handleDownloadCsv} />
         )}
       </div>
     </ToolPage>
