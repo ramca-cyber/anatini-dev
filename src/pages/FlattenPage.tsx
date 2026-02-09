@@ -97,26 +97,63 @@ export default function FlattenPage() {
       await db.registerFileHandle(file.name, file, duckdb.DuckDBDataProtocol.BROWSER_FILEREADER, true);
       const conn = await db.connect();
       try {
-        await conn.query(`CREATE OR REPLACE TABLE flattened AS SELECT * FROM read_json_auto('${file.name}', maximum_depth=-1)`);
+        // First load as-is to get nested structs
+        await conn.query(`CREATE OR REPLACE TABLE __raw_json AS SELECT * FROM read_json_auto('${file.name}', maximum_depth=-1)`);
+
+        // Recursively flatten struct columns by expanding them iteratively
+        let tableName = "__raw_json";
+        for (let iter = 0; iter < 10; iter++) {
+          // Check if any STRUCT columns remain
+          const descRes = await conn.query(`DESCRIBE "${tableName}"`);
+          const nameCol = descRes.getChildAt(0);
+          const typeCol = descRes.getChildAt(1);
+          const structCols: string[] = [];
+          const allCols: { name: string; type: string }[] = [];
+          for (let i = 0; i < descRes.numRows; i++) {
+            const colName = String(nameCol?.get(i));
+            const colType = String(typeCol?.get(i));
+            allCols.push({ name: colName, type: colType });
+            if (colType.startsWith("STRUCT")) structCols.push(colName);
+          }
+
+          if (structCols.length === 0) break;
+
+          // Build SELECT that expands struct columns using UNNEST
+          const sep = naming === "dot" ? "." : "_";
+          const selectParts: string[] = [];
+          for (const col of allCols) {
+            if (col.type.startsWith("STRUCT")) {
+              // Parse struct fields from the type string, e.g. STRUCT(a VARCHAR, b INTEGER)
+              // Use DuckDB's struct_extract by querying the struct keys
+              const keysRes = await conn.query(`SELECT UNNEST(struct_keys(s."${col.name}")) as k FROM (SELECT "${col.name}" FROM "${tableName}" WHERE "${col.name}" IS NOT NULL LIMIT 1) s`);
+              const keysCol = keysRes.getChildAt(0);
+              for (let k = 0; k < keysRes.numRows; k++) {
+                const key = String(keysCol?.get(k));
+                const newName = `${col.name}${sep}${key}`;
+                selectParts.push(`struct_extract("${col.name}", '${key}') AS "${newName}"`);
+              }
+            } else {
+              selectParts.push(`"${col.name}"`);
+            }
+          }
+
+          const nextTable = `__flat_${iter}`;
+          await conn.query(`CREATE OR REPLACE TABLE "${nextTable}" AS SELECT ${selectParts.join(", ")} FROM "${tableName}"`);
+          if (tableName !== "__raw_json") await conn.query(`DROP TABLE IF EXISTS "${tableName}"`);
+          tableName = nextTable;
+        }
+
+        await conn.query(`CREATE OR REPLACE TABLE flattened AS SELECT * FROM "${tableName}"`);
+        if (tableName !== "flattened") await conn.query(`DROP TABLE IF EXISTS "${tableName}"`);
+        await conn.query(`DROP TABLE IF EXISTS __raw_json`);
+
         const countRes = await conn.query(`SELECT COUNT(*) as cnt FROM flattened`);
         const count = Number(countRes.getChildAt(0)?.get(0) ?? 0);
         setRowCount(count);
-
-        // Rename columns if dot notation desired
-        if (naming === "dot") {
-          // DuckDB uses underscore by default with maximum_depth=-1, leave as-is for underscore
-          // For dot, we'd need to rename — but DuckDB flatten uses underscores natively
-          // We'll rename in the display layer
-        }
       } finally {
         await conn.close();
       }
       const result = await runQuery(db, `SELECT * FROM flattened LIMIT 100`);
-
-      // Apply naming convention to display columns
-      if (naming === "dot") {
-        result.columns = result.columns.map(c => c.replace(/_/g, "."));
-      }
 
       setPreview(result);
     } catch (e) {
