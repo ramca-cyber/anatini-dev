@@ -13,6 +13,14 @@ import SqlPage from "./pages/SqlPage";
 import ProfilerPage from "./pages/ProfilerPage";
 import DiffPage from "./pages/DiffPage";
 import SchemaPage from "./pages/SchemaPage";
+import JsonFormatterPage from "./pages/JsonFormatterPage";
+import CsvToJsonPage from "./pages/CsvToJsonPage";
+import JsonToCsvPage from "./pages/JsonToCsvPage";
+import JsonToParquetPage from "./pages/JsonToParquetPage";
+import ParquetViewerPage from "./pages/ParquetViewerPage";
+import CsvViewerPage from "./pages/CsvViewerPage";
+import CsvToSqlPage from "./pages/CsvToSqlPage";
+import ExcelCsvPage from "./pages/ExcelCsvPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,24 +39,24 @@ const App = () => (
               {/* Converters */}
               <Route path="/csv-to-parquet" element={<ConvertPage />} />
               <Route path="/parquet-to-csv" element={<ConvertPage />} />
-              <Route path="/csv-to-json" element={<NotFound />} />
-              <Route path="/json-to-csv" element={<NotFound />} />
-              <Route path="/json-to-parquet" element={<NotFound />} />
-              <Route path="/excel-csv-converter" element={<NotFound />} />
+              <Route path="/csv-to-json" element={<CsvToJsonPage />} />
+              <Route path="/json-to-csv" element={<JsonToCsvPage />} />
+              <Route path="/json-to-parquet" element={<JsonToParquetPage />} />
+              <Route path="/excel-csv-converter" element={<ExcelCsvPage />} />
 
               {/* Viewers & Formatters */}
-              <Route path="/csv-viewer" element={<NotFound />} />
-              <Route path="/parquet-viewer" element={<NotFound />} />
-              <Route path="/json-formatter" element={<NotFound />} />
+              <Route path="/csv-viewer" element={<CsvViewerPage />} />
+              <Route path="/parquet-viewer" element={<ParquetViewerPage />} />
+              <Route path="/json-formatter" element={<JsonFormatterPage />} />
 
               {/* Analysis & SQL */}
               <Route path="/sql-playground" element={<SqlPage />} />
               <Route path="/data-profiler" element={<ProfilerPage />} />
               <Route path="/json-flattener" element={<FlattenPage />} />
               <Route path="/schema-generator" element={<SchemaPage />} />
-              <Route path="/csv-to-sql" element={<NotFound />} />
+              <Route path="/csv-to-sql" element={<CsvToSqlPage />} />
 
-              {/* Legacy — kept */}
+              {/* Legacy */}
               <Route path="/diff" element={<DiffPage />} />
 
               {/* Redirects from old routes */}
