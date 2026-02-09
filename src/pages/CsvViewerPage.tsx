@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getToolSeo } from "@/lib/seo-content";
 import { Eye, FlaskConical, Search, ArrowUpDown } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
@@ -98,7 +99,7 @@ export default function CsvViewerPage() {
   }
 
   return (
-    <ToolPage icon={Eye} title="CSV Viewer" description="View, search, filter, and sort CSV data with column statistics.">
+    <ToolPage icon={Eye} title="CSV Viewer" description="View, search, filter, and sort CSV data with column statistics." seoContent={getToolSeo("csv-viewer")}>
       <div className="space-y-4">
         {!file && (
           <div className="space-y-3">

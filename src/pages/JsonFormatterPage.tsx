@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getToolSeo } from "@/lib/seo-content";
 import { Code, Copy, Check, ChevronRight, ChevronDown } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { Button } from "@/components/ui/button";
@@ -130,6 +131,7 @@ export default function JsonFormatterPage() {
     <ToolPage
       icon={Code}
       title="JSON Formatter"
+      seoContent={getToolSeo("json-formatter")}
       description="Format, minify, and validate JSON with tree view and sorting."
     >
       <div className="space-y-4">

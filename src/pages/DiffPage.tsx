@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getToolSeo } from "@/lib/seo-content";
 import { GitCompare, Download, FlaskConical } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
@@ -214,7 +215,7 @@ export default function DiffPage() {
 
   return (
     <ToolPage icon={GitCompare} title="Dataset Diff" description="Compare two dataset versions to see added, removed and modified rows."
-      pageTitle="Dataset Diff — Compare CSV Files Online | DuckTools">
+      pageTitle="Dataset Diff — Compare CSV Files Online | Anatini.dev" seoContent={getToolSeo("diff")}>
       <div className="space-y-6">
         <div className="grid gap-4 md:grid-cols-2">
           <div>
