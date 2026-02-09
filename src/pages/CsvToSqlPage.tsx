@@ -38,7 +38,6 @@ export default function CsvToSqlPage() {
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<"output" | "raw-input">("output");
 
-  // Options
   const [dialect, setDialect] = useState<Dialect>("postgresql");
   const [batchSize, setBatchSize] = useState(100);
   const [includeDropTable, setIncludeDropTable] = useState(false);
@@ -55,7 +54,6 @@ export default function CsvToSqlPage() {
     try {
       const text = await f.text();
       setRawInput(text.slice(0, 50_000));
-
       const tName = sanitizeTableName(f.name);
       setTableName(tName);
       const info = await registerFile(db, f, tName);
@@ -77,18 +75,12 @@ export default function CsvToSqlPage() {
     try {
       const result = await runQuery(db, `SELECT * FROM "${tn}"`);
       const lines: string[] = [];
-
-      if (includeDropTable) {
-        lines.push(`DROP TABLE IF EXISTS ${tableName};`);
-        lines.push("");
-      }
-
+      if (includeDropTable) { lines.push(`DROP TABLE IF EXISTS ${tableName};`); lines.push(""); }
       const colDefs = m.columns.map((col, i) => `  ${col} ${mapType(m.types[i], dialect)}`);
       lines.push(`CREATE TABLE ${tableName} (`);
       lines.push(colDefs.join(",\n"));
       lines.push(`);`);
       lines.push("");
-
       for (let i = 0; i < result.rows.length; i += batchSize) {
         const batch = result.rows.slice(i, i + batchSize);
         lines.push(`INSERT INTO ${tableName} (${m.columns.join(", ")}) VALUES`);
@@ -104,7 +96,6 @@ export default function CsvToSqlPage() {
         lines.push(valueLines.join(",\n") + ";");
         lines.push("");
       }
-
       setOutput(lines.join("\n"));
       setError(null);
     } catch (e) {
@@ -141,12 +132,13 @@ export default function CsvToSqlPage() {
 
         {file && meta && (
           <div className="space-y-4">
+            {/* Row 1: File info + actions */}
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
               <Button variant="outline" onClick={() => { setFile(null); setMeta(null); setOutput(""); setRawInput(null); }}>New file</Button>
             </div>
 
-            {/* Options */}
+            {/* Row 2: Options */}
             <div className="border-2 border-border p-4 space-y-3">
               <div className="flex flex-wrap gap-4">
                 <div className="space-y-1">
@@ -183,11 +175,9 @@ export default function CsvToSqlPage() {
               <Button size="sm" onClick={() => generateSQL()}>Regenerate</Button>
             </div>
 
-            {/* Schema preview */}
+            {/* Row 3: Schema preview */}
             <div className="border-2 border-border">
-              <div className="border-b-2 border-border bg-muted/50 px-3 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                Schema Preview
-              </div>
+              <div className="border-b-2 border-border bg-muted/50 px-3 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Schema Preview</div>
               {meta.columns.map((col, i) => (
                 <div key={col} className="flex items-center justify-between border-b border-border/50 px-3 py-1.5 text-xs">
                   <span className="font-medium">{col}</span>
@@ -196,7 +186,7 @@ export default function CsvToSqlPage() {
               ))}
             </div>
 
-            {/* View toggle */}
+            {/* Row 4: View toggle */}
             <div className="flex gap-2">
               {([["output", "SQL Output"], ["raw-input", "Raw Input"]] as const).map(([v, label]) => (
                 <button key={v} onClick={() => setView(v)}
@@ -211,6 +201,7 @@ export default function CsvToSqlPage() {
         {loading && <LoadingState message="Generating SQL..." />}
         {error && <div className="border-2 border-destructive bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
+        {/* Row 5: Content */}
         {output && view === "output" && <CodeBlock code={output} fileName={`${tableName}.sql`} onDownload={handleDownload} />}
         {view === "raw-input" && <RawPreview content={rawInput} label="Raw Input" fileName={file?.name} />}
       </div>

@@ -42,7 +42,6 @@ export default function ExcelCsvPage() {
     const ext = f.name.split(".").pop()?.toLowerCase();
     try {
       const XLSX = await loadXlsx();
-
       if (ext === "csv" || ext === "tsv") {
         setMode("csv-to-excel");
         const text = await f.text();
@@ -59,10 +58,8 @@ export default function ExcelCsvPage() {
         setSheets(wb.SheetNames);
         setSelectedSheet(wb.SheetNames[0]);
         loadSheet(wb, wb.SheetNames[0], XLSX);
-        // Generate CSV output for raw preview
         const ws = wb.Sheets[wb.SheetNames[0]];
-        const csv = XLSX.utils.sheet_to_csv(ws);
-        setCsvOutput(csv);
+        setCsvOutput(XLSX.utils.sheet_to_csv(ws));
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load file");
@@ -76,45 +73,35 @@ export default function ExcelCsvPage() {
     const data: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1 });
     if (data.length > 0) {
       const columns = (data[0] as string[]).map((c) => String(c ?? ""));
-      const rows = data.slice(1, 201).map((row: any[]) =>
-        columns.map((_, i) => row[i] ?? null)
-      );
+      const rows = data.slice(1, 201).map((row: any[]) => columns.map((_, i) => row[i] ?? null));
       setPreview({ columns, rows });
     }
-    // Update CSV output when sheet changes (excel-to-csv mode)
-    if (mode === "excel-to-csv" || (!file)) {
-      const csv = XLSX.utils.sheet_to_csv(ws);
-      setCsvOutput(csv);
+    if (mode === "excel-to-csv") {
+      setCsvOutput(XLSX.utils.sheet_to_csv(ws));
     }
   }
 
   function handleSheetChange(name: string) {
     setSelectedSheet(name);
-    if (workbook && xlsx) {
-      loadSheet(workbook, name, xlsx);
-    }
+    if (workbook && xlsx) loadSheet(workbook, name, xlsx);
   }
 
   async function handleDownload() {
     if (!workbook || !xlsx || !file) return;
     const XLSX = xlsx;
-
     if (mode === "excel-to-csv") {
       const ws = workbook.Sheets[selectedSheet];
       const csv = XLSX.utils.sheet_to_csv(ws);
-      const baseName = file.name.replace(/\.[^.]+$/, "");
-      downloadBlob(csv, `${baseName}_${selectedSheet}.csv`, "text/csv");
+      downloadBlob(csv, `${file.name.replace(/\.[^.]+$/, "")}_${selectedSheet}.csv`, "text/csv");
     } else {
       const buf = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
-      const baseName = file.name.replace(/\.[^.]+$/, "");
-      downloadBlob(new Uint8Array(buf), `${baseName}.xlsx`, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+      downloadBlob(new Uint8Array(buf), `${file.name.replace(/\.[^.]+$/, "")}.xlsx`, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     }
   }
 
   function handleDownloadCsv() {
     if (!csvOutput || !file) return;
-    const baseName = file.name.replace(/\.[^.]+$/, "");
-    downloadBlob(csvOutput, `${baseName}_${selectedSheet}.csv`, "text/csv");
+    downloadBlob(csvOutput, `${file.name.replace(/\.[^.]+$/, "")}_${selectedSheet}.csv`, "text/csv");
   }
 
   return (
@@ -133,6 +120,7 @@ export default function ExcelCsvPage() {
 
         {file && (
           <div className="space-y-4">
+            {/* Row 1: File info + actions */}
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <FileInfo name={file.name} size={formatBytes(file.size)} />
               <div className="flex gap-2">
@@ -143,7 +131,7 @@ export default function ExcelCsvPage() {
               </div>
             </div>
 
-            {/* Sheet selector */}
+            {/* Row 2: Sheet selector */}
             {sheets.length > 1 && (
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-muted-foreground">Sheet:</span>
@@ -162,10 +150,9 @@ export default function ExcelCsvPage() {
               <strong>Direction:</strong> {mode === "excel-to-csv" ? "Excel → CSV" : "CSV → Excel"} · <strong>Sheets:</strong> {sheets.length}
             </div>
 
+            {/* Row 3: View toggle (only for excel-to-csv) */}
             {mode === "excel-to-csv" && (
-              <>
-                <div className="text-xs text-muted-foreground">Input: Binary Excel file — raw preview not available</div>
-                {/* View toggle */}
+              <div className="flex items-center gap-3">
                 <div className="flex gap-2">
                   {([["table", "Table View"], ...(csvOutput ? [["raw-output", "Raw CSV Output"]] : [])] as [string, string][]).map(([v, label]) => (
                     <button key={v} onClick={() => setView(v as any)}
@@ -174,7 +161,8 @@ export default function ExcelCsvPage() {
                     </button>
                   ))}
                 </div>
-              </>
+                <span className="text-xs text-muted-foreground">· Input is binary Excel</span>
+              </div>
             )}
           </div>
         )}
@@ -182,6 +170,7 @@ export default function ExcelCsvPage() {
         {loading && <LoadingState message="Processing file..." />}
         {error && <div className="border-2 border-destructive bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
+        {/* Row 4: Content */}
         {preview && view === "table" && (
           <DataTable columns={preview.columns} rows={preview.rows} className="max-h-[500px]" maxRows={200} />
         )}

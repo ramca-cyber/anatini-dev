@@ -59,19 +59,16 @@ export default function ParquetToJsonPage() {
         res.columns.forEach((col, i) => (obj[col] = row[i]));
         return obj;
       });
-
       let output: string;
       if (format === "ndjson") {
         output = objects.map((o) => JSON.stringify(o)).join("\n") + "\n";
       } else {
         output = pretty ? JSON.stringify(objects, null, 2) : JSON.stringify(objects);
       }
-
       setJsonOutput(output);
       const outputSize = new Blob([output]).size;
       const durationMs = Math.round(performance.now() - start);
       setResult({ durationMs, outputSize });
-
       const baseName = file.name.replace(/\.[^.]+$/, "");
       const ext = format === "ndjson" ? "jsonl" : "json";
       downloadBlob(output, `${baseName}.${ext}`, "application/json");
@@ -90,14 +87,8 @@ export default function ParquetToJsonPage() {
   }
 
   return (
-    <ToolPage
-      icon={Braces}
-      title="Parquet to JSON"
-      description="Export Parquet files to JSON or NDJSON format."
-      pageTitle="Parquet to JSON — Free, Offline | Anatini.dev"
-      seoContent={getToolSeo("parquet-to-json")}
-    >
-      <div className="space-y-6">
+    <ToolPage icon={Braces} title="Parquet to JSON" description="Export Parquet files to JSON or NDJSON format." pageTitle="Parquet to JSON — Free, Offline | Anatini.dev" seoContent={getToolSeo("parquet-to-json")}>
+      <div className="space-y-4">
         {!file && (
           <div className="space-y-3">
             <DropZone accept={[".parquet"]} onFile={handleFile} label="Drop a Parquet file" />
@@ -111,6 +102,7 @@ export default function ParquetToJsonPage() {
 
         {file && meta && (
           <div className="space-y-4">
+            {/* Row 1: File info + actions */}
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
               <div className="flex items-center gap-2">
@@ -121,7 +113,7 @@ export default function ParquetToJsonPage() {
               </div>
             </div>
 
-            {/* Format options */}
+            {/* Row 2: Format options */}
             <div className="border-2 border-border p-3 space-y-3">
               <div>
                 <label className="text-xs text-muted-foreground font-bold">Output Format</label>
@@ -142,18 +134,20 @@ export default function ParquetToJsonPage() {
               )}
             </div>
 
-            <div className="text-xs text-muted-foreground">Input: Binary Parquet file — raw preview not available</div>
-
-            {/* View toggle */}
-            <div className="flex gap-2">
-              {([["table", "Table View"], ...(jsonOutput ? [["raw-output", "Raw JSON Output"]] : [])] as [string, string][]).map(([v, label]) => (
-                <button key={v} onClick={() => setView(v as any)}
-                  className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${view === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                  {label}
-                </button>
-              ))}
+            {/* Row 3: View toggle */}
+            <div className="flex items-center gap-3">
+              <div className="flex gap-2">
+                {([["table", "Table View"], ...(jsonOutput ? [["raw-output", "Raw JSON Output"]] : [])] as [string, string][]).map(([v, label]) => (
+                  <button key={v} onClick={() => setView(v as any)}
+                    className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${view === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <span className="text-xs text-muted-foreground">· Input is binary Parquet</span>
             </div>
 
+            {/* Conversion result */}
             {result && (
               <div className="border-2 border-foreground bg-card p-4 flex items-center gap-6 flex-wrap">
                 <div><div className="text-xs text-muted-foreground">Time</div><div className="text-lg font-bold">{(result.durationMs / 1000).toFixed(1)}s</div></div>
@@ -167,6 +161,7 @@ export default function ParquetToJsonPage() {
         {loading && <LoadingState message="Processing..." />}
         {error && <div className="border-2 border-destructive bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
+        {/* Row 4: Content */}
         {preview && view === "table" && (
           <div className="space-y-2">
             <h3 className="text-sm font-medium text-muted-foreground">Preview (first 100 rows)</h3>

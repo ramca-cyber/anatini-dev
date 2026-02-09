@@ -22,9 +22,6 @@ export default function JsonToCsvPage() {
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<"table" | "raw-output" | "raw-input">("table");
 
-  // Options
-  const [delimiter, setDelimiter] = useState(",");
-
   async function handleFile(f: File) {
     if (!db) return;
     setFile(f);
@@ -37,7 +34,6 @@ export default function JsonToCsvPage() {
     try {
       const text = await f.text();
       setRawInput(text.slice(0, 50_000));
-
       const tableName = sanitizeTableName(f.name);
       const info = await registerFile(db, f, tableName);
       setMeta(info);
@@ -63,8 +59,7 @@ export default function JsonToCsvPage() {
       { id: 3, name: "Charlie", email: "charlie@example.com", age: 35, city: "Austin" },
     ]);
     const blob = new Blob([sample], { type: "application/json" });
-    const f = new File([blob], "sample.json", { type: "application/json" });
-    handleFile(f);
+    handleFile(new File([blob], "sample.json", { type: "application/json" }));
   }
 
   return (
@@ -83,6 +78,7 @@ export default function JsonToCsvPage() {
 
         {file && meta && (
           <div className="space-y-4">
+            {/* Row 1: File info + actions */}
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
               <div className="flex gap-2">
@@ -91,7 +87,7 @@ export default function JsonToCsvPage() {
               </div>
             </div>
 
-            {/* View toggle */}
+            {/* Row 2: View toggle */}
             <div className="flex gap-2">
               {([["table", "Table View"], ["raw-output", "Raw CSV"], ["raw-input", "Raw Input"]] as const).map(([v, label]) => (
                 <button key={v} onClick={() => setView(v)}
@@ -106,6 +102,7 @@ export default function JsonToCsvPage() {
         {loading && <LoadingState message="Converting..." />}
         {error && <div className="border-2 border-destructive bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
+        {/* Row 3: Content */}
         {preview && view === "table" && (
           <DataTable columns={preview.columns} rows={preview.rows} types={preview.types} className="max-h-[500px]" />
         )}
