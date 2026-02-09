@@ -18,8 +18,6 @@ export default function JsonToParquetPage() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ durationMs: number; outputSize: number } | null>(null);
   const [view, setView] = useState<"schema" | "raw-input">("schema");
-
-  // Options
   const [compression, setCompression] = useState<"snappy" | "zstd" | "none">("snappy");
 
   async function handleFile(f: File) {
@@ -33,7 +31,6 @@ export default function JsonToParquetPage() {
     try {
       const text = await f.text();
       setRawInput(text.slice(0, 50_000));
-
       const tableName = sanitizeTableName(f.name);
       const info = await registerFile(db, f, tableName);
       setMeta(info);
@@ -89,6 +86,7 @@ export default function JsonToParquetPage() {
 
         {file && meta && (
           <div className="space-y-4">
+            {/* Row 1: File info + actions */}
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
               <div className="flex gap-2">
@@ -97,7 +95,7 @@ export default function JsonToParquetPage() {
               </div>
             </div>
 
-            {/* Compression option */}
+            {/* Row 2: Compression options */}
             <div className="border-2 border-border p-3">
               <label className="text-xs text-muted-foreground font-bold">Compression</label>
               <div className="flex gap-1 mt-1">
@@ -110,54 +108,25 @@ export default function JsonToParquetPage() {
               </div>
             </div>
 
-            {/* View toggle */}
-            <div className="flex gap-2">
-              {([["schema", "Schema"], ["raw-input", "Raw Input"]] as const).map(([v, label]) => (
-                <button key={v} onClick={() => setView(v)}
-                  className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${view === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                  {label}
-                </button>
-              ))}
+            {/* Row 3: View toggle */}
+            <div className="flex items-center gap-3">
+              <div className="flex gap-2">
+                {([["schema", "Schema"], ["raw-input", "Raw Input"]] as const).map(([v, label]) => (
+                  <button key={v} onClick={() => setView(v)}
+                    className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${view === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <span className="text-xs text-muted-foreground">· Output is binary Parquet</span>
             </div>
 
-            {/* Schema preview */}
-            {view === "schema" && (
-              <div className="border-2 border-border">
-                <div className="border-b-2 border-border bg-muted/50 px-3 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Schema</div>
-                <div className="divide-y divide-border">
-                  {meta.columns.map((col, i) => (
-                    <div key={col} className="flex items-center justify-between px-3 py-1.5 text-xs">
-                      <span className="font-medium">{col}</span>
-                      <span className="font-mono text-muted-foreground">{meta.types[i]}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {view === "raw-input" && (
-              <RawPreview content={rawInput} label="Raw Input" fileName={file?.name} />
-            )}
-
-            <div className="text-xs text-muted-foreground">Output: Binary Parquet file — raw preview not available</div>
-
-            {/* Result card */}
+            {/* Conversion result */}
             {result && (
               <div className="border-2 border-foreground bg-card p-4 flex items-center gap-6 flex-wrap">
-                <div>
-                  <div className="text-xs text-muted-foreground">Time</div>
-                  <div className="text-lg font-bold">{(result.durationMs / 1000).toFixed(1)}s</div>
-                </div>
-                <div>
-                  <div className="text-xs text-muted-foreground">Output size</div>
-                  <div className="text-lg font-bold">{formatBytes(result.outputSize)}</div>
-                </div>
-                <div>
-                  <div className="text-xs text-muted-foreground">Compression ratio</div>
-                  <div className="text-lg font-bold">
-                    {file.size > 0 ? `${Math.round((1 - result.outputSize / file.size) * 100)}%` : "—"} smaller
-                  </div>
-                </div>
+                <div><div className="text-xs text-muted-foreground">Time</div><div className="text-lg font-bold">{(result.durationMs / 1000).toFixed(1)}s</div></div>
+                <div><div className="text-xs text-muted-foreground">Output size</div><div className="text-lg font-bold">{formatBytes(result.outputSize)}</div></div>
+                <div><div className="text-xs text-muted-foreground">Compression ratio</div><div className="text-lg font-bold">{file.size > 0 ? `${Math.round((1 - result.outputSize / file.size) * 100)}%` : "—"} smaller</div></div>
               </div>
             )}
           </div>
@@ -165,6 +134,24 @@ export default function JsonToParquetPage() {
 
         {loading && <LoadingState message="Processing..." />}
         {error && <div className="border-2 border-destructive bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+
+        {/* Row 4: Content */}
+        {meta && view === "schema" && file && (
+          <div className="border-2 border-border">
+            <div className="border-b-2 border-border bg-muted/50 px-3 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Schema</div>
+            <div className="divide-y divide-border">
+              {meta.columns.map((col, i) => (
+                <div key={col} className="flex items-center justify-between px-3 py-1.5 text-xs">
+                  <span className="font-medium">{col}</span>
+                  <span className="font-mono text-muted-foreground">{meta.types[i]}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {view === "raw-input" && (
+          <RawPreview content={rawInput} label="Raw Input" fileName={file?.name} />
+        )}
       </div>
     </ToolPage>
   );

@@ -6,6 +6,7 @@
   <url><loc>https://anatini.dev/csv-to-json</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://anatini.dev/json-to-csv</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://anatini.dev/json-to-parquet</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://anatini.dev/parquet-to-json</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://anatini.dev/excel-csv-converter</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://anatini.dev/csv-viewer</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://anatini.dev/parquet-viewer</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>

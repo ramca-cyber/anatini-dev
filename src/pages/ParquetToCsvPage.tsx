@@ -67,19 +67,12 @@ export default function ParquetToCsvPage() {
 
   function handleDownloadCsv() {
     if (!csvOutput || !file) return;
-    const baseName = file.name.replace(/\.[^.]+$/, "");
-    downloadBlob(csvOutput, `${baseName}.csv`, "text/csv");
+    downloadBlob(csvOutput, `${file.name.replace(/\.[^.]+$/, "")}.csv`, "text/csv");
   }
 
   return (
-    <ToolPage
-      icon={FileSpreadsheet}
-      title="Parquet to CSV"
-      description="Export Parquet files to CSV format."
-      pageTitle="Parquet to CSV — Free, Offline | Anatini.dev"
-      seoContent={getToolSeo("parquet-to-csv")}
-    >
-      <div className="space-y-6">
+    <ToolPage icon={FileSpreadsheet} title="Parquet to CSV" description="Export Parquet files to CSV format." pageTitle="Parquet to CSV — Free, Offline | Anatini.dev" seoContent={getToolSeo("parquet-to-csv")}>
+      <div className="space-y-4">
         {!file && (
           <div className="space-y-3">
             <DropZone accept={[".parquet"]} onFile={handleFile} label="Drop a Parquet file" />
@@ -93,6 +86,7 @@ export default function ParquetToCsvPage() {
 
         {file && meta && (
           <div className="space-y-4">
+            {/* Row 1: File info + actions */}
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
               <div className="flex items-center gap-2">
@@ -103,18 +97,20 @@ export default function ParquetToCsvPage() {
               </div>
             </div>
 
-            <div className="text-xs text-muted-foreground">Input: Binary Parquet file — raw preview not available</div>
-
-            {/* View toggle (only show raw-output after conversion) */}
-            <div className="flex gap-2">
-              {([["table", "Table View"], ...(csvOutput ? [["raw-output", "Raw CSV Output"]] : [])] as [string, string][]).map(([v, label]) => (
-                <button key={v} onClick={() => setView(v as any)}
-                  className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${view === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                  {label}
-                </button>
-              ))}
+            {/* Row 2: View toggle */}
+            <div className="flex items-center gap-3">
+              <div className="flex gap-2">
+                {([["table", "Table View"], ...(csvOutput ? [["raw-output", "Raw CSV Output"]] : [])] as [string, string][]).map(([v, label]) => (
+                  <button key={v} onClick={() => setView(v as any)}
+                    className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${view === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <span className="text-xs text-muted-foreground">· Input is binary Parquet</span>
             </div>
 
+            {/* Conversion result */}
             {conversionResult && (
               <div className="border-2 border-foreground bg-card p-4 flex items-center gap-6 flex-wrap">
                 <div><div className="text-xs text-muted-foreground">Time</div><div className="text-lg font-bold">{(conversionResult.durationMs / 1000).toFixed(1)}s</div></div>
@@ -128,6 +124,7 @@ export default function ParquetToCsvPage() {
         {loading && <LoadingState message="Processing..." />}
         {error && <div className="border-2 border-destructive bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
+        {/* Row 3: Content */}
         {preview && view === "table" && (
           <div className="space-y-2">
             <h3 className="text-sm font-medium text-muted-foreground">Preview (first 100 rows)</h3>

@@ -21,8 +21,6 @@ export default function CsvToJsonPage() {
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<"output" | "raw-input">("output");
 
-  // Options
-  const [delimiter, setDelimiter] = useState(",");
   const [outputFormat, setOutputFormat] = useState<"array" | "ndjson">("array");
   const [prettyPrint, setPrettyPrint] = useState(true);
 
@@ -35,10 +33,8 @@ export default function CsvToJsonPage() {
     setRawInput(null);
     setView("output");
     try {
-      // Read raw input text
       const text = await f.text();
       setRawInput(text.slice(0, 50_000));
-
       const tableName = sanitizeTableName(f.name);
       const info = await registerFile(db, f, tableName);
       setMeta(info);
@@ -63,7 +59,6 @@ export default function CsvToJsonPage() {
         result.columns.forEach((col, i) => { obj[col] = row[i]; });
         return obj;
       });
-
       let json: string;
       if (useFormat === "ndjson") {
         json = records.map((r) => JSON.stringify(r)).join("\n");
@@ -84,6 +79,8 @@ export default function CsvToJsonPage() {
     downloadBlob(output, `${file?.name.replace(/\.[^.]+$/, "")}.${ext}`, "application/json");
   }
 
+  const views = [["output", "JSON Output"], ["raw-input", "Raw Input"]] as const;
+
   return (
     <ToolPage icon={FileJson} title="CSV to JSON" description="Convert CSV files to JSON array or NDJSON format." seoContent={getToolSeo("csv-to-json")}>
       <div className="space-y-4">
@@ -100,12 +97,13 @@ export default function CsvToJsonPage() {
 
         {file && meta && (
           <div className="space-y-4">
+            {/* Row 1: File info + actions */}
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
               <Button variant="outline" onClick={() => { setFile(null); setMeta(null); setOutput(""); setRawInput(null); }}>New file</Button>
             </div>
 
-            {/* Options */}
+            {/* Row 2: Options */}
             <div className="flex flex-wrap items-center gap-4 border-2 border-border p-3">
               <div className="space-y-1">
                 <label className="text-xs text-muted-foreground font-bold">Output Format</label>
@@ -127,9 +125,9 @@ export default function CsvToJsonPage() {
               <Button size="sm" onClick={() => convert()}>Re-convert</Button>
             </div>
 
-            {/* View toggle */}
+            {/* Row 3: View toggle */}
             <div className="flex gap-2">
-              {([["output", "JSON Output"], ["raw-input", "Raw Input"]] as const).map(([v, label]) => (
+              {views.map(([v, label]) => (
                 <button key={v} onClick={() => setView(v)}
                   className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${view === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
                   {label}
@@ -142,6 +140,7 @@ export default function CsvToJsonPage() {
         {loading && <LoadingState message="Converting..." />}
         {error && <div className="border-2 border-destructive bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
+        {/* Row 4: Content */}
         {output && view === "output" && (
           <CodeBlock code={output} fileName={`output.${outputFormat === "ndjson" ? "jsonl" : "json"}`} onDownload={handleDownload} />
         )}

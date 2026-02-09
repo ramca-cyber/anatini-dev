@@ -36,7 +36,6 @@ export default function CsvToParquetPage() {
     try {
       const text = await f.text();
       setRawInput(text.slice(0, 50_000));
-
       const tableName = sanitizeTableName(f.name);
       const info = await registerFile(db, f, tableName);
       setMeta(info);
@@ -69,14 +68,8 @@ export default function CsvToParquetPage() {
   }
 
   return (
-    <ToolPage
-      icon={FileSpreadsheet}
-      title="CSV to Parquet"
-      description="Convert CSV files to columnar Parquet format with compression."
-      pageTitle="CSV to Parquet — Free, Offline | Anatini.dev"
-      seoContent={getToolSeo("csv-to-parquet")}
-    >
-      <div className="space-y-6">
+    <ToolPage icon={FileSpreadsheet} title="CSV to Parquet" description="Convert CSV files to columnar Parquet format with compression." pageTitle="CSV to Parquet — Free, Offline | Anatini.dev" seoContent={getToolSeo("csv-to-parquet")}>
+      <div className="space-y-4">
         {!file && (
           <div className="space-y-3">
             <DropZone accept={[".csv", ".tsv"]} onFile={handleFile} label="Drop a CSV file" />
@@ -90,6 +83,7 @@ export default function CsvToParquetPage() {
 
         {file && meta && (
           <div className="space-y-4">
+            {/* Row 1: File info + actions */}
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
               <div className="flex items-center gap-2">
@@ -100,6 +94,7 @@ export default function CsvToParquetPage() {
               </div>
             </div>
 
+            {/* Row 2: Options (collapsible) */}
             <button onClick={() => setShowOptions(!showOptions)} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
               <Settings2 className="h-4 w-4" /> Compression Options
               {showOptions ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
@@ -118,16 +113,20 @@ export default function CsvToParquetPage() {
               </div>
             )}
 
-            {/* View toggle */}
-            <div className="flex gap-2">
-              {([["table", "Table View"], ["raw-input", "Raw Input"]] as const).map(([v, label]) => (
-                <button key={v} onClick={() => setView(v)}
-                  className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${view === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                  {label}
-                </button>
-              ))}
+            {/* Row 3: View toggle */}
+            <div className="flex items-center gap-3">
+              <div className="flex gap-2">
+                {([["table", "Table View"], ["raw-input", "Raw Input"]] as const).map(([v, label]) => (
+                  <button key={v} onClick={() => setView(v)}
+                    className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${view === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <span className="text-xs text-muted-foreground">· Output is binary Parquet</span>
             </div>
 
+            {/* Conversion result */}
             {conversionResult && (
               <div className="border-2 border-foreground bg-card p-4 flex items-center gap-6 flex-wrap">
                 <div><div className="text-xs text-muted-foreground">Time</div><div className="text-lg font-bold">{(conversionResult.durationMs / 1000).toFixed(1)}s</div></div>
@@ -135,14 +134,13 @@ export default function CsvToParquetPage() {
                 <div><div className="text-xs text-muted-foreground">Compression</div><div className="text-lg font-bold">{file.size > 0 ? `${Math.round((1 - conversionResult.outputSize / file.size) * 100)}% smaller` : "—"}</div></div>
               </div>
             )}
-
-            <div className="text-xs text-muted-foreground">Output: Binary Parquet file — raw preview not available</div>
           </div>
         )}
 
         {loading && <LoadingState message="Processing..." />}
         {error && <div className="border-2 border-destructive bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
+        {/* Row 4: Content */}
         {preview && view === "table" && (
           <div className="space-y-2">
             <h3 className="text-sm font-medium text-muted-foreground">Preview (first 100 rows)</h3>
