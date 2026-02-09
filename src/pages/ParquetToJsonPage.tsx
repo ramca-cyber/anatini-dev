@@ -4,6 +4,7 @@ import { Braces, ArrowRightLeft, FlaskConical } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
+import { RawPreview } from "@/components/shared/RawPreview";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
@@ -16,10 +17,12 @@ export default function ParquetToJsonPage() {
   const [loading, setLoading] = useState(false);
   const [meta, setMeta] = useState<{ columns: string[]; rowCount: number; types: string[] } | null>(null);
   const [preview, setPreview] = useState<{ columns: string[]; rows: any[][]; types: string[] } | null>(null);
+  const [jsonOutput, setJsonOutput] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ durationMs: number; outputSize: number } | null>(null);
   const [format, setFormat] = useState<"array" | "ndjson">("array");
   const [pretty, setPretty] = useState(true);
+  const [view, setView] = useState<"table" | "raw-output">("table");
 
   async function handleFile(f: File) {
     if (!db) return;
@@ -27,7 +30,9 @@ export default function ParquetToJsonPage() {
     setLoading(true);
     setError(null);
     setPreview(null);
+    setJsonOutput(null);
     setResult(null);
+    setView("table");
     try {
       const tableName = sanitizeTableName(f.name);
       const info = await registerFile(db, f, tableName);
@@ -62,6 +67,7 @@ export default function ParquetToJsonPage() {
         output = pretty ? JSON.stringify(objects, null, 2) : JSON.stringify(objects);
       }
 
+      setJsonOutput(output);
       const outputSize = new Blob([output]).size;
       const durationMs = Math.round(performance.now() - start);
       setResult({ durationMs, outputSize });
@@ -74,6 +80,13 @@ export default function ParquetToJsonPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleDownloadJson() {
+    if (!jsonOutput || !file) return;
+    const baseName = file.name.replace(/\.[^.]+$/, "");
+    const ext = format === "ndjson" ? "jsonl" : "json";
+    downloadBlob(jsonOutput, `${baseName}.${ext}`, "application/json");
   }
 
   return (
@@ -104,7 +117,7 @@ export default function ParquetToJsonPage() {
                 <Button onClick={handleConvert} disabled={loading}>
                   <ArrowRightLeft className="h-4 w-4 mr-1" /> Convert to JSON
                 </Button>
-                <Button variant="outline" onClick={() => { setFile(null); setMeta(null); setPreview(null); setResult(null); }}>New file</Button>
+                <Button variant="outline" onClick={() => { setFile(null); setMeta(null); setPreview(null); setJsonOutput(null); setResult(null); }}>New file</Button>
               </div>
             </div>
 
@@ -129,6 +142,18 @@ export default function ParquetToJsonPage() {
               )}
             </div>
 
+            <div className="text-xs text-muted-foreground">Input: Binary Parquet file — raw preview not available</div>
+
+            {/* View toggle */}
+            <div className="flex gap-2">
+              {([["table", "Table View"], ...(jsonOutput ? [["raw-output", "Raw JSON Output"]] : [])] as [string, string][]).map(([v, label]) => (
+                <button key={v} onClick={() => setView(v as any)}
+                  className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${view === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
+                  {label}
+                </button>
+              ))}
+            </div>
+
             {result && (
               <div className="border-2 border-foreground bg-card p-4 flex items-center gap-6 flex-wrap">
                 <div><div className="text-xs text-muted-foreground">Time</div><div className="text-lg font-bold">{(result.durationMs / 1000).toFixed(1)}s</div></div>
@@ -142,11 +167,14 @@ export default function ParquetToJsonPage() {
         {loading && <LoadingState message="Processing..." />}
         {error && <div className="border-2 border-destructive bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
-        {preview && (
+        {preview && view === "table" && (
           <div className="space-y-2">
             <h3 className="text-sm font-medium text-muted-foreground">Preview (first 100 rows)</h3>
             <DataTable columns={preview.columns} rows={preview.rows} types={preview.types} className="max-h-[500px]" />
           </div>
+        )}
+        {jsonOutput && view === "raw-output" && (
+          <RawPreview content={jsonOutput} label="Raw JSON Output" fileName={`output.${format === "ndjson" ? "jsonl" : "json"}`} onDownload={handleDownloadJson} />
         )}
       </div>
     </ToolPage>

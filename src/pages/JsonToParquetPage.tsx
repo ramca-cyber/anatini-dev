@@ -3,6 +3,7 @@ import { getToolSeo } from "@/lib/seo-content";
 import { Braces, FlaskConical } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
+import { RawPreview } from "@/components/shared/RawPreview";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
@@ -13,8 +14,10 @@ export default function JsonToParquetPage() {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [meta, setMeta] = useState<{ columns: string[]; rowCount: number; types: string[] } | null>(null);
+  const [rawInput, setRawInput] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ durationMs: number; outputSize: number } | null>(null);
+  const [view, setView] = useState<"schema" | "raw-input">("schema");
 
   // Options
   const [compression, setCompression] = useState<"snappy" | "zstd" | "none">("snappy");
@@ -25,7 +28,12 @@ export default function JsonToParquetPage() {
     setLoading(true);
     setError(null);
     setResult(null);
+    setRawInput(null);
+    setView("schema");
     try {
+      const text = await f.text();
+      setRawInput(text.slice(0, 50_000));
+
       const tableName = sanitizeTableName(f.name);
       const info = await registerFile(db, f, tableName);
       setMeta(info);
@@ -85,7 +93,7 @@ export default function JsonToParquetPage() {
               <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
               <div className="flex gap-2">
                 <Button onClick={handleConvert} disabled={loading}>Convert to Parquet</Button>
-                <Button variant="outline" onClick={() => { setFile(null); setMeta(null); setResult(null); }}>New file</Button>
+                <Button variant="outline" onClick={() => { setFile(null); setMeta(null); setResult(null); setRawInput(null); }}>New file</Button>
               </div>
             </div>
 
@@ -102,18 +110,36 @@ export default function JsonToParquetPage() {
               </div>
             </div>
 
-            {/* Schema preview */}
-            <div className="border-2 border-border">
-              <div className="border-b-2 border-border bg-muted/50 px-3 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Schema</div>
-              <div className="divide-y divide-border">
-                {meta.columns.map((col, i) => (
-                  <div key={col} className="flex items-center justify-between px-3 py-1.5 text-xs">
-                    <span className="font-medium">{col}</span>
-                    <span className="font-mono text-muted-foreground">{meta.types[i]}</span>
-                  </div>
-                ))}
-              </div>
+            {/* View toggle */}
+            <div className="flex gap-2">
+              {([["schema", "Schema"], ["raw-input", "Raw Input"]] as const).map(([v, label]) => (
+                <button key={v} onClick={() => setView(v)}
+                  className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${view === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
+                  {label}
+                </button>
+              ))}
             </div>
+
+            {/* Schema preview */}
+            {view === "schema" && (
+              <div className="border-2 border-border">
+                <div className="border-b-2 border-border bg-muted/50 px-3 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Schema</div>
+                <div className="divide-y divide-border">
+                  {meta.columns.map((col, i) => (
+                    <div key={col} className="flex items-center justify-between px-3 py-1.5 text-xs">
+                      <span className="font-medium">{col}</span>
+                      <span className="font-mono text-muted-foreground">{meta.types[i]}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {view === "raw-input" && (
+              <RawPreview content={rawInput} label="Raw Input" fileName={file?.name} />
+            )}
+
+            <div className="text-xs text-muted-foreground">Output: Binary Parquet file — raw preview not available</div>
 
             {/* Result card */}
             {result && (

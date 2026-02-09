@@ -4,6 +4,7 @@ import { Database, FlaskConical } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { CodeBlock } from "@/components/shared/CodeBlock";
+import { RawPreview } from "@/components/shared/RawPreview";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
@@ -33,7 +34,9 @@ export default function CsvToSqlPage() {
   const [loading, setLoading] = useState(false);
   const [meta, setMeta] = useState<{ columns: string[]; rowCount: number; types: string[] } | null>(null);
   const [output, setOutput] = useState("");
+  const [rawInput, setRawInput] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [view, setView] = useState<"output" | "raw-input">("output");
 
   // Options
   const [dialect, setDialect] = useState<Dialect>("postgresql");
@@ -47,7 +50,12 @@ export default function CsvToSqlPage() {
     setLoading(true);
     setError(null);
     setOutput("");
+    setRawInput(null);
+    setView("output");
     try {
+      const text = await f.text();
+      setRawInput(text.slice(0, 50_000));
+
       const tName = sanitizeTableName(f.name);
       setTableName(tName);
       const info = await registerFile(db, f, tName);
@@ -75,14 +83,12 @@ export default function CsvToSqlPage() {
         lines.push("");
       }
 
-      // CREATE TABLE
       const colDefs = m.columns.map((col, i) => `  ${col} ${mapType(m.types[i], dialect)}`);
       lines.push(`CREATE TABLE ${tableName} (`);
       lines.push(colDefs.join(",\n"));
       lines.push(`);`);
       lines.push("");
 
-      // INSERT statements
       for (let i = 0; i < result.rows.length; i += batchSize) {
         const batch = result.rows.slice(i, i + batchSize);
         lines.push(`INSERT INTO ${tableName} (${m.columns.join(", ")}) VALUES`);
@@ -137,7 +143,7 @@ export default function CsvToSqlPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
-              <Button variant="outline" onClick={() => { setFile(null); setMeta(null); setOutput(""); }}>New file</Button>
+              <Button variant="outline" onClick={() => { setFile(null); setMeta(null); setOutput(""); setRawInput(null); }}>New file</Button>
             </div>
 
             {/* Options */}
@@ -189,13 +195,24 @@ export default function CsvToSqlPage() {
                 </div>
               ))}
             </div>
+
+            {/* View toggle */}
+            <div className="flex gap-2">
+              {([["output", "SQL Output"], ["raw-input", "Raw Input"]] as const).map(([v, label]) => (
+                <button key={v} onClick={() => setView(v)}
+                  className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${view === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
         {loading && <LoadingState message="Generating SQL..." />}
         {error && <div className="border-2 border-destructive bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
-        {output && <CodeBlock code={output} fileName={`${tableName}.sql`} onDownload={handleDownload} />}
+        {output && view === "output" && <CodeBlock code={output} fileName={`${tableName}.sql`} onDownload={handleDownload} />}
+        {view === "raw-input" && <RawPreview content={rawInput} label="Raw Input" fileName={file?.name} />}
       </div>
     </ToolPage>
   );

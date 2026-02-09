@@ -5,6 +5,7 @@ import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
 import { CodeBlock } from "@/components/shared/CodeBlock";
+import { RawPreview } from "@/components/shared/RawPreview";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
@@ -17,8 +18,9 @@ export default function JsonToCsvPage() {
   const [meta, setMeta] = useState<{ columns: string[]; rowCount: number; types: string[] } | null>(null);
   const [preview, setPreview] = useState<{ columns: string[]; rows: any[][]; types: string[] } | null>(null);
   const [csvOutput, setCsvOutput] = useState("");
+  const [rawInput, setRawInput] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<"table" | "raw">("table");
+  const [view, setView] = useState<"table" | "raw-output" | "raw-input">("table");
 
   // Options
   const [delimiter, setDelimiter] = useState(",");
@@ -30,7 +32,12 @@ export default function JsonToCsvPage() {
     setError(null);
     setPreview(null);
     setCsvOutput("");
+    setRawInput(null);
+    setView("table");
     try {
+      const text = await f.text();
+      setRawInput(text.slice(0, 50_000));
+
       const tableName = sanitizeTableName(f.name);
       const info = await registerFile(db, f, tableName);
       setMeta(info);
@@ -80,16 +87,16 @@ export default function JsonToCsvPage() {
               <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
               <div className="flex gap-2">
                 <Button onClick={handleDownload} disabled={!csvOutput}>Download CSV</Button>
-                <Button variant="outline" onClick={() => { setFile(null); setMeta(null); setPreview(null); setCsvOutput(""); }}>New file</Button>
+                <Button variant="outline" onClick={() => { setFile(null); setMeta(null); setPreview(null); setCsvOutput(""); setRawInput(null); }}>New file</Button>
               </div>
             </div>
 
             {/* View toggle */}
             <div className="flex gap-2">
-              {(["table", "raw"] as const).map((v) => (
+              {([["table", "Table View"], ["raw-output", "Raw CSV"], ["raw-input", "Raw Input"]] as const).map(([v, label]) => (
                 <button key={v} onClick={() => setView(v)}
                   className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${view === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                  {v === "table" ? "Table View" : "Raw CSV"}
+                  {label}
                 </button>
               ))}
             </div>
@@ -102,8 +109,11 @@ export default function JsonToCsvPage() {
         {preview && view === "table" && (
           <DataTable columns={preview.columns} rows={preview.rows} types={preview.types} className="max-h-[500px]" />
         )}
-        {csvOutput && view === "raw" && (
+        {csvOutput && view === "raw-output" && (
           <CodeBlock code={csvOutput} fileName="output.csv" onDownload={handleDownload} />
+        )}
+        {view === "raw-input" && (
+          <RawPreview content={rawInput} label="Raw Input" fileName={file?.name} />
         )}
       </div>
     </ToolPage>
