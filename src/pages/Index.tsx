@@ -86,6 +86,7 @@ export default function Index() {
             Every tool runs entirely in your browser via WebAssembly. No file ever leaves your machine — 
             there's no server to send it to. Close the tab, and your data is gone.
           </p>
+          <p className="text-sm font-medium text-muted-foreground/60">No accounts. No cookies. No analytics.</p>
         </div>
       </section>
     </>

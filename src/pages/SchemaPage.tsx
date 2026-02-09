@@ -14,7 +14,9 @@ type Dialect = "postgresql" | "mysql" | "bigquery" | "snowflake" | "duckdb";
 interface ColSchema {
   name: string;
   detectedType: string;
+  mappedType: string;
   nullable: boolean;
+  sampleValue?: string;
 }
 
 const TYPE_MAP: Record<Dialect, Record<string, string>> = {
@@ -34,15 +36,16 @@ function mapType(duckType: string, dialect: Dialect): string {
   return map.VARCHAR || "TEXT";
 }
 
-function generateDDL(tableName: string, cols: ColSchema[], dialect: Dialect): string {
+function generateDDL(tableName: string, cols: ColSchema[], dialect: Dialect, prefix: string, addComments: boolean): string {
   const quote = dialect === "bigquery" ? "`" : '"';
+  const fullName = prefix ? `${prefix}.${tableName}` : tableName;
   const lines = cols.map((c) => {
-    const mapped = mapType(c.detectedType, dialect);
     const nullable = c.nullable ? "" : " NOT NULL";
-    return `  ${quote}${c.name}${quote} ${mapped}${nullable}`;
+    const comment = addComments && c.sampleValue ? ` -- e.g. ${c.sampleValue}` : "";
+    return `  ${quote}${c.name}${quote} ${c.mappedType}${nullable}${comment}`;
   });
-  const prefix = dialect === "bigquery" ? `CREATE TABLE \`${tableName}\`` : `CREATE TABLE ${quote}${tableName}${quote}`;
-  return `${prefix} (\n${lines.join(",\n")}\n);`;
+  const prefixStr = dialect === "bigquery" ? `CREATE TABLE \`${fullName}\`` : `CREATE TABLE ${quote}${fullName}${quote}`;
+  return `${prefixStr} (\n${lines.join(",\n")}\n);`;
 }
 
 export default function SchemaPage() {
@@ -53,6 +56,8 @@ export default function SchemaPage() {
   const [cols, setCols] = useState<ColSchema[]>([]);
   const [tableName, setTableName] = useState("my_table");
   const [dialect, setDialect] = useState<Dialect>("postgresql");
+  const [schemaPrefix, setSchemaPrefix] = useState("");
+  const [addComments, setAddComments] = useState(false);
 
   async function handleFile(f: File) {
     if (!db) return;
@@ -64,12 +69,22 @@ export default function SchemaPage() {
       setTableName(tName);
       const info = await registerFile(db, f, tName);
 
-      // Check nullability
       const schemas: ColSchema[] = [];
       for (let i = 0; i < info.columns.length; i++) {
         const nullRes = await runQuery(db, `SELECT COUNT(*) FROM "${tName}" WHERE "${info.columns[i]}" IS NULL`);
         const hasNulls = Number(nullRes.rows[0][0]) > 0;
-        schemas.push({ name: info.columns[i], detectedType: info.types[i], nullable: hasNulls });
+        let sampleValue: string | undefined;
+        try {
+          const sampleRes = await runQuery(db, `SELECT "${info.columns[i]}"::VARCHAR FROM "${tName}" WHERE "${info.columns[i]}" IS NOT NULL LIMIT 1`);
+          sampleValue = sampleRes.rows[0]?.[0] ? String(sampleRes.rows[0][0]) : undefined;
+        } catch {}
+        schemas.push({
+          name: info.columns[i],
+          detectedType: info.types[i],
+          mappedType: mapType(info.types[i], dialect),
+          nullable: hasNulls,
+          sampleValue,
+        });
       }
       setCols(schemas);
     } catch (e) {
@@ -79,7 +94,16 @@ export default function SchemaPage() {
     }
   }
 
-  const ddl = cols.length > 0 ? generateDDL(tableName, cols, dialect) : "";
+  function updateMappedTypes(newDialect: Dialect) {
+    setDialect(newDialect);
+    setCols((prev) => prev.map((c) => ({ ...c, mappedType: mapType(c.detectedType, newDialect) })));
+  }
+
+  function updateColType(index: number, newType: string) {
+    setCols((prev) => prev.map((c, i) => i === index ? { ...c, mappedType: newType } : c));
+  }
+
+  const ddl = cols.length > 0 ? generateDDL(tableName, cols, dialect, schemaPrefix, addComments) : "";
 
   function handleCopy() {
     navigator.clipboard.writeText(ddl);
@@ -95,7 +119,8 @@ export default function SchemaPage() {
   ];
 
   return (
-    <ToolPage icon={Database} title="Schema Generator" description="Infer schemas and generate DDL for Postgres, MySQL, BigQuery and more.">
+    <ToolPage icon={Database} title="Schema Generator" description="Infer schemas and generate DDL for Postgres, MySQL, BigQuery and more."
+      pageTitle="Schema Generator — Infer DDL Online | DuckTools">
       <div className="space-y-6">
         {!file && (
           <div className="space-y-3">
@@ -122,7 +147,7 @@ export default function SchemaPage() {
               {dialects.map((d) => (
                 <button
                   key={d.id}
-                  onClick={() => setDialect(d.id)}
+                  onClick={() => updateMappedTypes(d.id)}
                   className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
                     dialect === d.id
                       ? "bg-primary text-primary-foreground"
@@ -134,17 +159,32 @@ export default function SchemaPage() {
               ))}
             </div>
 
-            {/* Table name */}
-            <div className="flex items-center gap-3">
-              <label className="text-sm text-muted-foreground">Table name:</label>
-              <input
-                value={tableName}
-                onChange={(e) => setTableName(e.target.value)}
-                className="rounded-md border border-border bg-card px-3 py-1.5 font-mono text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-              />
+            {/* Table name + schema prefix + comments */}
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-muted-foreground">Schema:</label>
+                <input
+                  value={schemaPrefix}
+                  onChange={(e) => setSchemaPrefix(e.target.value)}
+                  placeholder="public"
+                  className="w-24 rounded-md border border-border bg-card px-3 py-1.5 font-mono text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-muted-foreground">Table:</label>
+                <input
+                  value={tableName}
+                  onChange={(e) => setTableName(e.target.value)}
+                  className="rounded-md border border-border bg-card px-3 py-1.5 font-mono text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+              <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
+                <input type="checkbox" checked={addComments} onChange={(e) => setAddComments(e.target.checked)} className="rounded" />
+                Add sample value comments
+              </label>
             </div>
 
-            {/* Schema table */}
+            {/* Schema table with editable mapped types */}
             <div className="overflow-auto rounded-lg border border-border">
               <table className="w-full text-sm">
                 <thead>
@@ -156,11 +196,17 @@ export default function SchemaPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {cols.map((c) => (
+                  {cols.map((c, idx) => (
                     <tr key={c.name} className="border-b border-border/50 hover:bg-muted/30">
                       <td className="px-3 py-1.5 font-mono text-xs">{c.name}</td>
                       <td className="px-3 py-1.5 font-mono text-xs text-muted-foreground">{c.detectedType}</td>
-                      <td className="px-3 py-1.5 font-mono text-xs text-primary">{mapType(c.detectedType, dialect)}</td>
+                      <td className="px-3 py-1.5">
+                        <input
+                          value={c.mappedType}
+                          onChange={(e) => updateColType(idx, e.target.value)}
+                          className="w-full rounded border border-transparent bg-transparent px-1 py-0.5 font-mono text-xs text-primary hover:border-border focus:border-primary focus:outline-none"
+                        />
+                      </td>
                       <td className="px-3 py-1.5 text-xs">{c.nullable ? "YES" : "NO"}</td>
                     </tr>
                   ))}

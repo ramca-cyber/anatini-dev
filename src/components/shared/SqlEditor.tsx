@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback, type MutableRefObject } from "react";
 import { EditorState } from "@codemirror/state";
 import { EditorView, keymap, placeholder as cmPlaceholder } from "@codemirror/view";
 import { sql } from "@codemirror/lang-sql";
@@ -9,9 +9,10 @@ interface SqlEditorProps {
   value: string;
   onChange: (value: string) => void;
   onRun: () => void;
+  onInsertRef?: MutableRefObject<((text: string) => void) | null>;
 }
 
-export function SqlEditor({ value, onChange, onRun }: SqlEditorProps) {
+export function SqlEditor({ value, onChange, onRun, onInsertRef }: SqlEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const onRunRef = useRef(onRun);
@@ -19,6 +20,20 @@ export function SqlEditor({ value, onChange, onRun }: SqlEditorProps) {
 
   onRunRef.current = onRun;
   onChangeRef.current = onChange;
+
+  // Expose insert function
+  useEffect(() => {
+    if (onInsertRef) {
+      onInsertRef.current = (text: string) => {
+        const view = viewRef.current;
+        if (!view) return;
+        const pos = view.state.selection.main.head;
+        view.dispatch({ changes: { from: pos, insert: text } });
+        view.focus();
+      };
+      return () => { onInsertRef.current = null; };
+    }
+  }, [onInsertRef]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -86,7 +101,7 @@ export function SqlEditor({ value, onChange, onRun }: SqlEditorProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Sync external value changes (e.g., loading sample data sets the initial SQL)
+  // Sync external value changes
   useEffect(() => {
     const view = viewRef.current;
     if (!view) return;

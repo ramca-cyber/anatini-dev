@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { Terminal, Play, Download, Plus, Copy, Table2, FlaskConical, History, X } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
@@ -7,7 +7,7 @@ import { SqlEditor } from "@/components/shared/SqlEditor";
 import { LoadingState } from "@/components/shared/FileInfo";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
-import { registerFile, runQuery, exportToCSV, downloadBlob, sanitizeTableName, type QueryResult } from "@/lib/duckdb-helpers";
+import { registerFile, runQuery, exportToCSV, exportToParquet, downloadBlob, sanitizeTableName, type QueryResult } from "@/lib/duckdb-helpers";
 import { getSampleCSV } from "@/lib/sample-data";
 import { toast } from "@/hooks/use-toast";
 
@@ -21,9 +21,22 @@ interface LoadedTable {
 
 interface HistoryEntry {
   sql: string;
-  timestamp: Date;
+  timestamp: string;
   rowCount: number;
   durationMs: number;
+}
+
+const HISTORY_KEY = "ducktools_sql_history";
+const MAX_HISTORY = 20;
+
+function loadHistory(): HistoryEntry[] {
+  try {
+    return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+  } catch { return []; }
+}
+
+function saveHistory(entries: HistoryEntry[]) {
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(entries.slice(0, MAX_HISTORY)));
 }
 
 export default function SqlPage() {
@@ -34,8 +47,9 @@ export default function SqlPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showDropZone, setShowDropZone] = useState(true);
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [history, setHistory] = useState<HistoryEntry[]>(loadHistory);
   const [showHistory, setShowHistory] = useState(false);
+  const editorInsertRef = useRef<((text: string) => void) | null>(null);
 
   async function handleFile(f: File) {
     if (!db) return;
@@ -64,17 +78,17 @@ export default function SqlPage() {
       const res = await runQuery(db, sql);
       const durationMs = Math.round(performance.now() - start);
       setResult(res);
-      setHistory((prev) => [
-        { sql: sql.trim(), timestamp: new Date(), rowCount: res.rowCount, durationMs },
-        ...prev.slice(0, 49),
-      ]);
+      const entry: HistoryEntry = { sql: sql.trim(), timestamp: new Date().toISOString(), rowCount: res.rowCount, durationMs };
+      const updated = [entry, ...history.filter(h => h.sql !== sql.trim()).slice(0, MAX_HISTORY - 1)];
+      setHistory(updated);
+      saveHistory(updated);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Query failed");
       setResult(null);
     } finally {
       setLoading(false);
     }
-  }, [db, sql]);
+  }, [db, sql, history]);
 
   async function handleExportCSV() {
     if (!db || !sql.trim()) return;
@@ -86,6 +100,24 @@ export default function SqlPage() {
     }
   }
 
+  async function handleExportParquet() {
+    if (!db || !result) return;
+    try {
+      // Create temp table from query, export, drop
+      const conn = await db.connect();
+      try {
+        await conn.query(`CREATE OR REPLACE TABLE __export_tmp AS ${sql}`);
+        const buf = await exportToParquet(db, "__export_tmp");
+        downloadBlob(buf, "query_result.parquet", "application/octet-stream");
+        await conn.query(`DROP TABLE IF EXISTS __export_tmp`);
+      } finally {
+        await conn.close();
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Parquet export failed");
+    }
+  }
+
   function handleCopy() {
     if (!result) return;
     const header = result.columns.join("\t");
@@ -94,8 +126,17 @@ export default function SqlPage() {
     toast({ title: "Copied to clipboard" });
   }
 
+  function insertColumn(col: string) {
+    if (editorInsertRef.current) {
+      editorInsertRef.current(`"${col}"`);
+    } else {
+      setSql((prev) => prev + `"${col}" `);
+    }
+  }
+
   return (
-    <ToolPage icon={Terminal} title="SQL Playground" description="Run SQL queries against local files using DuckDB.">
+    <ToolPage icon={Terminal} title="SQL Playground" description="Run SQL queries against local files using DuckDB."
+      pageTitle="SQL Playground — Query Files Offline | DuckTools">
       <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
         {/* Sidebar */}
         <div className="space-y-4">
@@ -128,10 +169,15 @@ export default function SqlPage() {
               </div>
               <div className="space-y-0.5">
                 {t.columns.map((col, i) => (
-                  <div key={col} className="flex items-center justify-between text-xs">
-                    <span className="font-mono text-muted-foreground">{col}</span>
+                  <button
+                    key={col}
+                    onClick={() => insertColumn(col)}
+                    className="w-full flex items-center justify-between text-xs hover:bg-muted/30 rounded px-1 py-0.5 transition-colors cursor-pointer"
+                    title={`Click to insert "${col}"`}
+                  >
+                    <span className="font-mono text-muted-foreground hover:text-primary transition-colors">{col}</span>
                     <span className="font-mono text-[10px] text-muted-foreground/60">{t.types[i]}</span>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
@@ -140,7 +186,7 @@ export default function SqlPage() {
 
         {/* Main */}
         <div className="space-y-4">
-          <SqlEditor value={sql} onChange={setSql} onRun={handleRun} />
+          <SqlEditor value={sql} onChange={setSql} onRun={handleRun} onInsertRef={editorInsertRef} />
 
           <div className="flex items-center gap-2 flex-wrap">
             <Button onClick={handleRun} disabled={loading || !sql.trim()}>
@@ -163,6 +209,9 @@ export default function SqlPage() {
               <>
                 <Button variant="outline" size="sm" onClick={handleExportCSV}>
                   <Download className="h-4 w-4 mr-1" /> CSV
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleExportParquet}>
+                  <Download className="h-4 w-4 mr-1" /> Parquet
                 </Button>
                 <Button variant="outline" size="sm" onClick={handleCopy}>
                   <Copy className="h-4 w-4 mr-1" /> Copy
@@ -197,7 +246,7 @@ export default function SqlPage() {
                       <div className="flex gap-3 mt-1 text-[10px] text-muted-foreground">
                         <span>{h.rowCount} rows</span>
                         <span>{h.durationMs}ms</span>
-                        <span>{h.timestamp.toLocaleTimeString()}</span>
+                        <span>{new Date(h.timestamp).toLocaleTimeString()}</span>
                       </div>
                     </button>
                   ))}
