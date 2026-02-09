@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { getToolSeo } from "@/lib/seo-content";
-import { BarChart3, AlertTriangle, AlertCircle, Info, FlaskConical, Download, FileText, FileJson, FileSpreadsheet, ClipboardCopy, ChevronDown, ChevronRight } from "lucide-react";
+import { BarChart3, AlertTriangle, AlertCircle, Info, FlaskConical, Download, FileText, FileJson, FileSpreadsheet, ClipboardCopy } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
@@ -32,6 +32,89 @@ interface Finding {
   suggestedFix?: string;
 }
 
+function ColumnCard({ col, totalRows }: { col: ColumnProfile; totalRows: number }) {
+  const isNumeric = col.mean !== undefined;
+  const maxCount = col.topValues.length > 0 ? col.topValues[0].count : 1;
+  const nullBarPct = Math.min(col.nullPct, 100);
+  const distinctPct = totalRows > 0 ? Math.min((col.distinctCount / totalRows) * 100, 100) : 0;
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-4 space-y-3 hover:border-primary/30 transition-colors">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <h4 className="font-mono text-sm font-semibold truncate" title={col.name}>{col.name}</h4>
+          <span className="text-[11px] font-mono text-muted-foreground">{col.type}</span>
+        </div>
+        {col.nullPct > 50 && <AlertCircle className="h-4 w-4 text-destructive shrink-0" />}
+        {col.nullPct > 10 && col.nullPct <= 50 && <AlertTriangle className="h-4 w-4 text-warning shrink-0" />}
+      </div>
+
+      {/* Completeness + Uniqueness bars */}
+      <div className="space-y-2">
+        <div>
+          <div className="flex justify-between text-[11px] mb-0.5">
+            <span className="text-muted-foreground">Completeness</span>
+            <span className="font-mono">{(100 - col.nullPct).toFixed(1)}%</span>
+          </div>
+          <div className="h-1.5 w-full rounded-full bg-muted/40 overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all ${col.nullPct > 50 ? "bg-destructive" : col.nullPct > 10 ? "bg-warning" : "bg-primary"}`}
+              style={{ width: `${100 - nullBarPct}%` }}
+            />
+          </div>
+        </div>
+        <div>
+          <div className="flex justify-between text-[11px] mb-0.5">
+            <span className="text-muted-foreground">Uniqueness</span>
+            <span className="font-mono">{distinctPct.toFixed(1)}%</span>
+          </div>
+          <div className="h-1.5 w-full rounded-full bg-muted/40 overflow-hidden">
+            <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${distinctPct}%` }} />
+          </div>
+        </div>
+      </div>
+
+      {/* Numeric stats */}
+      {isNumeric && (
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
+          <div><span className="text-muted-foreground">Mean:</span> <span className="font-mono">{col.mean}</span></div>
+          <div><span className="text-muted-foreground">Median:</span> <span className="font-mono">{col.median}</span></div>
+          <div><span className="text-muted-foreground">Std Dev:</span> <span className="font-mono">{col.stddev}</span></div>
+          <div><span className="text-muted-foreground">Range:</span> <span className="font-mono">{col.min}–{col.max}</span></div>
+        </div>
+      )}
+
+      {/* Top values mini bar chart */}
+      {col.topValues.length > 0 && (
+        <div className="space-y-1">
+          <div className="text-[11px] text-muted-foreground">Top values</div>
+          {col.topValues.slice(0, 4).map((tv, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <span className="w-20 truncate text-[11px] font-mono" title={tv.value}>{tv.value}</span>
+              <div className="flex-1 h-3 bg-muted/30 rounded overflow-hidden">
+                <div
+                  className="h-full bg-primary/50 rounded transition-all"
+                  style={{ width: `${(tv.count / maxCount) * 100}%` }}
+                />
+              </div>
+              <span className="text-[10px] font-mono text-muted-foreground w-6 text-right">{tv.count}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Non-numeric min/max */}
+      {!isNumeric && col.min && (
+        <div className="text-[11px] space-y-0.5">
+          <div><span className="text-muted-foreground">Min:</span> <span className="font-mono">{col.min}</span></div>
+          <div><span className="text-muted-foreground">Max:</span> <span className="font-mono">{col.max}</span></div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ProfilerPage() {
   const { db } = useDuckDB();
   const [file, setFile] = useState<File | null>(null);
@@ -40,7 +123,6 @@ export default function ProfilerPage() {
   const [overview, setOverview] = useState<{ rowCount: number; colCount: number; nullRate: number } | null>(null);
   const [columns, setColumns] = useState<ColumnProfile[]>([]);
   const [findings, setFindings] = useState<Finding[]>([]);
-  const [expandedCol, setExpandedCol] = useState<string | null>(null);
   const [findingFilter, setFindingFilter] = useState<"all" | "critical" | "warning" | "info">("all");
 
   async function handleFile(f: File) {
@@ -127,7 +209,6 @@ export default function ProfilerPage() {
     }
   }
 
-  // Type distribution for overview
   const typeDistribution = columns.reduce<Record<string, number>>((acc, c) => {
     const baseType = c.type.replace(/\(.*\)/, "").toUpperCase();
     acc[baseType] = (acc[baseType] || 0) + 1;
@@ -186,7 +267,7 @@ export default function ProfilerPage() {
 <tbody>${columns.map((c) => `<tr><td>${c.name}</td><td>${c.type}</td><td>${c.nullCount}</td><td>${c.nullPct.toFixed(1)}%</td><td>${c.distinctCount}</td><td>${c.min ?? "∅"}</td><td>${c.max ?? "∅"}</td></tr>`).join("")}</tbody></table>
 <h2>Findings (${findings.length})</h2>
 ${findings.length === 0 ? "<p>No findings — data looks clean!</p>" : findings.map((f) => `<div class="finding ${f.level}"><div class="title">${f.title}</div><div class="desc">${f.description}</div>${f.suggestedFix ? `<div class="desc" style="margin-top:.25rem;font-style:italic">💡 ${f.suggestedFix}</div>` : ""}</div>`).join("")}
-<div class="footer">Generated by DuckTools · 100% offline</div>
+<div class="footer">Generated by Anatini.dev · 100% offline</div>
 </body></html>`;
     downloadBlob(html, `${file?.name ?? "profile"}_report.html`, "text/html");
     toast({ title: "HTML report downloaded" });
@@ -197,11 +278,9 @@ ${findings.length === 0 ? "<p>No findings — data looks clean!</p>" : findings.
     const lines = [
       `Profile Report: ${file?.name}`,
       `Rows: ${overview.rowCount} | Columns: ${overview.colCount} | Null Rate: ${overview.nullRate.toFixed(1)}%`,
-      "",
-      "Columns:",
+      "", "Columns:",
       ...columns.map(c => `  ${c.name} (${c.type}) — ${c.nullPct.toFixed(1)}% null, ${c.distinctCount} distinct`),
-      "",
-      `Findings (${findings.length}):`,
+      "", `Findings (${findings.length}):`,
       ...findings.map(f => `  [${f.level.toUpperCase()}] ${f.title}: ${f.description}`),
     ];
     navigator.clipboard.writeText(lines.join("\n"));
@@ -210,7 +289,6 @@ ${findings.length === 0 ? "<p>No findings — data looks clean!</p>" : findings.
 
   const levelIcon = { critical: AlertCircle, warning: AlertTriangle, info: Info };
   const levelColor = { critical: "border-destructive/50 bg-destructive/10 text-destructive", warning: "border-warning/50 bg-warning/10 text-warning", info: "border-primary/50 bg-primary/10 text-primary" };
-
   const filteredFindings = findingFilter === "all" ? findings : findings.filter(f => f.level === findingFilter);
 
   return (
@@ -237,7 +315,7 @@ ${findings.length === 0 ? "<p>No findings — data looks clean!</p>" : findings.
               <Button variant="outline" onClick={() => { setFile(null); setOverview(null); setColumns([]); setFindings([]); }}>New file</Button>
             </div>
 
-            <Tabs defaultValue="overview">
+            <Tabs defaultValue="columns">
               <TabsList>
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="columns">Columns</TabsTrigger>
@@ -260,7 +338,6 @@ ${findings.length === 0 ? "<p>No findings — data looks clean!</p>" : findings.
                   ))}
                 </div>
 
-                {/* Type distribution bars */}
                 <div className="rounded-lg border border-border bg-card p-4 space-y-3">
                   <h4 className="text-sm font-medium text-muted-foreground">Column Type Distribution</h4>
                   <div className="space-y-2">
@@ -268,10 +345,7 @@ ${findings.length === 0 ? "<p>No findings — data looks clean!</p>" : findings.
                       <div key={type} className="flex items-center gap-3">
                         <span className="w-20 text-xs font-mono text-muted-foreground truncate">{type}</span>
                         <div className="flex-1 h-5 bg-muted/30 rounded overflow-hidden">
-                          <div
-                            className="h-full bg-primary/60 rounded transition-all"
-                            style={{ width: `${(count / maxTypeCount) * 100}%` }}
-                          />
+                          <div className="h-full bg-primary/60 rounded transition-all" style={{ width: `${(count / maxTypeCount) * 100}%` }} />
                         </div>
                         <span className="text-xs font-medium w-6 text-right">{count}</span>
                       </div>
@@ -279,7 +353,6 @@ ${findings.length === 0 ? "<p>No findings — data looks clean!</p>" : findings.
                   </div>
                 </div>
 
-                {/* Top issues */}
                 {findings.length > 0 && (
                   <div className="rounded-lg border border-border bg-card p-4 space-y-2">
                     <h4 className="text-sm font-medium text-muted-foreground">Top Issues</h4>
@@ -297,73 +370,14 @@ ${findings.length === 0 ? "<p>No findings — data looks clean!</p>" : findings.
               </TabsContent>
 
               <TabsContent value="columns" className="pt-4">
-                <div className="overflow-auto rounded-lg border border-border">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border bg-muted/50">
-                        <th className="px-3 py-2 text-left font-medium w-6"></th>
-                        <th className="px-3 py-2 text-left font-medium">Column</th>
-                        <th className="px-3 py-2 text-left font-medium">Type</th>
-                        <th className="px-3 py-2 text-left font-medium">Nulls</th>
-                        <th className="px-3 py-2 text-left font-medium">Null %</th>
-                        <th className="px-3 py-2 text-left font-medium">Distinct</th>
-                        <th className="px-3 py-2 text-left font-medium">Min</th>
-                        <th className="px-3 py-2 text-left font-medium">Max</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {columns.map((c) => (
-                        <>
-                          <tr
-                            key={c.name}
-                            onClick={() => setExpandedCol(expandedCol === c.name ? null : c.name)}
-                            className="border-b border-border/50 hover:bg-muted/30 cursor-pointer transition-colors"
-                          >
-                            <td className="px-3 py-1.5 text-muted-foreground">
-                              {expandedCol === c.name ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
-                            </td>
-                            <td className="px-3 py-1.5 font-mono text-xs font-medium">{c.name}</td>
-                            <td className="px-3 py-1.5 font-mono text-xs text-muted-foreground">{c.type}</td>
-                            <td className="px-3 py-1.5 font-mono text-xs">{c.nullCount}</td>
-                            <td className="px-3 py-1.5 font-mono text-xs">{c.nullPct.toFixed(1)}%</td>
-                            <td className="px-3 py-1.5 font-mono text-xs">{c.distinctCount}</td>
-                            <td className="px-3 py-1.5 font-mono text-xs">{c.min ?? "∅"}</td>
-                            <td className="px-3 py-1.5 font-mono text-xs">{c.max ?? "∅"}</td>
-                          </tr>
-                          {expandedCol === c.name && (
-                            <tr key={c.name + "_detail"} className="border-b border-border/50 bg-muted/10">
-                              <td colSpan={8} className="px-6 py-3">
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-                                  {c.mean && <div><span className="text-muted-foreground">Mean:</span> <span className="font-mono">{c.mean}</span></div>}
-                                  {c.median && <div><span className="text-muted-foreground">Median:</span> <span className="font-mono">{c.median}</span></div>}
-                                  {c.stddev && <div><span className="text-muted-foreground">Std Dev:</span> <span className="font-mono">{c.stddev}</span></div>}
-                                  <div><span className="text-muted-foreground">Min:</span> <span className="font-mono">{c.min ?? "∅"}</span></div>
-                                  <div><span className="text-muted-foreground">Max:</span> <span className="font-mono">{c.max ?? "∅"}</span></div>
-                                </div>
-                                {c.topValues.length > 0 && (
-                                  <div className="mt-3">
-                                    <div className="text-xs text-muted-foreground mb-1">Top Values</div>
-                                    <div className="flex flex-wrap gap-2">
-                                      {c.topValues.map((tv, i) => (
-                                        <span key={i} className="rounded bg-muted/50 px-2 py-0.5 font-mono text-[11px]">
-                                          {tv.value} <span className="text-muted-foreground">({tv.count})</span>
-                                        </span>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-                              </td>
-                            </tr>
-                          )}
-                        </>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {columns.map((c) => (
+                    <ColumnCard key={c.name} col={c} totalRows={overview.rowCount} />
+                  ))}
                 </div>
               </TabsContent>
 
               <TabsContent value="findings" className="space-y-3 pt-4">
-                {/* Filter pills */}
                 <div className="flex gap-2">
                   {(["all", "critical", "warning", "info"] as const).map((level) => (
                     <button
@@ -389,9 +403,7 @@ ${findings.length === 0 ? "<p>No findings — data looks clean!</p>" : findings.
                       <div>
                         <div className="font-medium">{f.title}</div>
                         <div className="text-sm opacity-80">{f.description}</div>
-                        {f.suggestedFix && (
-                          <div className="mt-1 text-sm opacity-60 italic">💡 {f.suggestedFix}</div>
-                        )}
+                        {f.suggestedFix && <div className="mt-1 text-sm opacity-60 italic">💡 {f.suggestedFix}</div>}
                       </div>
                     </div>
                   );
@@ -402,31 +414,19 @@ ${findings.length === 0 ? "<p>No findings — data looks clean!</p>" : findings.
                 <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
                   <button onClick={exportHTML} className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-6 transition-all hover:border-primary/40 hover:-translate-y-0.5">
                     <FileText className="h-8 w-8 text-primary" />
-                    <div className="text-center">
-                      <div className="font-medium">HTML Report</div>
-                      <div className="text-xs text-muted-foreground">Styled, standalone report</div>
-                    </div>
+                    <div className="text-center"><div className="font-medium">HTML Report</div><div className="text-xs text-muted-foreground">Styled, standalone report</div></div>
                   </button>
                   <button onClick={exportJSON} className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-6 transition-all hover:border-primary/40 hover:-translate-y-0.5">
                     <FileJson className="h-8 w-8 text-primary" />
-                    <div className="text-center">
-                      <div className="font-medium">JSON Report</div>
-                      <div className="text-xs text-muted-foreground">Machine-readable data</div>
-                    </div>
+                    <div className="text-center"><div className="font-medium">JSON Report</div><div className="text-xs text-muted-foreground">Machine-readable data</div></div>
                   </button>
                   <button onClick={exportCSV} className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-6 transition-all hover:border-primary/40 hover:-translate-y-0.5">
                     <FileSpreadsheet className="h-8 w-8 text-primary" />
-                    <div className="text-center">
-                      <div className="font-medium">CSV Summary</div>
-                      <div className="text-xs text-muted-foreground">Column stats spreadsheet</div>
-                    </div>
+                    <div className="text-center"><div className="font-medium">CSV Summary</div><div className="text-xs text-muted-foreground">Column stats spreadsheet</div></div>
                   </button>
                   <button onClick={copyToClipboard} className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-6 transition-all hover:border-primary/40 hover:-translate-y-0.5">
                     <ClipboardCopy className="h-8 w-8 text-primary" />
-                    <div className="text-center">
-                      <div className="font-medium">Clipboard</div>
-                      <div className="text-xs text-muted-foreground">Copy text summary</div>
-                    </div>
+                    <div className="text-center"><div className="font-medium">Clipboard</div><div className="text-xs text-muted-foreground">Copy text summary</div></div>
                   </button>
                 </div>
               </TabsContent>

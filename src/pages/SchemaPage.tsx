@@ -5,6 +5,7 @@ import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { registerFile, runQuery, formatBytes, sanitizeTableName, downloadBlob } from "@/lib/duckdb-helpers";
 import { getSampleSchemaCSV } from "@/lib/sample-data";
@@ -146,90 +147,96 @@ export default function SchemaPage() {
             {/* Dialect toggle */}
             <div className="flex flex-wrap gap-2">
               {dialects.map((d) => (
-                <button
-                  key={d.id}
-                  onClick={() => updateMappedTypes(d.id)}
-                  className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-                    dialect === d.id
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                  }`}
-                >
+                <button key={d.id} onClick={() => updateMappedTypes(d.id)}
+                  className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${dialect === d.id ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-secondary/80"}`}>
                   {d.label}
                 </button>
               ))}
             </div>
 
-            {/* Table name + schema prefix + comments */}
-            <div className="flex items-center gap-4 flex-wrap">
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-muted-foreground">Schema:</label>
-                <input
-                  value={schemaPrefix}
-                  onChange={(e) => setSchemaPrefix(e.target.value)}
-                  placeholder="public"
-                  className="w-24 rounded-md border border-border bg-card px-3 py-1.5 font-mono text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-muted-foreground">Table:</label>
-                <input
-                  value={tableName}
-                  onChange={(e) => setTableName(e.target.value)}
-                  className="rounded-md border border-border bg-card px-3 py-1.5 font-mono text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                />
-              </div>
-              <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
-                <input type="checkbox" checked={addComments} onChange={(e) => setAddComments(e.target.checked)} className="rounded" />
-                Add sample value comments
-              </label>
-            </div>
+            <Tabs defaultValue="schema">
+              <TabsList>
+                <TabsTrigger value="schema">Column Mapping</TabsTrigger>
+                <TabsTrigger value="ddl">DDL Output</TabsTrigger>
+                <TabsTrigger value="settings">Settings</TabsTrigger>
+              </TabsList>
 
-            {/* Schema table with editable mapped types */}
-            <div className="overflow-auto rounded-lg border border-border">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border bg-muted/50">
-                    <th className="px-3 py-2 text-left font-medium">Column</th>
-                    <th className="px-3 py-2 text-left font-medium">Detected</th>
-                    <th className="px-3 py-2 text-left font-medium">Mapped ({dialect})</th>
-                    <th className="px-3 py-2 text-left font-medium">Nullable</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {cols.map((c, idx) => (
-                    <tr key={c.name} className="border-b border-border/50 hover:bg-muted/30">
-                      <td className="px-3 py-1.5 font-mono text-xs">{c.name}</td>
-                      <td className="px-3 py-1.5 font-mono text-xs text-muted-foreground">{c.detectedType}</td>
-                      <td className="px-3 py-1.5">
-                        <input
-                          value={c.mappedType}
-                          onChange={(e) => updateColType(idx, e.target.value)}
-                          className="w-full rounded border border-transparent bg-transparent px-1 py-0.5 font-mono text-xs text-primary hover:border-border focus:border-primary focus:outline-none"
-                        />
-                      </td>
-                      <td className="px-3 py-1.5 text-xs">{c.nullable ? "YES" : "NO"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* DDL */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium text-muted-foreground">Generated DDL</h3>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={handleCopy}>
-                    <Copy className="h-4 w-4 mr-1" /> Copy
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => downloadBlob(ddl, `${tableName}.sql`, "text/sql")}>
-                    <Download className="h-4 w-4 mr-1" /> Download
-                  </Button>
+              <TabsContent value="schema" className="pt-4">
+                <div className="overflow-auto rounded-lg border border-border">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border bg-muted/50">
+                        <th className="px-3 py-2 text-left font-medium">Column</th>
+                        <th className="px-3 py-2 text-left font-medium">Detected</th>
+                        <th className="px-3 py-2 text-left font-medium">Mapped ({dialect})</th>
+                        <th className="px-3 py-2 text-left font-medium">Nullable</th>
+                        <th className="px-3 py-2 text-left font-medium">Sample</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {cols.map((c, idx) => (
+                        <tr key={c.name} className="border-b border-border/50 hover:bg-muted/30">
+                          <td className="px-3 py-1.5 font-mono text-xs">{c.name}</td>
+                          <td className="px-3 py-1.5 font-mono text-xs text-muted-foreground">{c.detectedType}</td>
+                          <td className="px-3 py-1.5">
+                            <input
+                              value={c.mappedType}
+                              onChange={(e) => updateColType(idx, e.target.value)}
+                              className="w-full rounded border border-transparent bg-transparent px-1 py-0.5 font-mono text-xs text-primary hover:border-border focus:border-primary focus:outline-none"
+                            />
+                          </td>
+                          <td className="px-3 py-1.5 text-xs">{c.nullable ? "YES" : "NO"}</td>
+                          <td className="px-3 py-1.5 font-mono text-xs text-muted-foreground truncate max-w-[150px]" title={c.sampleValue}>{c.sampleValue ?? "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-              </div>
-              <pre className="rounded-lg border border-border bg-card p-4 font-mono text-sm text-foreground overflow-auto">{ddl}</pre>
-            </div>
+              </TabsContent>
+
+              <TabsContent value="ddl" className="pt-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-medium text-muted-foreground">Generated DDL</h3>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={handleCopy}>
+                      <Copy className="h-4 w-4 mr-1" /> Copy
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => downloadBlob(ddl, `${tableName}.sql`, "text/sql")}>
+                      <Download className="h-4 w-4 mr-1" /> Download
+                    </Button>
+                  </div>
+                </div>
+                <pre className="rounded-lg border border-border bg-card p-4 font-mono text-sm text-foreground overflow-auto">{ddl}</pre>
+              </TabsContent>
+
+              <TabsContent value="settings" className="pt-4 space-y-4">
+                <div className="rounded-lg border border-border bg-card p-4 space-y-4">
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm text-muted-foreground">Schema prefix:</label>
+                      <input
+                        value={schemaPrefix}
+                        onChange={(e) => setSchemaPrefix(e.target.value)}
+                        placeholder="public"
+                        className="w-28 rounded-md border border-border bg-background px-3 py-1.5 font-mono text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm text-muted-foreground">Table name:</label>
+                      <input
+                        value={tableName}
+                        onChange={(e) => setTableName(e.target.value)}
+                        className="rounded-md border border-border bg-background px-3 py-1.5 font-mono text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                      />
+                    </div>
+                  </div>
+                  <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
+                    <input type="checkbox" checked={addComments} onChange={(e) => setAddComments(e.target.checked)} className="rounded" />
+                    Add sample value comments in DDL
+                  </label>
+                </div>
+              </TabsContent>
+            </Tabs>
           </>
         )}
       </div>
