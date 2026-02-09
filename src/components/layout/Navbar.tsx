@@ -21,7 +21,7 @@ export function Navbar() {
       <div className="container flex h-14 items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 font-semibold text-foreground">
-          <Bird className="h-6 w-6 text-primary" />
+          <Bird className="h-6 w-6 text-[#FFD43B]" />
           <span className="text-lg tracking-tight">DuckTools</span>
         </Link>
 

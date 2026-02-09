@@ -1,14 +1,21 @@
-import { type ReactNode } from "react";
+import { type ReactNode, useEffect } from "react";
 import { type LucideIcon } from "lucide-react";
 
 interface ToolPageProps {
   icon: LucideIcon;
   title: string;
   description: string;
+  pageTitle?: string;
   children: ReactNode;
 }
 
-export function ToolPage({ icon: Icon, title, description, children }: ToolPageProps) {
+export function ToolPage({ icon: Icon, title, description, pageTitle, children }: ToolPageProps) {
+  useEffect(() => {
+    const prev = document.title;
+    document.title = pageTitle ?? `${title} — Free, Offline | DuckTools`;
+    return () => { document.title = prev; };
+  }, [title, pageTitle]);
+
   return (
     <div className="container py-8">
       <div className="mb-8 flex items-center gap-3">

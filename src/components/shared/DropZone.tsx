@@ -5,28 +5,40 @@ interface DropZoneProps {
   accept: string[];
   onFile: (file: File) => void;
   label?: string;
+  maxSizeMB?: number;
 }
 
-export function DropZone({ accept, onFile, label = "Drop a file here" }: DropZoneProps) {
+export function DropZone({ accept, onFile, label = "Drop a file here", maxSizeMB = 200 }: DropZoneProps) {
   const [dragOver, setDragOver] = useState(false);
+  const [sizeWarning, setSizeWarning] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const checkAndPass = useCallback((file: File) => {
+    const mb = file.size / (1024 * 1024);
+    if (mb > maxSizeMB) {
+      setSizeWarning(`This file is ${mb.toFixed(0)} MB — large files may slow your browser.`);
+    } else {
+      setSizeWarning(null);
+    }
+    onFile(file);
+  }, [onFile, maxSizeMB]);
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
       setDragOver(false);
       const file = e.dataTransfer.files[0];
-      if (file) onFile(file);
+      if (file) checkAndPass(file);
     },
-    [onFile]
+    [checkAndPass]
   );
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
-      if (file) onFile(file);
+      if (file) checkAndPass(file);
     },
-    [onFile]
+    [checkAndPass]
   );
 
   return (
@@ -59,6 +71,11 @@ export function DropZone({ accept, onFile, label = "Drop a file here" }: DropZon
         onChange={handleChange}
         className="hidden"
       />
+      {sizeWarning && (
+        <div className="mt-2 flex items-center gap-1.5 text-xs text-warning">
+          <span>⚠️</span> {sizeWarning}
+        </div>
+      )}
     </div>
   );
 }

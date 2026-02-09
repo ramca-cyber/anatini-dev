@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { BarChart3, AlertTriangle, AlertCircle, Info, FlaskConical, Download, FileText, FileJson, FileSpreadsheet } from "lucide-react";
+import { BarChart3, AlertTriangle, AlertCircle, Info, FlaskConical, Download, FileText, FileJson, FileSpreadsheet, ClipboardCopy, ChevronDown, ChevronRight } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
-import { DataTable } from "@/components/shared/DataTable";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -19,6 +18,9 @@ interface ColumnProfile {
   distinctCount: number;
   min?: string;
   max?: string;
+  mean?: string;
+  median?: string;
+  stddev?: string;
   topValues: { value: string; count: number }[];
 }
 
@@ -26,6 +28,7 @@ interface Finding {
   level: "critical" | "warning" | "info";
   title: string;
   description: string;
+  suggestedFix?: string;
 }
 
 export default function ProfilerPage() {
@@ -36,6 +39,8 @@ export default function ProfilerPage() {
   const [overview, setOverview] = useState<{ rowCount: number; colCount: number; nullRate: number } | null>(null);
   const [columns, setColumns] = useState<ColumnProfile[]>([]);
   const [findings, setFindings] = useState<Finding[]>([]);
+  const [expandedCol, setExpandedCol] = useState<string | null>(null);
+  const [findingFilter, setFindingFilter] = useState<"all" | "critical" | "warning" | "info">("all");
 
   async function handleFile(f: File) {
     if (!db) return;
@@ -52,6 +57,8 @@ export default function ProfilerPage() {
 
       for (let i = 0; i < info.columns.length; i++) {
         const col = info.columns[i];
+        const isNumeric = /INT|FLOAT|DOUBLE|DECIMAL|NUMERIC|BIGINT|REAL/i.test(info.types[i]);
+
         const statsRes = await runQuery(db, `
           SELECT 
             COUNT(*) - COUNT("${col}") as null_count,
@@ -63,6 +70,22 @@ export default function ProfilerPage() {
         const nullCount = Number(statsRes.rows[0][0]);
         const distinctCount = Number(statsRes.rows[0][1]);
         totalNulls += nullCount;
+
+        let mean: string | undefined, median: string | undefined, stddev: string | undefined;
+        if (isNumeric) {
+          try {
+            const numRes = await runQuery(db, `
+              SELECT 
+                ROUND(AVG("${col}")::DOUBLE, 2)::VARCHAR,
+                ROUND(MEDIAN("${col}")::DOUBLE, 2)::VARCHAR,
+                ROUND(STDDEV("${col}")::DOUBLE, 2)::VARCHAR
+              FROM "${tableName}"
+            `);
+            mean = numRes.rows[0]?.[0] ? String(numRes.rows[0][0]) : undefined;
+            median = numRes.rows[0]?.[1] ? String(numRes.rows[0][1]) : undefined;
+            stddev = numRes.rows[0]?.[2] ? String(numRes.rows[0][2]) : undefined;
+          } catch {}
+        }
 
         let topValues: { value: string; count: number }[] = [];
         try {
@@ -77,7 +100,7 @@ export default function ProfilerPage() {
         profiles.push({
           name: col, type: info.types[i], nullCount,
           nullPct: info.rowCount > 0 ? (nullCount / info.rowCount) * 100 : 0,
-          distinctCount,
+          distinctCount, mean, median, stddev,
           min: statsRes.rows[0][2] ? String(statsRes.rows[0][2]) : undefined,
           max: statsRes.rows[0][3] ? String(statsRes.rows[0][3]) : undefined,
           topValues,
@@ -90,10 +113,10 @@ export default function ProfilerPage() {
 
       const fList: Finding[] = [];
       for (const p of profiles) {
-        if (p.nullPct > 50) fList.push({ level: "critical", title: `High null rate in "${p.name}"`, description: `${p.nullPct.toFixed(1)}% of values are null.` });
-        else if (p.nullPct > 10) fList.push({ level: "warning", title: `Moderate null rate in "${p.name}"`, description: `${p.nullPct.toFixed(1)}% null values detected.` });
-        if (p.distinctCount === 1 && info.rowCount > 1) fList.push({ level: "warning", title: `Constant column "${p.name}"`, description: "Contains only one unique value — may be redundant." });
-        if (p.distinctCount === info.rowCount && info.rowCount > 1) fList.push({ level: "info", title: `Unique column "${p.name}"`, description: "Every value is unique — potential identifier/key." });
+        if (p.nullPct > 50) fList.push({ level: "critical", title: `High null rate in "${p.name}"`, description: `${p.nullPct.toFixed(1)}% of values are null.`, suggestedFix: `Consider imputing missing values or removing this column if not needed.` });
+        else if (p.nullPct > 10) fList.push({ level: "warning", title: `Moderate null rate in "${p.name}"`, description: `${p.nullPct.toFixed(1)}% null values detected.`, suggestedFix: `Review data source for missing "${p.name}" values. Consider a default value.` });
+        if (p.distinctCount === 1 && info.rowCount > 1) fList.push({ level: "warning", title: `Constant column "${p.name}"`, description: "Contains only one unique value — may be redundant.", suggestedFix: "Drop this column if it adds no analytical value." });
+        if (p.distinctCount === info.rowCount && info.rowCount > 1) fList.push({ level: "info", title: `Unique column "${p.name}"`, description: "Every value is unique — potential identifier/key.", suggestedFix: "Consider using this as a primary key or join key." });
       }
       setFindings(fList);
     } catch (e) {
@@ -103,25 +126,24 @@ export default function ProfilerPage() {
     }
   }
 
+  // Type distribution for overview
+  const typeDistribution = columns.reduce<Record<string, number>>((acc, c) => {
+    const baseType = c.type.replace(/\(.*\)/, "").toUpperCase();
+    acc[baseType] = (acc[baseType] || 0) + 1;
+    return acc;
+  }, {});
+  const maxTypeCount = Math.max(...Object.values(typeDistribution), 1);
+
   function exportJSON() {
-    const report = {
-      file: file?.name,
-      generatedAt: new Date().toISOString(),
-      overview,
-      columns: columns.map((c) => ({
-        name: c.name, type: c.type, nullCount: c.nullCount, nullPct: c.nullPct,
-        distinctCount: c.distinctCount, min: c.min, max: c.max, topValues: c.topValues,
-      })),
-      findings,
-    };
+    const report = { file: file?.name, generatedAt: new Date().toISOString(), overview, columns: columns.map(c => ({ ...c })), findings };
     downloadBlob(JSON.stringify(report, null, 2), `${file?.name ?? "profile"}_report.json`, "application/json");
     toast({ title: "JSON report downloaded" });
   }
 
   function exportCSV() {
-    const header = "Column,Type,Nulls,Null %,Distinct,Min,Max\n";
+    const header = "Column,Type,Nulls,Null %,Distinct,Min,Max,Mean,Median,StdDev\n";
     const rows = columns.map((c) =>
-      [c.name, c.type, c.nullCount, c.nullPct.toFixed(1), c.distinctCount, c.min ?? "", c.max ?? ""]
+      [c.name, c.type, c.nullCount, c.nullPct.toFixed(1), c.distinctCount, c.min ?? "", c.max ?? "", c.mean ?? "", c.median ?? "", c.stddev ?? ""]
         .map((v) => `"${String(v).replace(/"/g, '""')}"`)
         .join(",")
     ).join("\n");
@@ -162,18 +184,37 @@ export default function ProfilerPage() {
 <table><thead><tr><th>Column</th><th>Type</th><th>Nulls</th><th>Null %</th><th>Distinct</th><th>Min</th><th>Max</th></tr></thead>
 <tbody>${columns.map((c) => `<tr><td>${c.name}</td><td>${c.type}</td><td>${c.nullCount}</td><td>${c.nullPct.toFixed(1)}%</td><td>${c.distinctCount}</td><td>${c.min ?? "∅"}</td><td>${c.max ?? "∅"}</td></tr>`).join("")}</tbody></table>
 <h2>Findings (${findings.length})</h2>
-${findings.length === 0 ? "<p>No findings — data looks clean!</p>" : findings.map((f) => `<div class="finding ${f.level}"><div class="title">${f.title}</div><div class="desc">${f.description}</div></div>`).join("")}
+${findings.length === 0 ? "<p>No findings — data looks clean!</p>" : findings.map((f) => `<div class="finding ${f.level}"><div class="title">${f.title}</div><div class="desc">${f.description}</div>${f.suggestedFix ? `<div class="desc" style="margin-top:.25rem;font-style:italic">💡 ${f.suggestedFix}</div>` : ""}</div>`).join("")}
 <div class="footer">Generated by DuckTools · 100% offline</div>
 </body></html>`;
     downloadBlob(html, `${file?.name ?? "profile"}_report.html`, "text/html");
     toast({ title: "HTML report downloaded" });
   }
 
+  function copyToClipboard() {
+    if (!overview) return;
+    const lines = [
+      `Profile Report: ${file?.name}`,
+      `Rows: ${overview.rowCount} | Columns: ${overview.colCount} | Null Rate: ${overview.nullRate.toFixed(1)}%`,
+      "",
+      "Columns:",
+      ...columns.map(c => `  ${c.name} (${c.type}) — ${c.nullPct.toFixed(1)}% null, ${c.distinctCount} distinct`),
+      "",
+      `Findings (${findings.length}):`,
+      ...findings.map(f => `  [${f.level.toUpperCase()}] ${f.title}: ${f.description}`),
+    ];
+    navigator.clipboard.writeText(lines.join("\n"));
+    toast({ title: "Profile copied to clipboard" });
+  }
+
   const levelIcon = { critical: AlertCircle, warning: AlertTriangle, info: Info };
   const levelColor = { critical: "border-destructive/50 bg-destructive/10 text-destructive", warning: "border-warning/50 bg-warning/10 text-warning", info: "border-primary/50 bg-primary/10 text-primary" };
 
+  const filteredFindings = findingFilter === "all" ? findings : findings.filter(f => f.level === findingFilter);
+
   return (
-    <ToolPage icon={BarChart3} title="Data Quality Profiler" description="Profile datasets for nulls, duplicates, outliers and quality issues.">
+    <ToolPage icon={BarChart3} title="Data Quality Profiler" description="Profile datasets for nulls, duplicates, outliers and quality issues."
+      pageTitle="Data Profiler — Analyze CSV Quality Online | DuckTools">
       <div className="space-y-6">
         {!file && (
           <div className="space-y-3">
@@ -217,19 +258,129 @@ ${findings.length === 0 ? "<p>No findings — data looks clean!</p>" : findings.
                     </div>
                   ))}
                 </div>
+
+                {/* Type distribution bars */}
+                <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+                  <h4 className="text-sm font-medium text-muted-foreground">Column Type Distribution</h4>
+                  <div className="space-y-2">
+                    {Object.entries(typeDistribution).sort((a, b) => b[1] - a[1]).map(([type, count]) => (
+                      <div key={type} className="flex items-center gap-3">
+                        <span className="w-20 text-xs font-mono text-muted-foreground truncate">{type}</span>
+                        <div className="flex-1 h-5 bg-muted/30 rounded overflow-hidden">
+                          <div
+                            className="h-full bg-primary/60 rounded transition-all"
+                            style={{ width: `${(count / maxTypeCount) * 100}%` }}
+                          />
+                        </div>
+                        <span className="text-xs font-medium w-6 text-right">{count}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Top issues */}
+                {findings.length > 0 && (
+                  <div className="rounded-lg border border-border bg-card p-4 space-y-2">
+                    <h4 className="text-sm font-medium text-muted-foreground">Top Issues</h4>
+                    {findings.slice(0, 3).map((f, i) => {
+                      const Icon = levelIcon[f.level];
+                      return (
+                        <div key={i} className="flex items-center gap-2 text-xs">
+                          <Icon className={`h-3.5 w-3.5 ${f.level === "critical" ? "text-destructive" : f.level === "warning" ? "text-warning" : "text-primary"}`} />
+                          <span className="text-foreground">{f.title}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </TabsContent>
 
               <TabsContent value="columns" className="pt-4">
-                <DataTable
-                  columns={["Column", "Type", "Nulls", "Null %", "Distinct", "Min", "Max"]}
-                  rows={columns.map((c) => [c.name, c.type, c.nullCount, c.nullPct.toFixed(1) + "%", c.distinctCount, c.min ?? "∅", c.max ?? "∅"])}
-                  className="max-h-[500px]"
-                />
+                <div className="overflow-auto rounded-lg border border-border">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border bg-muted/50">
+                        <th className="px-3 py-2 text-left font-medium w-6"></th>
+                        <th className="px-3 py-2 text-left font-medium">Column</th>
+                        <th className="px-3 py-2 text-left font-medium">Type</th>
+                        <th className="px-3 py-2 text-left font-medium">Nulls</th>
+                        <th className="px-3 py-2 text-left font-medium">Null %</th>
+                        <th className="px-3 py-2 text-left font-medium">Distinct</th>
+                        <th className="px-3 py-2 text-left font-medium">Min</th>
+                        <th className="px-3 py-2 text-left font-medium">Max</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {columns.map((c) => (
+                        <>
+                          <tr
+                            key={c.name}
+                            onClick={() => setExpandedCol(expandedCol === c.name ? null : c.name)}
+                            className="border-b border-border/50 hover:bg-muted/30 cursor-pointer transition-colors"
+                          >
+                            <td className="px-3 py-1.5 text-muted-foreground">
+                              {expandedCol === c.name ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                            </td>
+                            <td className="px-3 py-1.5 font-mono text-xs font-medium">{c.name}</td>
+                            <td className="px-3 py-1.5 font-mono text-xs text-muted-foreground">{c.type}</td>
+                            <td className="px-3 py-1.5 font-mono text-xs">{c.nullCount}</td>
+                            <td className="px-3 py-1.5 font-mono text-xs">{c.nullPct.toFixed(1)}%</td>
+                            <td className="px-3 py-1.5 font-mono text-xs">{c.distinctCount}</td>
+                            <td className="px-3 py-1.5 font-mono text-xs">{c.min ?? "∅"}</td>
+                            <td className="px-3 py-1.5 font-mono text-xs">{c.max ?? "∅"}</td>
+                          </tr>
+                          {expandedCol === c.name && (
+                            <tr key={c.name + "_detail"} className="border-b border-border/50 bg-muted/10">
+                              <td colSpan={8} className="px-6 py-3">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                                  {c.mean && <div><span className="text-muted-foreground">Mean:</span> <span className="font-mono">{c.mean}</span></div>}
+                                  {c.median && <div><span className="text-muted-foreground">Median:</span> <span className="font-mono">{c.median}</span></div>}
+                                  {c.stddev && <div><span className="text-muted-foreground">Std Dev:</span> <span className="font-mono">{c.stddev}</span></div>}
+                                  <div><span className="text-muted-foreground">Min:</span> <span className="font-mono">{c.min ?? "∅"}</span></div>
+                                  <div><span className="text-muted-foreground">Max:</span> <span className="font-mono">{c.max ?? "∅"}</span></div>
+                                </div>
+                                {c.topValues.length > 0 && (
+                                  <div className="mt-3">
+                                    <div className="text-xs text-muted-foreground mb-1">Top Values</div>
+                                    <div className="flex flex-wrap gap-2">
+                                      {c.topValues.map((tv, i) => (
+                                        <span key={i} className="rounded bg-muted/50 px-2 py-0.5 font-mono text-[11px]">
+                                          {tv.value} <span className="text-muted-foreground">({tv.count})</span>
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
+                          )}
+                        </>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </TabsContent>
 
               <TabsContent value="findings" className="space-y-3 pt-4">
-                {findings.length === 0 && <p className="text-sm text-muted-foreground">No findings — your data looks clean!</p>}
-                {findings.map((f, i) => {
+                {/* Filter pills */}
+                <div className="flex gap-2">
+                  {(["all", "critical", "warning", "info"] as const).map((level) => (
+                    <button
+                      key={level}
+                      onClick={() => setFindingFilter(level)}
+                      className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                        findingFilter === level
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                      }`}
+                    >
+                      {level === "all" ? `All (${findings.length})` : `${level.charAt(0).toUpperCase() + level.slice(1)} (${findings.filter(f => f.level === level).length})`}
+                    </button>
+                  ))}
+                </div>
+
+                {filteredFindings.length === 0 && <p className="text-sm text-muted-foreground">No findings match the filter.</p>}
+                {filteredFindings.map((f, i) => {
                   const Icon = levelIcon[f.level];
                   return (
                     <div key={i} className={`flex items-start gap-3 rounded-lg border p-4 ${levelColor[f.level]}`}>
@@ -237,6 +388,9 @@ ${findings.length === 0 ? "<p>No findings — data looks clean!</p>" : findings.
                       <div>
                         <div className="font-medium">{f.title}</div>
                         <div className="text-sm opacity-80">{f.description}</div>
+                        {f.suggestedFix && (
+                          <div className="mt-1 text-sm opacity-60 italic">💡 {f.suggestedFix}</div>
+                        )}
                       </div>
                     </div>
                   );
@@ -244,26 +398,33 @@ ${findings.length === 0 ? "<p>No findings — data looks clean!</p>" : findings.
               </TabsContent>
 
               <TabsContent value="export" className="pt-4">
-                <div className="grid gap-4 sm:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
                   <button onClick={exportHTML} className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-6 transition-all hover:border-primary/40 hover:-translate-y-0.5">
                     <FileText className="h-8 w-8 text-primary" />
                     <div className="text-center">
                       <div className="font-medium">HTML Report</div>
-                      <div className="text-xs text-muted-foreground">Styled, standalone report you can share</div>
+                      <div className="text-xs text-muted-foreground">Styled, standalone report</div>
                     </div>
                   </button>
                   <button onClick={exportJSON} className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-6 transition-all hover:border-primary/40 hover:-translate-y-0.5">
                     <FileJson className="h-8 w-8 text-primary" />
                     <div className="text-center">
                       <div className="font-medium">JSON Report</div>
-                      <div className="text-xs text-muted-foreground">Machine-readable full profile data</div>
+                      <div className="text-xs text-muted-foreground">Machine-readable data</div>
                     </div>
                   </button>
                   <button onClick={exportCSV} className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-6 transition-all hover:border-primary/40 hover:-translate-y-0.5">
                     <FileSpreadsheet className="h-8 w-8 text-primary" />
                     <div className="text-center">
                       <div className="font-medium">CSV Summary</div>
-                      <div className="text-xs text-muted-foreground">Column stats as a spreadsheet</div>
+                      <div className="text-xs text-muted-foreground">Column stats spreadsheet</div>
+                    </div>
+                  </button>
+                  <button onClick={copyToClipboard} className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-6 transition-all hover:border-primary/40 hover:-translate-y-0.5">
+                    <ClipboardCopy className="h-8 w-8 text-primary" />
+                    <div className="text-center">
+                      <div className="font-medium">Clipboard</div>
+                      <div className="text-xs text-muted-foreground">Copy text summary</div>
                     </div>
                   </button>
                 </div>
