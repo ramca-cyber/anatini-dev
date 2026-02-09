@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getToolSeo } from "@/lib/seo-content";
 import { FileSpreadsheet, Download, ArrowRightLeft, FlaskConical, Settings2, ChevronDown, ChevronUp } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
@@ -87,7 +88,8 @@ export default function ConvertPage() {
       icon={FileSpreadsheet}
       title="CSV ↔ Parquet Converter"
       description="Convert between CSV and Parquet with type preservation and compression."
-      pageTitle="Convert CSV to Parquet Online — Free, Offline | DuckTools"
+      pageTitle="Convert CSV to Parquet Online — Free, Offline | Anatini.dev"
+      seoContent={getToolSeo("csv-to-parquet")}
     >
       <div className="space-y-6">
         {!file && (

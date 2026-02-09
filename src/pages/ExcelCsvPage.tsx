@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getToolSeo } from "@/lib/seo-content";
 import { FileText } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
@@ -96,7 +97,7 @@ export default function ExcelCsvPage() {
   }
 
   return (
-    <ToolPage icon={FileText} title="Excel ↔ CSV Converter" description="Convert between Excel and CSV with multi-sheet support.">
+    <ToolPage icon={FileText} title="Excel ↔ CSV Converter" description="Convert between Excel and CSV with multi-sheet support." seoContent={getToolSeo("excel-csv-converter")}>
       <div className="space-y-4">
         {!file && (
           <DropZone accept={[".xlsx", ".xls", ".csv", ".tsv"]} onFile={handleFile} label="Drop an Excel or CSV file" />

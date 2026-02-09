@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getToolSeo } from "@/lib/seo-content";
 import { BarChart3, AlertTriangle, AlertCircle, Info, FlaskConical, Download, FileText, FileJson, FileSpreadsheet, ClipboardCopy, ChevronDown, ChevronRight } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
@@ -214,7 +215,7 @@ ${findings.length === 0 ? "<p>No findings — data looks clean!</p>" : findings.
 
   return (
     <ToolPage icon={BarChart3} title="Data Quality Profiler" description="Profile datasets for nulls, duplicates, outliers and quality issues."
-      pageTitle="Data Profiler — Analyze CSV Quality Online | DuckTools">
+      pageTitle="Data Profiler — Analyze CSV Quality Online | Anatini.dev" seoContent={getToolSeo("data-profiler")}>
       <div className="space-y-6">
         {!file && (
           <div className="space-y-3">

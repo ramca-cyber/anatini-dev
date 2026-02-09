@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getToolSeo } from "@/lib/seo-content";
 import { FileJson, FlaskConical } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
@@ -73,7 +74,7 @@ export default function CsvToJsonPage() {
   }
 
   return (
-    <ToolPage icon={FileJson} title="CSV to JSON" description="Convert CSV files to JSON array or NDJSON format.">
+    <ToolPage icon={FileJson} title="CSV to JSON" description="Convert CSV files to JSON array or NDJSON format." seoContent={getToolSeo("csv-to-json")}>
       <div className="space-y-4">
         {!file && (
           <div className="space-y-3">
