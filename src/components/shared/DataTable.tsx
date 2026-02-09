@@ -1,5 +1,17 @@
 import { cn } from "@/lib/utils";
 
+function formatValue(val: any): string {
+  if (val === null || val === undefined) return "";
+  if (typeof val === "bigint") return val.toString();
+  if (typeof val === "object") {
+    try {
+      return JSON.stringify(val, (_key, v) => typeof v === "bigint" ? v.toString() : v);
+    } catch {
+      return String(val);
+    }
+  }
+  return String(val);
+}
 interface DataTableProps {
   columns: string[];
   rows: any[][];
@@ -34,9 +46,9 @@ export function DataTable({ columns, rows, types, maxRows = 100, className }: Da
                   {val === null || val === undefined ? (
                     <span className="text-muted-foreground/40">∅</span>
                   ) : typeof val === "object" ? (
-                    <span className="max-w-[200px] truncate block text-muted-foreground">{JSON.stringify(val)}</span>
+                    <span className="max-w-[200px] truncate block text-muted-foreground">{formatValue(val)}</span>
                   ) : (
-                    <span className="max-w-[300px] truncate block">{String(val)}</span>
+                    <span className="max-w-[300px] truncate block">{formatValue(val)}</span>
                   )}
                 </td>
               ))}

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BarChart3, AlertTriangle, AlertCircle, Info } from "lucide-react";
+import { BarChart3, AlertTriangle, AlertCircle, Info, FlaskConical } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { registerFile, runQuery, formatBytes, sanitizeTableName, type QueryResult } from "@/lib/duckdb-helpers";
+import { getSampleProfilerCSV } from "@/lib/sample-data";
 
 interface ColumnProfile {
   name: string;
@@ -111,7 +112,16 @@ export default function ProfilerPage() {
   return (
     <ToolPage icon={BarChart3} title="Data Quality Profiler" description="Profile datasets for nulls, duplicates, outliers and quality issues.">
       <div className="space-y-6">
-        {!file && <DropZone accept={[".csv", ".parquet", ".json"]} onFile={handleFile} label="Drop a dataset to profile" />}
+        {!file && (
+          <div className="space-y-3">
+            <DropZone accept={[".csv", ".parquet", ".json"]} onFile={handleFile} label="Drop a dataset to profile" />
+            <div className="flex justify-center">
+              <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => handleFile(getSampleProfilerCSV())}>
+                <FlaskConical className="h-4 w-4 mr-1" /> Try with sample data
+              </Button>
+            </div>
+          </div>
+        )}
         {loading && <LoadingState message="Profiling dataset..." />}
         {error && <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
 

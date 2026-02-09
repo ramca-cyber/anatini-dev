@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { GitCompare, Download } from "lucide-react";
+import { GitCompare, Download, FlaskConical } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
@@ -7,6 +7,7 @@ import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { registerFile, runQuery, exportToCSV, downloadBlob, formatBytes, sanitizeTableName } from "@/lib/duckdb-helpers";
+import { getSampleCSVBefore, getSampleCSVAfter } from "@/lib/sample-data";
 
 export default function DiffPage() {
   const { db } = useDuckDB();
@@ -89,6 +90,12 @@ export default function DiffPage() {
   }
 
   const bothLoaded = beforeMeta && afterMeta;
+  const neitherLoaded = !beforeFile && !afterFile;
+
+  async function loadSampleData() {
+    await handleBefore(getSampleCSVBefore());
+    await handleAfter(getSampleCSVAfter());
+  }
 
   return (
     <ToolPage icon={GitCompare} title="Dataset Diff" description="Compare two dataset versions to see added, removed and modified rows.">
@@ -111,6 +118,14 @@ export default function DiffPage() {
             )}
           </div>
         </div>
+
+        {neitherLoaded && (
+          <div className="flex justify-center">
+            <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={loadSampleData}>
+              <FlaskConical className="h-4 w-4 mr-1" /> Try with sample data
+            </Button>
+          </div>
+        )}
 
         {bothLoaded && !summary && (
           <div className="flex gap-2">
