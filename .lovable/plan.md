@@ -1,102 +1,144 @@
 
 
-## DuckTools — Implementation Plan
+## Spec vs. Implementation — Gap Analysis and Fix Plan
 
-### Phase 1: Foundation & Global Shell
-
-**Design System**
-- Dark theme with the specified color palette (deep navy backgrounds, cyan accents)
-- JetBrains Mono + IBM Plex Sans fonts loaded via Google Fonts
-- Lucide icons throughout
-
-**Global Layout**
-- Top navigation bar: DuckTools logo (duck icon + wordmark), horizontal tool tabs (pill-shaped), privacy badge with green dot
-- Footer: "100% offline · No data leaves your browser"
-- Responsive: hamburger menu on mobile, full nav on desktop
-
-**Routing**
-- `/` → Landing page
-- `/convert`, `/flatten`, `/sql`, `/profiler`, `/diff`, `/schema` → Tool pages
-- `/about` → About page
+After comparing the full UI/UX spec against the current codebase, here are the gaps organized by priority.
 
 ---
 
-### Phase 2: Landing Page
+### HIGH PRIORITY — Missing Features
 
-- Hero section with tagline: "Browser-powered data tools. Nothing leaves your machine."
-- 6 tool cards in a 3×2 grid with dark card backgrounds, hover effects (cyan border, lift shadow, arrow slide)
-- Privacy statement section at the bottom
-- SEO-ready with proper headings and meta descriptions
+**1. Diff Tool: Join Key Selection and Modified Rows Detection**
+The spec calls for:
+- Auto-detect join key (highest cardinality column matching both files) with manual override dropdown
+- 4 summary cards: Added, Removed, **Modified**, Unchanged (current impl only has Added, Removed, Unchanged — no Modified)
+- Column-level change display (added/removed/changed columns between datasets)
+- Row-level color coding with filter toggles (All / Added / Removed / Modified)
 
----
+Current implementation uses simple `EXCEPT`/`INTERSECT` which cannot detect **modified** rows — only added/removed.
 
-### Phase 3: Shared Components & DuckDB Integration
-
-**DuckDB-WASM Setup**
-- Lazy-loaded DuckDB-WASM instance shared across tools
-- React context/provider for DuckDB access
-
-**Shared Drop Zone Component**
-- Drag-and-drop file upload with dashed border, cyan glow on drag-over
-- File type validation (CSV, Parquet, JSON)
-- Loading state with progress bar and file metadata (rows, columns, size)
-- Privacy reassurance text
-
-**Shared Data Table Component**
-- Virtualized scrolling for large results
-- Sortable columns, sticky headers
-- Null values rendered as `∅`, long text truncation
-- Row hover highlighting
+**Fix:** Add a join key auto-detect + dropdown, use key-based comparison to identify modified rows, add a 4th "Modified" summary card, and add column-level change reporting.
 
 ---
 
-### Phase 4: Tool Pages (all 6 as functional stubs with DuckDB)
+**2. Flatten Tool: Structure Detection Display + Naming Convention Toggle**
+The spec shows a "Structure Detected" panel before flattening, displaying:
+- Root type (Array of N objects)
+- Nesting depth
+- Detected paths with their flattened names and types
 
-**CSV ↔ Parquet Converter** (`/convert`)
-- Two-panel input/output layout with drop zone
-- Auto-detect conversion direction, show file info (size, rows, columns)
-- Options panel (delimiter, header row, compression) collapsed by default
-- Convert button, download output, preview first 100 rows
+Also missing: naming convention toggle (dot notation vs underscore).
 
-**JSON Flattener** (`/flatten`)
-- Drop zone for JSON/JSONL files
-- Structure detection display showing nesting paths
-- Naming convention toggle (dot notation vs underscore)
-- Result table preview + download as CSV/Parquet
+Current impl goes straight from file drop to flattened result — no intermediate structure view.
 
-**SQL Playground** (`/sql`)
-- Two-panel layout: file list + schema browser (left), code editor + results (right)
-- CodeMirror editor with SQL syntax highlighting
-- Multi-file support (each file becomes a table)
-- Run query with Ctrl+Enter, auto-generate starter query
-- Export results as CSV/Parquet/clipboard
-
-**Data Quality Profiler** (`/profiler`)
-- Four tabs: Overview, Columns, Findings, Export
-- Overview: summary cards (rows, columns, null rate, findings count), column type distribution bars, top issues list
-- Columns: sortable table with detail expansion (statistics, top values, distribution)
-- Findings: severity-coded cards (critical/warning/info) with descriptions and suggested fixes
-- Export: HTML report, JSON report, CSV summary, clipboard copy
-
-**Dataset Diff** (`/diff`)
-- Two side-by-side drop zones (Before / After)
-- Auto-detect join key with manual override dropdown
-- Diff summary cards (added, removed, modified, unchanged)
-- Column-level and row-level change display with color coding
-- Download diff as CSV/JSON
-
-**Schema Generator** (`/schema`)
-- Drop zone + target database toggle buttons (Postgres, MySQL, BigQuery, Snowflake, DuckDB)
-- Editable inferred schema table (column, detected type, mapped type, nullable)
-- Options: table name, schema, NOT NULL constraints, comments
-- Live-generated DDL with copy and download
+**Fix:** After loading the JSON, show a structure detection panel. Add a toggle for dot vs underscore naming. Add a "Flatten" button (currently auto-flattens).
 
 ---
 
-### Phase 5: About Page & Polish
+**3. Profiler: Column Detail Expansion + Column Type Distribution Bars**
+The spec shows:
+- Overview tab: column type distribution bars (bar chart showing INT: 8, TEXT: 6, etc.) and "Top Issues" list
+- Columns tab: clickable rows that expand to show detailed statistics (min, max, mean, median, stddev, percentiles, zeros, negatives, outliers, top values, sample values)
+- Findings tab: "Suggested fix" text for each finding, plus a filter by severity
 
-- About page with privacy statement, tech stack info, and open-source messaging
-- Micro-interactions: file drop animations, progress bar shimmer, number count-up effects, download checkmark animations
-- Toast notifications for clipboard copy
-- Mobile responsive behavior (stacked layouts, hamburger menu, horizontal scroll tables)
+Current impl has basic overview cards, a flat columns table (no expansion), and findings without suggested fixes or filters.
+
+**Fix:** Add type distribution bars to Overview. Add expandable column detail rows with richer stats. Add suggested fix text to findings. Add severity filter to Findings tab.
+
+---
+
+**4. SQL Playground: Column Click-to-Insert + Query History in localStorage**
+The spec calls for:
+- Clicking a column name in the schema browser inserts it into the editor
+- Query history persisted in localStorage (last 20 queries), accessible via up-arrow
+- Parquet export button in results
+
+Current impl has in-memory history (lost on reload) and no click-to-insert on columns. No Parquet export.
+
+**Fix:** Add `onClick` handler on column names to insert into editor. Persist history to localStorage. Add Parquet export button.
+
+---
+
+**5. Convert Tool: Options Panel + Size Comparison + Conversion Time**
+The spec shows:
+- Collapsible options panel (CSV delimiter, header row, Parquet compression: Snappy/Zstd/None)
+- Post-convert info: "Converted in 2.3s", "Output: 12.1 MB (73% smaller)"
+- Size comparison is the "wow moment"
+
+Current impl has none of these — just a straight convert + download.
+
+**Fix:** Add a collapsible options section. Show conversion duration and output size comparison after convert.
+
+---
+
+### MEDIUM PRIORITY — UI/UX Polish Gaps
+
+**6. Schema Generator: Editable Mapped Types**
+Spec says: "Each 'Mapped' cell is editable (click to change type)". Also missing: schema prefix option and "Add comments with sample values" checkbox.
+
+**Fix:** Make the mapped type column editable (inline select or input). Add schema prefix input and comment toggle.
+
+---
+
+**7. Profiler Export: Clipboard Copy Option**
+Spec shows 4 export options: HTML, JSON, CSV, and Clipboard copy. Current impl has 3 (missing clipboard).
+
+**Fix:** Add a 4th "Copy to Clipboard" card in the Export tab that copies a text summary.
+
+---
+
+**8. Landing Page: "No accounts. No cookies. No analytics." text**
+Spec privacy section includes: "No accounts. No cookies. No analytics." — this specific text is missing from the current privacy section.
+
+**Fix:** Add this line to the landing page privacy section.
+
+---
+
+**9. SEO: Per-Page Titles and Meta Descriptions**
+Spec requires unique `<title>` per tool page (e.g., "Convert CSV to Parquet Online — Free, Offline | DuckTools"). Currently all pages share the same `<title>` from `index.html`.
+
+**Fix:** Use `document.title` or a `useEffect` in `ToolPage` to set page-specific titles.
+
+---
+
+**10. Navbar: Duck Icon Color**
+Spec says duck icon should be `--accent-duck` (#FFD43B yellow), not cyan. Currently uses `text-primary` (cyan).
+
+**Fix:** Change `Bird` icon color to the duck yellow (`text-[#FFD43B]`).
+
+---
+
+### LOW PRIORITY — Micro-interactions and Polish
+
+**11. Drop Zone: File Size Warning for >200MB**
+Spec: "warning if > 200MB". Not implemented.
+
+**12. Loading State: Progress Bar Instead of Spinner**
+Spec shows a progress bar with percentage. Current impl shows a spinner with text.
+
+**13. Data Table: Sortable Columns**
+Spec: "click header to sort, arrow indicator". Not implemented.
+
+**14. Numbers Count-Up Animation**
+Spec: "Numbers count up rapidly to final value" in profiler overview cards. Not implemented.
+
+**15. Download Checkmark Animation**
+Spec: "Download button shows brief checkmark animation on click". Not implemented.
+
+---
+
+### Summary of Changes
+
+| File | Changes |
+|------|---------|
+| `src/pages/DiffPage.tsx` | Join key auto-detect + dropdown, modified row detection, column-level changes, 4th summary card, row filters |
+| `src/pages/FlattenPage.tsx` | Structure detection panel, naming toggle, explicit Flatten button |
+| `src/pages/ProfilerPage.tsx` | Type distribution bars, expandable column details, richer stats, finding filters + suggested fixes, clipboard export |
+| `src/pages/SqlPage.tsx` | Column click-to-insert, localStorage history, Parquet export |
+| `src/pages/ConvertPage.tsx` | Collapsible options panel, conversion timing, size comparison |
+| `src/pages/SchemaPage.tsx` | Editable mapped types, schema prefix, comments toggle |
+| `src/components/shared/ToolPage.tsx` | Dynamic `document.title` per page |
+| `src/components/layout/Navbar.tsx` | Duck icon color to yellow |
+| `src/pages/Index.tsx` | Add missing privacy text |
+| `src/components/shared/DataTable.tsx` | Sortable columns (stretch) |
 
