@@ -12,6 +12,7 @@ const converters = [
   { path: "/csv-to-json", title: "CSV → JSON", description: "Array or NDJSON output format.", icon: FileJson },
   { path: "/json-to-csv", title: "JSON → CSV", description: "Flatten and convert to CSV.", icon: Table },
   { path: "/json-to-parquet", title: "JSON → Parquet", description: "Compress JSON into Parquet.", icon: Braces },
+  { path: "/parquet-to-json", title: "Parquet → JSON", description: "Export Parquet to JSON/NDJSON.", icon: Braces },
   { path: "/excel-csv-converter", title: "Excel ↔ CSV", description: "Multi-sheet support.", icon: FileText },
 ];
 
@@ -34,7 +35,7 @@ const features = [
   { icon: Zap, title: "WebAssembly Speed", description: "DuckDB compiled to WASM — analytical queries in milliseconds, not seconds." },
   { icon: Lock, title: "Zero Data Leaks", description: "No uploads. No servers. No tracking. Your files never leave your machine." },
   { icon: Globe, title: "No Install Needed", description: "Works in any modern browser. No extensions, no CLI, no accounts required." },
-  { icon: Shield, title: "Free Forever", description: "All 14 tools, no paywalls. Open source philosophy, closed-source simplicity." },
+  { icon: Shield, title: "Free Forever", description: "All 15+ tools, no paywalls. Open source philosophy, closed-source simplicity." },
 ];
 
 const jsonLd = {
@@ -87,7 +88,7 @@ export default function Index() {
         <div className="container py-20 md:py-28">
           <div className="mx-auto max-w-3xl">
             <div className="inline-block border-2 border-border bg-secondary px-3 py-1 text-xs font-bold uppercase tracking-widest mb-6">
-              14 Tools · 100% Offline · Zero Tracking
+              15+ Tools · 100% Offline · Zero Tracking
             </div>
             <h1 className="text-4xl font-bold leading-[1.1] tracking-tight md:text-5xl lg:text-6xl">
               Data tools that run

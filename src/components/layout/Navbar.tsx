@@ -19,6 +19,7 @@ const toolGroups = [
       { path: "/csv-to-json", label: "CSV → JSON" },
       { path: "/json-to-csv", label: "JSON → CSV" },
       { path: "/json-to-parquet", label: "JSON → Parquet" },
+      { path: "/parquet-to-json", label: "Parquet → JSON" },
       { path: "/excel-csv-converter", label: "Excel ↔ CSV" },
     ],
   },
