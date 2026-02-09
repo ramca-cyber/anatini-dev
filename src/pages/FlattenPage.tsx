@@ -97,54 +97,98 @@ export default function FlattenPage() {
       await db.registerFileHandle(file.name, file, duckdb.DuckDBDataProtocol.BROWSER_FILEREADER, true);
       const conn = await db.connect();
       try {
-        // First load as-is to get nested structs
+        const sep = naming === "dot" ? "." : "_";
+
+        // Load JSON with full depth
         await conn.query(`CREATE OR REPLACE TABLE __raw_json AS SELECT * FROM read_json_auto('${file.name}', maximum_depth=-1)`);
 
-        // Recursively flatten struct columns by expanding them iteratively
-        let tableName = "__raw_json";
+        // Iteratively expand STRUCTs and UNNEST arrays
+        let currentTable = "__raw_json";
         for (let iter = 0; iter < 10; iter++) {
-          // Check if any STRUCT columns remain
-          const descRes = await conn.query(`DESCRIBE "${tableName}"`);
+          const descRes = await conn.query(`DESCRIBE "${currentTable}"`);
           const nameCol = descRes.getChildAt(0);
           const typeCol = descRes.getChildAt(1);
-          const structCols: string[] = [];
-          const allCols: { name: string; type: string }[] = [];
+
+          const cols: { name: string; type: string }[] = [];
           for (let i = 0; i < descRes.numRows; i++) {
-            const colName = String(nameCol?.get(i));
-            const colType = String(typeCol?.get(i));
-            allCols.push({ name: colName, type: colType });
-            if (colType.startsWith("STRUCT")) structCols.push(colName);
+            cols.push({ name: String(nameCol?.get(i)), type: String(typeCol?.get(i)) });
           }
 
-          if (structCols.length === 0) break;
+          const hasStruct = cols.some(c => c.type.startsWith("STRUCT"));
+          const hasArray = cols.some(c => c.type.endsWith("[]"));
 
-          // Build SELECT that expands struct columns using UNNEST
-          const sep = naming === "dot" ? "." : "_";
+          if (!hasStruct && !hasArray) break;
+
+          // Build SELECT: expand structs with renamed fields, unnest arrays
           const selectParts: string[] = [];
-          for (const col of allCols) {
+          const unnestParts: string[] = [];
+
+          for (const col of cols) {
             if (col.type.startsWith("STRUCT")) {
-              // Parse struct fields from the type string, e.g. STRUCT(a VARCHAR, b INTEGER)
-              // Use DuckDB's struct_extract by querying the struct keys
-              const keysRes = await conn.query(`SELECT UNNEST(struct_keys(s."${col.name}")) as k FROM (SELECT "${col.name}" FROM "${tableName}" WHERE "${col.name}" IS NOT NULL LIMIT 1) s`);
-              const keysCol = keysRes.getChildAt(0);
-              for (let k = 0; k < keysRes.numRows; k++) {
-                const key = String(keysCol?.get(k));
-                const newName = `${col.name}${sep}${key}`;
-                selectParts.push(`struct_extract("${col.name}", '${key}') AS "${newName}"`);
+              // Use struct.* expansion — DuckDB supports this natively
+              // But we need to rename, so extract keys from the type string
+              // Safer: query one row to get field names
+              try {
+                const fieldsQuery = `SELECT json_keys(to_json("${col.name}")) as keys FROM "${currentTable}" WHERE "${col.name}" IS NOT NULL LIMIT 1`;
+                const fieldsRes = await conn.query(fieldsQuery);
+                if (fieldsRes.numRows > 0) {
+                  const keysArr = fieldsRes.getChildAt(0)?.get(0);
+                  // keysArr is a DuckDB list, iterate
+                  const keys: string[] = [];
+                  if (keysArr && typeof keysArr === "object" && "toArray" in keysArr) {
+                    for (const k of (keysArr as any).toArray()) keys.push(String(k));
+                  } else if (Array.isArray(keysArr)) {
+                    for (const k of keysArr) keys.push(String(k));
+                  } else {
+                    // Fallback: use struct.* without renaming
+                    selectParts.push(`"${col.name}".*`);
+                    continue;
+                  }
+                  for (const key of keys) {
+                    const newName = `${col.name}${sep}${key}`;
+                    selectParts.push(`struct_extract("${col.name}", '${key}') AS "${newName}"`);
+                  }
+                } else {
+                  // All nulls, just drop
+                  selectParts.push(`NULL AS "${col.name}"`);
+                }
+              } catch {
+                // Fallback: just expand with .*
+                selectParts.push(`"${col.name}".*`);
+              }
+            } else if (col.type.endsWith("[]")) {
+              // Array column — unnest it
+              const innerType = col.type.slice(0, -2);
+              if (innerType.startsWith("STRUCT")) {
+                // Array of structs: unnest then expand struct in next iteration
+                unnestParts.push(`UNNEST("${col.name}") AS "${col.name}"`);
+              } else {
+                // Array of primitives: unnest to rows
+                unnestParts.push(`UNNEST("${col.name}") AS "${col.name}"`);
               }
             } else {
               selectParts.push(`"${col.name}"`);
             }
           }
 
+          // If we have arrays to unnest, we need LATERAL UNNEST via comma-join syntax
           const nextTable = `__flat_${iter}`;
-          await conn.query(`CREATE OR REPLACE TABLE "${nextTable}" AS SELECT ${selectParts.join(", ")} FROM "${tableName}"`);
-          if (tableName !== "__raw_json") await conn.query(`DROP TABLE IF EXISTS "${tableName}"`);
-          tableName = nextTable;
+          if (unnestParts.length > 0) {
+            // Combine: select non-array cols + unnested array cols
+            const allSelect = [...selectParts, ...unnestParts].join(", ");
+            await conn.query(`CREATE OR REPLACE TABLE "${nextTable}" AS SELECT ${allSelect} FROM "${currentTable}"`);
+          } else {
+            await conn.query(`CREATE OR REPLACE TABLE "${nextTable}" AS SELECT ${selectParts.join(", ")} FROM "${currentTable}"`);
+          }
+
+          if (currentTable !== "__raw_json") {
+            await conn.query(`DROP TABLE IF EXISTS "${currentTable}"`);
+          }
+          currentTable = nextTable;
         }
 
-        await conn.query(`CREATE OR REPLACE TABLE flattened AS SELECT * FROM "${tableName}"`);
-        if (tableName !== "flattened") await conn.query(`DROP TABLE IF EXISTS "${tableName}"`);
+        await conn.query(`CREATE OR REPLACE TABLE flattened AS SELECT * FROM "${currentTable}"`);
+        if (currentTable !== "__raw_json") await conn.query(`DROP TABLE IF EXISTS "${currentTable}"`);
         await conn.query(`DROP TABLE IF EXISTS __raw_json`);
 
         const countRes = await conn.query(`SELECT COUNT(*) as cnt FROM flattened`);
@@ -154,7 +198,6 @@ export default function FlattenPage() {
         await conn.close();
       }
       const result = await runQuery(db, `SELECT * FROM flattened LIMIT 100`);
-
       setPreview(result);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to flatten JSON");
