@@ -7,7 +7,8 @@ import { DuckDBProvider } from "@/contexts/DuckDBContext";
 import { Layout } from "@/components/layout/Layout";
 import Index from "./pages/Index";
 import About from "./pages/About";
-import ConvertPage from "./pages/ConvertPage";
+import CsvToParquetPage from "./pages/CsvToParquetPage";
+import ParquetToCsvPage from "./pages/ParquetToCsvPage";
 import FlattenPage from "./pages/FlattenPage";
 import SqlPage from "./pages/SqlPage";
 import ProfilerPage from "./pages/ProfilerPage";
@@ -37,8 +38,8 @@ const App = () => (
               <Route path="/" element={<Index />} />
 
               {/* Converters */}
-              <Route path="/csv-to-parquet" element={<ConvertPage />} />
-              <Route path="/parquet-to-csv" element={<ConvertPage />} />
+              <Route path="/csv-to-parquet" element={<CsvToParquetPage />} />
+              <Route path="/parquet-to-csv" element={<ParquetToCsvPage />} />
               <Route path="/csv-to-json" element={<CsvToJsonPage />} />
               <Route path="/json-to-csv" element={<JsonToCsvPage />} />
               <Route path="/json-to-parquet" element={<JsonToParquetPage />} />
