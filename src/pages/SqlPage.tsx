@@ -1,8 +1,9 @@
 import { useState, useCallback } from "react";
-import { Terminal, Play, Download, Plus, X, Copy, Table2, FlaskConical } from "lucide-react";
+import { Terminal, Play, Download, Plus, Copy, Table2, FlaskConical, History, X } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
+import { SqlEditor } from "@/components/shared/SqlEditor";
 import { LoadingState } from "@/components/shared/FileInfo";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
@@ -18,6 +19,13 @@ interface LoadedTable {
   rowCount: number;
 }
 
+interface HistoryEntry {
+  sql: string;
+  timestamp: Date;
+  rowCount: number;
+  durationMs: number;
+}
+
 export default function SqlPage() {
   const { db } = useDuckDB();
   const [tables, setTables] = useState<LoadedTable[]>([]);
@@ -26,6 +34,8 @@ export default function SqlPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showDropZone, setShowDropZone] = useState(true);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
 
   async function handleFile(f: File) {
     if (!db) return;
@@ -49,9 +59,15 @@ export default function SqlPage() {
     if (!db || !sql.trim()) return;
     setLoading(true);
     setError(null);
+    const start = performance.now();
     try {
       const res = await runQuery(db, sql);
+      const durationMs = Math.round(performance.now() - start);
       setResult(res);
+      setHistory((prev) => [
+        { sql: sql.trim(), timestamp: new Date(), rowCount: res.rowCount, durationMs },
+        ...prev.slice(0, 49),
+      ]);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Query failed");
       setResult(null);
@@ -73,7 +89,7 @@ export default function SqlPage() {
   function handleCopy() {
     if (!result) return;
     const header = result.columns.join("\t");
-    const rows = result.rows.map((r) => r.map((v) => v ?? "").join("\t")).join("\n");
+    const rows = result.rows.map((r) => r.map((v) => (typeof v === "bigint" ? v.toString() : v) ?? "").join("\t")).join("\n");
     navigator.clipboard.writeText(header + "\n" + rows);
     toast({ title: "Copied to clipboard" });
   }
@@ -124,19 +140,24 @@ export default function SqlPage() {
 
         {/* Main */}
         <div className="space-y-4">
-          <div className="relative">
-            <textarea
-              value={sql}
-              onChange={(e) => setSql(e.target.value)}
-              onKeyDown={(e) => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); handleRun(); } }}
-              placeholder="-- Write SQL here (Ctrl+Enter to run)"
-              className="w-full min-h-[160px] rounded-lg border border-border bg-card p-4 font-mono text-sm text-foreground resize-y placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary"
-            />
-          </div>
+          <SqlEditor value={sql} onChange={setSql} onRun={handleRun} />
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Button onClick={handleRun} disabled={loading || !sql.trim()}>
               <Play className="h-4 w-4 mr-1" /> Run
+            </Button>
+            <Button
+              variant={showHistory ? "secondary" : "outline"}
+              size="sm"
+              onClick={() => setShowHistory(!showHistory)}
+              className="relative"
+            >
+              <History className="h-4 w-4 mr-1" /> History
+              {history.length > 0 && (
+                <span className="ml-1 rounded-full bg-primary/20 px-1.5 text-[10px] font-medium text-primary">
+                  {history.length}
+                </span>
+              )}
             </Button>
             {result && (
               <>
@@ -152,6 +173,38 @@ export default function SqlPage() {
               </>
             )}
           </div>
+
+          {/* History panel */}
+          {showHistory && (
+            <div className="rounded-lg border border-border bg-card">
+              <div className="flex items-center justify-between border-b border-border px-4 py-2">
+                <h4 className="text-sm font-medium text-muted-foreground">Query History</h4>
+                <Button variant="ghost" size="sm" onClick={() => setShowHistory(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              {history.length === 0 ? (
+                <div className="p-4 text-sm text-muted-foreground">No queries yet</div>
+              ) : (
+                <div className="max-h-[240px] overflow-auto divide-y divide-border/50">
+                  {history.map((h, i) => (
+                    <button
+                      key={i}
+                      onClick={() => { setSql(h.sql); setShowHistory(false); }}
+                      className="w-full text-left px-4 py-2.5 hover:bg-muted/30 transition-colors"
+                    >
+                      <div className="font-mono text-xs text-foreground truncate">{h.sql}</div>
+                      <div className="flex gap-3 mt-1 text-[10px] text-muted-foreground">
+                        <span>{h.rowCount} rows</span>
+                        <span>{h.durationMs}ms</span>
+                        <span>{h.timestamp.toLocaleTimeString()}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {loading && <LoadingState message="Running query..." />}
           {error && <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
