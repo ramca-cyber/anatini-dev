@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { getToolSeo } from "@/lib/seo-content";
-import { Braces, ArrowRightLeft } from "lucide-react";
+import { Braces, ArrowRightLeft, FlaskConical } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
@@ -8,6 +8,7 @@ import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { registerFile, runQuery, downloadBlob, formatBytes, sanitizeTableName } from "@/lib/duckdb-helpers";
+import { generateSampleParquet } from "@/lib/sample-data";
 
 export default function ParquetToJsonPage() {
   const { db } = useDuckDB();
@@ -85,7 +86,14 @@ export default function ParquetToJsonPage() {
     >
       <div className="space-y-6">
         {!file && (
-          <DropZone accept={[".parquet"]} onFile={handleFile} label="Drop a Parquet file" />
+          <div className="space-y-3">
+            <DropZone accept={[".parquet"]} onFile={handleFile} label="Drop a Parquet file" />
+            <div className="flex justify-center">
+              <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={async () => { if (db) { const f = await generateSampleParquet(db); handleFile(f); } }}>
+                <FlaskConical className="h-4 w-4 mr-1" /> Try with sample data
+              </Button>
+            </div>
+          </div>
         )}
 
         {file && meta && (

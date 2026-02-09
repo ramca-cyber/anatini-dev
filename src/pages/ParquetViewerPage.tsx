@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { registerFile, runQuery, exportToCSV, downloadBlob, formatBytes, sanitizeTableName } from "@/lib/duckdb-helpers";
+import { generateSampleParquet } from "@/lib/sample-data";
 
 export default function ParquetViewerPage() {
   const { db } = useDuckDB();
@@ -76,7 +77,14 @@ export default function ParquetViewerPage() {
     <ToolPage icon={Eye} title="Parquet Viewer" description="Explore Parquet files — data, schema, and metadata." seoContent={getToolSeo("parquet-viewer")}>
       <div className="space-y-4">
         {!file && (
-          <DropZone accept={[".parquet"]} onFile={handleFile} label="Drop a Parquet file" />
+          <div className="space-y-3">
+            <DropZone accept={[".parquet"]} onFile={handleFile} label="Drop a Parquet file" />
+            <div className="flex justify-center">
+              <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={async () => { if (db) { const f = await generateSampleParquet(db); handleFile(f); } }}>
+                <FlaskConical className="h-4 w-4 mr-1" /> Try with sample data
+              </Button>
+            </div>
+          </div>
         )}
 
         {file && meta && (
