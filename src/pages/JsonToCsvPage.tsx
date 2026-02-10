@@ -35,6 +35,8 @@ export default function JsonToCsvPage() {
   const [includeHeader, setIncludeHeader] = useState(true);
   const [copied, setCopied] = useState(false);
   const [conversionResult, setConversionResult] = useState<{ durationMs: number; outputSize: number } | null>(null);
+  const [outputView, setOutputView] = useState<"table" | "raw">("table");
+  const [outputPreview, setOutputPreview] = useState<{ columns: string[]; rows: any[][]; types: string[] } | null>(null);
 
   async function handleFile(f: File) {
     if (!db) return;
@@ -73,6 +75,9 @@ export default function JsonToCsvPage() {
       const outputSize = new Blob([csv]).size;
       const durationMs = Math.round(performance.now() - start);
       setConversionResult({ durationMs, outputSize });
+      const outPreview = await runQuery(db, `SELECT * FROM "${tableName}" LIMIT 100`);
+      setOutputPreview(outPreview);
+      setOutputView("table");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Conversion failed");
     } finally {
@@ -225,7 +230,23 @@ export default function JsonToCsvPage() {
                     <div><div className="text-xs text-muted-foreground">Size change</div><div className="text-lg font-bold">{file.size > 0 ? `${Math.round((conversionResult.outputSize / file.size - 1) * 100)}% ${conversionResult.outputSize > file.size ? "larger" : "smaller"}` : "—"}</div></div>
                   </div>
 
-                  <RawPreview content={csvOutput} label="Raw Output" fileName="output.csv" onDownload={handleDownload} />
+                  <div className="flex items-center gap-3">
+                    <div className="flex gap-1">
+                      {([["table", "Table View"], ["raw", "Raw Output"]] as ["table" | "raw", string][]).map(([v, label]) => (
+                        <button key={v} onClick={() => setOutputView(v)}
+                          className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${outputView === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {outputView === "table" && outputPreview && (
+                    <DataTable columns={outputPreview.columns} rows={outputPreview.rows} types={outputPreview.types} className="max-h-[500px]" />
+                  )}
+                  {outputView === "raw" && (
+                    <RawPreview content={csvOutput} label="Raw Output" fileName="output.csv" onDownload={handleDownload} />
+                  )}
                 </div>
               )}
             </div>
