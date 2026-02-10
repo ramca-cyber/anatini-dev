@@ -31,7 +31,7 @@ export default function CsvToParquetPage() {
   const [rowGroupSize, setRowGroupSize] = useState<number | null>(null);
   const [conversionResult, setConversionResult] = useState<{ durationMs: number; outputSize: number } | null>(null);
   const [inputView, setInputView] = useState<"table" | "schema" | "raw-input">("table");
-  const [outputView, setOutputView] = useState<"preview">("preview");
+  const [outputView, setOutputView] = useState<"preview" | "raw">("preview");
   const [nullableInfo, setNullableInfo] = useState<boolean[]>([]);
   const [outputPreview, setOutputPreview] = useState<{ columns: string[]; rows: any[][]; types: string[] } | null>(null);
   const [parquetMeta, setParquetMeta] = useState<ParquetMeta | null>(null);
@@ -87,13 +87,12 @@ export default function CsvToParquetPage() {
       const durationMs = Math.round(performance.now() - start);
       setConversionResult({ durationMs, outputSize: buf.byteLength });
       setOutputBuf(buf);
+      setOutputView("preview");
 
-      // Read back the exported parquet for output preview
       const outName = `${tableName}_export.parquet`;
       try {
         const outData = await runQuery(db, `SELECT * FROM read_parquet('${outName}') LIMIT 100`);
         setOutputPreview(outData);
-
         const metaResult = await runQuery(db, `SELECT * FROM parquet_metadata('${outName}')`);
         const rowGroups = metaResult.rowCount;
         let totalCompressed = 0;
@@ -107,9 +106,7 @@ export default function CsvToParquetPage() {
           }
         }
         setParquetMeta({ rowGroups, totalCompressed, totalUncompressed });
-      } catch {
-        // Non-critical: output preview failed but conversion succeeded
-      }
+      } catch {}
     } catch (e) {
       setError(e instanceof Error ? e.message : "Conversion failed");
     } finally {
@@ -246,8 +243,17 @@ export default function CsvToParquetPage() {
                   <div><div className="text-xs text-muted-foreground">Compression</div><div className="text-lg font-bold">{file.size > 0 ? `${Math.round((1 - conversionResult.outputSize / file.size) * 100)}% smaller` : "—"}</div></div>
                 </div>
 
-                {/* Output preview */}
-                {outputPreview && (
+                {/* Output tabs */}
+                <div className="flex gap-1">
+                  {([["preview", "Output Preview"], ["raw", "Raw Output"]] as ["preview" | "raw", string][]).map(([v, label]) => (
+                    <button key={v} onClick={() => setOutputView(v)}
+                      className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${outputView === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+
+                {outputView === "preview" && outputPreview && (
                   <div className="space-y-3">
                     {parquetMeta && (
                       <div className="border-2 border-border bg-card p-4 flex items-center gap-6 flex-wrap">
@@ -257,9 +263,11 @@ export default function CsvToParquetPage() {
                         <div><div className="text-xs text-muted-foreground">Codec</div><div className="text-lg font-bold">{compression === "none" ? "None" : compression.toUpperCase()}</div></div>
                       </div>
                     )}
-                    <h4 className="text-sm font-medium text-muted-foreground">Output Preview (first 100 rows from Parquet)</h4>
                     <DataTable columns={outputPreview.columns} rows={outputPreview.rows} types={outputPreview.types} className="max-h-[500px]" />
                   </div>
+                )}
+                {outputView === "raw" && (
+                  <RawPreview content={null} label="Raw Output" binary />
                 )}
               </div>
             )}

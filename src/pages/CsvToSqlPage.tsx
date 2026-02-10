@@ -1,18 +1,18 @@
 import { useState } from "react";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
-import { Database, FlaskConical } from "lucide-react";
+import { Database, FlaskConical, ArrowRightLeft, Download, Copy, Check } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
-import { CodeBlock } from "@/components/shared/CodeBlock";
 import { RawPreview } from "@/components/shared/RawPreview";
+import { DataTable } from "@/components/shared/DataTable";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { PasteInput } from "@/components/shared/PasteInput";
-import { ConversionStats } from "@/components/shared/ConversionStats";
 import { DuckDBGate } from "@/components/shared/DuckDBGate";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { registerFile, runQuery, downloadBlob, formatBytes, sanitizeTableName } from "@/lib/duckdb-helpers";
 import { getSampleCSV } from "@/lib/sample-data";
+import { toast } from "@/hooks/use-toast";
 
 type Dialect = "postgresql" | "mysql" | "sqlite" | "bigquery" | "sqlserver" | "duckdb";
 
@@ -54,10 +54,11 @@ export default function CsvToSqlPage() {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [meta, setMeta] = useState<{ columns: string[]; rowCount: number; types: string[] } | null>(null);
+  const [preview, setPreview] = useState<{ columns: string[]; rows: any[][]; types: string[] } | null>(null);
   const [output, setOutput] = useState("");
   const [rawInput, setRawInput] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<"output" | "raw-input">("output");
+  const [inputView, setInputView] = useState<"table" | "raw-input">("table");
   const [inputMode, setInputMode] = useState<"file" | "paste">("file");
   const [dialect, setDialect] = useState<Dialect>("postgresql");
   const [batchSize, setBatchSize] = useState(100);
@@ -66,6 +67,8 @@ export default function CsvToSqlPage() {
   const [schemaName, setSchemaName] = useState("");
   const [quotedIdentifiers, setQuotedIdentifiers] = useState(false);
   const [columnSchema, setColumnSchema] = useState<ColumnSchema[]>([]);
+  const [copied, setCopied] = useState(false);
+  const [conversionResult, setConversionResult] = useState<{ durationMs: number; outputSize: number } | null>(null);
 
   function buildQualifiedName() {
     const q = quotedIdentifiers ? '"' : '';
@@ -84,7 +87,9 @@ export default function CsvToSqlPage() {
     setError(null);
     setOutput("");
     setRawInput(null);
-    setView("output");
+    setPreview(null);
+    setInputView("table");
+    setConversionResult(null);
     try {
       const text = await f.text();
       setRawInput(text.slice(0, 50_000));
@@ -92,6 +97,9 @@ export default function CsvToSqlPage() {
       setTableName(tName);
       const info = await registerFile(db, f, tName);
       setMeta(info);
+
+      const previewRes = await runQuery(db, `SELECT * FROM "${tName}" LIMIT 100`);
+      setPreview(previewRes);
 
       // Build initial column schema
       const schema = info.columns.map((col, i) => ({
@@ -111,7 +119,6 @@ export default function CsvToSqlPage() {
       }
 
       setColumnSchema(schema);
-      await generateSQL(tName, info, schema);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load file");
     } finally {
@@ -133,14 +140,16 @@ export default function CsvToSqlPage() {
     setColumnSchema(prev => prev.map((c, i) => i === index ? { ...c, nullable } : c));
   }
 
-  async function generateSQL(tName?: string, info?: { columns: string[]; rowCount: number; types: string[] }, schema?: ColumnSchema[]) {
+  async function handleConvert() {
     if (!db || !file) return;
-    const tn = tName ?? sanitizeTableName(file.name);
-    const m = info ?? meta;
-    const cs = schema ?? columnSchema;
+    const m = meta;
+    const cs = columnSchema;
     if (!m || cs.length === 0) return;
     setLoading(true);
+    setConversionResult(null);
+    const start = performance.now();
     try {
+      const tn = sanitizeTableName(file.name);
       const result = await runQuery(db, `SELECT * FROM "${tn}"`);
       const lines: string[] = [];
       const fqn = buildQualifiedName();
@@ -165,7 +174,11 @@ export default function CsvToSqlPage() {
         lines.push(valueLines.join(",\n") + ";");
         lines.push("");
       }
-      setOutput(lines.join("\n"));
+      const sql = lines.join("\n");
+      setOutput(sql);
+      const outputSize = new Blob([sql]).size;
+      const durationMs = Math.round(performance.now() - start);
+      setConversionResult({ durationMs, outputSize });
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Generation failed");
@@ -176,12 +189,23 @@ export default function CsvToSqlPage() {
 
   function handleDialectChange(d: Dialect) {
     setDialect(d);
-    // Remap types for new dialect
     setColumnSchema(prev => prev.map(c => ({ ...c, mappedType: mapType(c.originalType, d) })));
   }
 
   function handleDownload() {
     downloadBlob(output, `${tableName}.sql`, "text/sql");
+  }
+
+  async function handleCopy() {
+    await navigator.clipboard.writeText(output);
+    setCopied(true);
+    toast({ title: "Copied to clipboard" });
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  function resetAll() {
+    setFile(null); setMeta(null); setOutput(""); setRawInput(null);
+    setColumnSchema([]); setPreview(null); setConversionResult(null);
   }
 
   const dialects: { id: Dialect; label: string }[] = [
@@ -224,11 +248,16 @@ export default function CsvToSqlPage() {
 
           {file && meta && (
             <div className="space-y-4">
+              {/* File info + actions */}
               <div className="flex items-center justify-between gap-4 flex-wrap">
                 <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
-                <Button variant="outline" onClick={() => { setFile(null); setMeta(null); setOutput(""); setRawInput(null); setColumnSchema([]); }}>New file</Button>
+                <div className="flex gap-2">
+                  <Button onClick={handleConvert} disabled={loading}>
+                    <ArrowRightLeft className="h-4 w-4 mr-1" /> {output ? "Re-convert" : "Convert to SQL"}
+                  </Button>
+                  <Button variant="outline" onClick={resetAll}>New file</Button>
+                </div>
               </div>
-              {output && <ConversionStats rows={meta.rowCount} columns={meta.columns.length} inputFormat="CSV" outputFormat="SQL" />}
 
               {/* Options panel */}
               <div className="border-2 border-border p-4 space-y-3">
@@ -269,10 +298,9 @@ export default function CsvToSqlPage() {
                     Quoted identifiers
                   </label>
                 </div>
-                <Button size="sm" onClick={() => generateSQL()}>Regenerate</Button>
               </div>
 
-              {/* Interactive schema editor */}
+              {/* Schema editor */}
               <div className="border-2 border-border">
                 <div className="border-b-2 border-border bg-muted/50 px-3 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
                   Schema Editor — click types to change
@@ -298,21 +326,59 @@ export default function CsvToSqlPage() {
                 </div>
               </div>
 
-              <div className="flex gap-2">
-                {([["output", "SQL Output"], ["raw-input", "Raw Input"]] as const).map(([v, label]) => (
-                  <button key={v} onClick={() => setView(v)}
-                    className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${view === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                    {label}
-                  </button>
-                ))}
+              {/* INPUT SECTION */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Input</h3>
+                  <div className="flex gap-1">
+                    {([["table", "Table View"], ["raw-input", "Raw Input"]] as ["table" | "raw-input", string][]).map(([v, label]) => (
+                      <button key={v} onClick={() => setInputView(v)}
+                        className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${inputView === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {preview && inputView === "table" && (
+                  <DataTable columns={preview.columns} rows={preview.rows} types={preview.types} className="max-h-[500px]" />
+                )}
+                {inputView === "raw-input" && (
+                  <RawPreview content={rawInput} label="Raw Input" fileName={file?.name} />
+                )}
               </div>
+
+              {/* OUTPUT SECTION */}
+              {output && conversionResult && (
+                <div className="space-y-3 border-t-2 border-border pt-4">
+                  <div className="flex items-center justify-between gap-4 flex-wrap">
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Output</h3>
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={handleDownload}>
+                        <Download className="h-4 w-4 mr-1" /> Download SQL
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={handleCopy}>
+                        {copied ? <Check className="h-4 w-4 mr-1" /> : <Copy className="h-4 w-4 mr-1" />}
+                        {copied ? "Copied" : "Copy"}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Conversion stats */}
+                  <div className="border-2 border-foreground bg-card p-4 flex items-center gap-6 flex-wrap">
+                    <div><div className="text-xs text-muted-foreground">Time</div><div className="text-lg font-bold">{(conversionResult.durationMs / 1000).toFixed(1)}s</div></div>
+                    <div><div className="text-xs text-muted-foreground">Output size</div><div className="text-lg font-bold">{formatBytes(conversionResult.outputSize)}</div></div>
+                    <div><div className="text-xs text-muted-foreground">Size change</div><div className="text-lg font-bold">{file.size > 0 ? `${Math.round((conversionResult.outputSize / file.size - 1) * 100)}% ${conversionResult.outputSize > file.size ? "larger" : "smaller"}` : "—"}</div></div>
+                  </div>
+
+                  <RawPreview content={output} label="Raw Output" fileName={`${tableName}.sql`} onDownload={handleDownload} />
+                </div>
+              )}
             </div>
           )}
 
           {loading && <LoadingState message="Generating SQL..." />}
           {error && <div className="border-2 border-destructive bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
-          {output && view === "output" && <CodeBlock code={output} fileName={`${tableName}.sql`} onDownload={handleDownload} />}
-          {view === "raw-input" && <RawPreview content={rawInput} label="Raw Input" fileName={file?.name} />}
         </div>
       </DuckDBGate>
     </ToolPage>

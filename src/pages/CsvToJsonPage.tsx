@@ -3,7 +3,6 @@ import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { FileJson, FlaskConical, ArrowRightLeft, Download, Copy, Check } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
-import { CodeBlock } from "@/components/shared/CodeBlock";
 import { RawPreview } from "@/components/shared/RawPreview";
 import { DataTable } from "@/components/shared/DataTable";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
@@ -27,6 +26,7 @@ export default function CsvToJsonPage() {
   const [inputView, setInputView] = useState<"table" | "raw-input">("table");
   const [inputMode, setInputMode] = useState<"file" | "paste">("file");
   const [copied, setCopied] = useState(false);
+  const [conversionResult, setConversionResult] = useState<{ durationMs: number; outputSize: number } | null>(null);
 
   const [outputFormat, setOutputFormat] = useState<"array" | "arrays" | "ndjson">("array");
   const [prettyPrint, setPrettyPrint] = useState(true);
@@ -43,6 +43,7 @@ export default function CsvToJsonPage() {
     setRawInput(null);
     setPreview(null);
     setInputView("table");
+    setConversionResult(null);
     try {
       const text = await f.text();
       setRawInput(text.slice(0, 50_000));
@@ -86,6 +87,8 @@ export default function CsvToJsonPage() {
   async function handleConvert() {
     if (!db || !file) return;
     setLoading(true);
+    setConversionResult(null);
+    const start = performance.now();
     try {
       const tName = sanitizeTableName(file.name);
       const result = await runQuery(db, `SELECT * FROM "${tName}"`);
@@ -108,6 +111,9 @@ export default function CsvToJsonPage() {
         json = prettyPrint ? JSON.stringify(records, null, indent === "tab" ? "\t" : indent) : JSON.stringify(records);
       }
       setOutput(json);
+      const outputSize = new Blob([json]).size;
+      const durationMs = Math.round(performance.now() - start);
+      setConversionResult({ durationMs, outputSize });
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Conversion failed");
@@ -130,7 +136,7 @@ export default function CsvToJsonPage() {
 
   function resetAll() {
     setFile(null); setMeta(null); setOutput("");
-    setRawInput(null); setPreview(null);
+    setRawInput(null); setPreview(null); setConversionResult(null);
   }
 
   return (
@@ -249,7 +255,7 @@ export default function CsvToJsonPage() {
               </div>
 
               {/* OUTPUT SECTION */}
-              {output && (
+              {output && conversionResult && (
                 <div className="space-y-3 border-t-2 border-border pt-4">
                   <div className="flex items-center justify-between gap-4 flex-wrap">
                     <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Output</h3>
@@ -264,7 +270,14 @@ export default function CsvToJsonPage() {
                     </div>
                   </div>
 
-                  <CodeBlock code={output} fileName={`output.${outputFormat === "ndjson" ? "jsonl" : "json"}`} />
+                  {/* Conversion stats */}
+                  <div className="border-2 border-foreground bg-card p-4 flex items-center gap-6 flex-wrap">
+                    <div><div className="text-xs text-muted-foreground">Time</div><div className="text-lg font-bold">{(conversionResult.durationMs / 1000).toFixed(1)}s</div></div>
+                    <div><div className="text-xs text-muted-foreground">Output size</div><div className="text-lg font-bold">{formatBytes(conversionResult.outputSize)}</div></div>
+                    <div><div className="text-xs text-muted-foreground">Size change</div><div className="text-lg font-bold">{file.size > 0 ? `${Math.round((conversionResult.outputSize / file.size - 1) * 100)}% ${conversionResult.outputSize > file.size ? "larger" : "smaller"}` : "—"}</div></div>
+                  </div>
+
+                  <RawPreview content={output} label="Raw Output" fileName={`output.${outputFormat === "ndjson" ? "jsonl" : "json"}`} onDownload={handleDownload} />
                 </div>
               )}
             </div>

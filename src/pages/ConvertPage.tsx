@@ -1,15 +1,17 @@
 import { useState } from "react";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
-import { FileSpreadsheet, Download, ArrowRightLeft, FlaskConical, Settings2, ChevronDown, ChevronUp } from "lucide-react";
+import { FileSpreadsheet, Download, ArrowRightLeft, FlaskConical, Settings2, ChevronDown, ChevronUp, Copy, Check } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DuckDBGate } from "@/components/shared/DuckDBGate";
 import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
+import { RawPreview } from "@/components/shared/RawPreview";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { registerFile, runQuery, exportToCSV, exportToParquet, downloadBlob, formatBytes, sanitizeTableName } from "@/lib/duckdb-helpers";
 import { getSampleCSV } from "@/lib/sample-data";
+import { toast } from "@/hooks/use-toast";
 
 export default function ConvertPage() {
   const { db } = useDuckDB();
@@ -28,9 +30,11 @@ export default function ConvertPage() {
   // Conversion result
   const [conversionResult, setConversionResult] = useState<{ durationMs: number; outputSize: number } | null>(null);
   const [outputBlob, setOutputBlob] = useState<{ data: Uint8Array | string; name: string; mime: string } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const inputExt = file?.name.split(".").pop()?.toLowerCase();
   const outputFormat = inputExt === "parquet" ? "CSV" : "Parquet";
+  const isBinaryOutput = outputFormat === "Parquet";
 
   async function handleFile(f: File) {
     if (!db) return;
@@ -86,11 +90,18 @@ export default function ConvertPage() {
     downloadBlob(outputBlob.data, outputBlob.name, outputBlob.mime);
   }
 
-  const compressionOptions = [
-    { id: "snappy" as const, label: "Snappy" },
-    { id: "zstd" as const, label: "Zstd" },
-    { id: "none" as const, label: "None" },
-  ];
+  async function handleCopy() {
+    if (!outputBlob || typeof outputBlob.data !== "string") return;
+    await navigator.clipboard.writeText(outputBlob.data);
+    setCopied(true);
+    toast({ title: "Copied to clipboard" });
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  function resetAll() {
+    setFile(null); setMeta(null); setPreview(null);
+    setConversionResult(null); setOutputBlob(null);
+  }
 
   return (
     <ToolPage
@@ -102,7 +113,7 @@ export default function ConvertPage() {
       seoContent={getToolSeo("csv-to-parquet")}
     >
       <DuckDBGate>
-      <div className="space-y-6">
+      <div className="space-y-4">
         {!file && (
           <div className="space-y-3">
             <DropZone accept={[".csv", ".parquet"]} onFile={handleFile} label="Drop a CSV or Parquet file" />
@@ -123,9 +134,7 @@ export default function ConvertPage() {
                   <ArrowRightLeft className="h-4 w-4 mr-1" />
                   {conversionResult ? "Re-convert" : `Convert to ${outputFormat}`}
                 </Button>
-                <Button variant="outline" onClick={() => { setFile(null); setMeta(null); setPreview(null); setConversionResult(null); setOutputBlob(null); }}>
-                  New file
-                </Button>
+                <Button variant="outline" onClick={resetAll}>New file</Button>
               </div>
             </div>
 
@@ -135,35 +144,32 @@ export default function ConvertPage() {
               {showOptions ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
             </button>
             {showOptions && (
-              <div className="rounded-lg border border-border bg-card p-4 space-y-4">
+              <div className="border-2 border-border p-4 space-y-4">
                 {inputExt === "csv" && (
                   <div className="flex items-center gap-4 flex-wrap">
                     <div className="space-y-1">
-                      <label className="text-xs text-muted-foreground">Delimiter</label>
-                      <select value={delimiter} onChange={(e) => setDelimiter(e.target.value)} className="block rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+                      <label className="text-xs text-muted-foreground font-bold">Delimiter</label>
+                      <select value={delimiter} onChange={(e) => setDelimiter(e.target.value)} className="border-2 border-border bg-background px-2 py-1 text-xs">
                         <option value=",">Comma (,)</option>
                         <option value="\t">Tab</option>
                         <option value=";">Semicolon (;)</option>
                         <option value="|">Pipe (|)</option>
                       </select>
                     </div>
-                    <div className="space-y-1">
-                      <label className="text-xs text-muted-foreground">Header row</label>
-                      <label className="flex items-center gap-2 text-sm">
-                        <input type="checkbox" checked={hasHeader} onChange={(e) => setHasHeader(e.target.checked)} className="rounded" />
-                        First row is header
-                      </label>
-                    </div>
+                    <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <input type="checkbox" checked={hasHeader} onChange={(e) => setHasHeader(e.target.checked)} />
+                      First row is header
+                    </label>
                   </div>
                 )}
                 {outputFormat === "Parquet" && (
                   <div className="space-y-1">
-                    <label className="text-xs text-muted-foreground">Parquet Compression</label>
-                    <div className="flex gap-2">
-                      {compressionOptions.map((c) => (
-                        <button key={c.id} onClick={() => setCompression(c.id)}
-                          className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${compression === c.id ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-secondary/80"}`}>
-                          {c.label}
+                    <label className="text-xs text-muted-foreground font-bold">Parquet Compression</label>
+                    <div className="flex gap-1">
+                      {(["snappy", "zstd", "none"] as const).map((c) => (
+                        <button key={c} onClick={() => setCompression(c)}
+                          className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${compression === c ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
+                          {c.charAt(0).toUpperCase() + c.slice(1)}
                         </button>
                       ))}
                     </div>
@@ -185,20 +191,22 @@ export default function ConvertPage() {
               <div className="space-y-3 border-t-2 border-border pt-4">
                 <div className="flex items-center justify-between gap-4 flex-wrap">
                   <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Output</h3>
-                  <Button size="sm" onClick={handleDownload}>
-                    <Download className="h-4 w-4 mr-1" /> Download {outputFormat}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={handleDownload}>
+                      <Download className="h-4 w-4 mr-1" /> Download {outputFormat}
+                    </Button>
+                    {!isBinaryOutput && (
+                      <Button variant="outline" size="sm" onClick={handleCopy}>
+                        {copied ? <Check className="h-4 w-4 mr-1" /> : <Copy className="h-4 w-4 mr-1" />}
+                        {copied ? "Copied" : "Copy"}
+                      </Button>
+                    )}
+                  </div>
                 </div>
 
-                <div className="rounded-lg border border-border bg-card p-4 flex items-center gap-6 flex-wrap">
-                  <div>
-                    <div className="text-xs text-muted-foreground">Converted in</div>
-                    <div className="text-lg font-bold">{(conversionResult.durationMs / 1000).toFixed(1)}s</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-muted-foreground">Output size</div>
-                    <div className="text-lg font-bold">{formatBytes(conversionResult.outputSize)}</div>
-                  </div>
+                <div className="border-2 border-foreground bg-card p-4 flex items-center gap-6 flex-wrap">
+                  <div><div className="text-xs text-muted-foreground">Time</div><div className="text-lg font-bold">{(conversionResult.durationMs / 1000).toFixed(1)}s</div></div>
+                  <div><div className="text-xs text-muted-foreground">Output size</div><div className="text-lg font-bold">{formatBytes(conversionResult.outputSize)}</div></div>
                   <div>
                     <div className="text-xs text-muted-foreground">Size change</div>
                     <div className="text-lg font-bold">
@@ -208,13 +216,24 @@ export default function ConvertPage() {
                     </div>
                   </div>
                 </div>
+
+                {isBinaryOutput ? (
+                  <RawPreview content={null} label="Raw Output" binary />
+                ) : (
+                  <RawPreview
+                    content={typeof outputBlob?.data === "string" ? outputBlob.data : null}
+                    label="Raw Output"
+                    fileName={outputBlob?.name}
+                    onDownload={handleDownload}
+                  />
+                )}
               </div>
             )}
           </div>
         )}
 
         {loading && <LoadingState message="Processing file..." />}
-        {error && <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
+        {error && <div className="border-2 border-destructive bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
       </div>
       </DuckDBGate>
     </ToolPage>

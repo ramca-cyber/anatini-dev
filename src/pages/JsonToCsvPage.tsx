@@ -4,7 +4,6 @@ import { Table, FlaskConical, Copy, Check, ArrowRightLeft, Download } from "luci
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
-import { CodeBlock } from "@/components/shared/CodeBlock";
 import { RawPreview } from "@/components/shared/RawPreview";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { PasteInput } from "@/components/shared/PasteInput";
@@ -35,6 +34,7 @@ export default function JsonToCsvPage() {
   const [delimiter, setDelimiter] = useState(",");
   const [includeHeader, setIncludeHeader] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [conversionResult, setConversionResult] = useState<{ durationMs: number; outputSize: number } | null>(null);
 
   async function handleFile(f: File) {
     if (!db) return;
@@ -45,6 +45,7 @@ export default function JsonToCsvPage() {
     setCsvOutput("");
     setRawInput(null);
     setInputView("table");
+    setConversionResult(null);
     try {
       const text = await f.text();
       setRawInput(text.slice(0, 50_000));
@@ -63,10 +64,15 @@ export default function JsonToCsvPage() {
   async function handleConvert() {
     if (!db || !file || !meta) return;
     setLoading(true);
+    setConversionResult(null);
+    const start = performance.now();
     try {
       const tableName = sanitizeTableName(file.name);
       const csv = await exportToCSV(db, `SELECT * FROM "${tableName}"`, { delimiter, header: includeHeader });
       setCsvOutput(csv);
+      const outputSize = new Blob([csv]).size;
+      const durationMs = Math.round(performance.now() - start);
+      setConversionResult({ durationMs, outputSize });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Conversion failed");
     } finally {
@@ -103,7 +109,7 @@ export default function JsonToCsvPage() {
 
   function resetAll() {
     setFile(null); setMeta(null); setPreview(null);
-    setCsvOutput(""); setRawInput(null);
+    setCsvOutput(""); setRawInput(null); setConversionResult(null);
   }
 
   return (
@@ -197,7 +203,7 @@ export default function JsonToCsvPage() {
               </div>
 
               {/* OUTPUT SECTION */}
-              {csvOutput && (
+              {csvOutput && conversionResult && (
                 <div className="space-y-3 border-t-2 border-border pt-4">
                   <div className="flex items-center justify-between gap-4 flex-wrap">
                     <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Output</h3>
@@ -212,7 +218,14 @@ export default function JsonToCsvPage() {
                     </div>
                   </div>
 
-                  <CodeBlock code={csvOutput} fileName="output.csv" />
+                  {/* Conversion stats */}
+                  <div className="border-2 border-foreground bg-card p-4 flex items-center gap-6 flex-wrap">
+                    <div><div className="text-xs text-muted-foreground">Time</div><div className="text-lg font-bold">{(conversionResult.durationMs / 1000).toFixed(1)}s</div></div>
+                    <div><div className="text-xs text-muted-foreground">Output size</div><div className="text-lg font-bold">{formatBytes(conversionResult.outputSize)}</div></div>
+                    <div><div className="text-xs text-muted-foreground">Size change</div><div className="text-lg font-bold">{file.size > 0 ? `${Math.round((conversionResult.outputSize / file.size - 1) * 100)}% ${conversionResult.outputSize > file.size ? "larger" : "smaller"}` : "—"}</div></div>
+                  </div>
+
+                  <RawPreview content={csvOutput} label="Raw Output" fileName="output.csv" onDownload={handleDownload} />
                 </div>
               )}
             </div>
