@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
-import { Eye, FlaskConical, Search } from "lucide-react";
+import { Eye, FlaskConical, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { DuckDBGate } from "@/components/shared/DuckDBGate";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
@@ -12,6 +12,8 @@ import { useDuckDB } from "@/contexts/DuckDBContext";
 import { registerFile, runQuery, exportToCSV, downloadBlob, formatBytes, sanitizeTableName } from "@/lib/duckdb-helpers";
 import { generateSampleParquet } from "@/lib/sample-data";
 
+const PAGE_SIZE = 200;
+
 export default function ParquetViewerPage() {
   const { db } = useDuckDB();
   const [file, setFile] = useState<File | null>(null);
@@ -21,27 +23,38 @@ export default function ParquetViewerPage() {
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<"data" | "schema" | "metadata">("data");
   const [search, setSearch] = useState("");
+  const [searchCol, setSearchCol] = useState("__all__");
   const [parquetMeta, setParquetMeta] = useState<{ columns: string[]; rows: any[][] } | null>(null);
+  const [page, setPage] = useState(0);
+  const [tableName, setTableName] = useState("");
+
+  async function loadPage(tName: string, pageNum: number) {
+    if (!db) return;
+    const offset = pageNum * PAGE_SIZE;
+    const result = await runQuery(db, `SELECT * FROM "${tName}" LIMIT ${PAGE_SIZE} OFFSET ${offset}`);
+    setPreview(result);
+    setPage(pageNum);
+  }
 
   async function handleFile(f: File) {
     if (!db) return;
     setFile(f);
     setLoading(true);
     setError(null);
+    setPage(0);
+    setSearch("");
+    setSearchCol("__all__");
     try {
-      const tableName = sanitizeTableName(f.name);
-      const info = await registerFile(db, f, tableName);
+      const tName = sanitizeTableName(f.name);
+      setTableName(tName);
+      const info = await registerFile(db, f, tName);
       setMeta(info);
-      const result = await runQuery(db, `SELECT * FROM "${tableName}" LIMIT 200`);
-      setPreview(result);
+      await loadPage(tName, 0);
 
-      // Try to get parquet metadata
       try {
         const metaResult = await runQuery(db, `SELECT * FROM parquet_metadata('${f.name}')`);
         setParquetMeta({ columns: metaResult.columns, rows: metaResult.rows });
-      } catch {
-        setParquetMeta(null);
-      }
+      } catch { setParquetMeta(null); }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load file");
     } finally {
@@ -51,14 +64,12 @@ export default function ParquetViewerPage() {
 
   async function handleExportCSV() {
     if (!db || !file) return;
-    const tableName = sanitizeTableName(file.name);
     const csv = await exportToCSV(db, `SELECT * FROM "${tableName}"`);
     downloadBlob(csv, `${file.name.replace(/\.[^.]+$/, "")}.csv`, "text/csv");
   }
 
   async function handleExportJSON() {
     if (!db || !file) return;
-    const tableName = sanitizeTableName(file.name);
     const result = await runQuery(db, `SELECT * FROM "${tableName}"`);
     const records = result.rows.map((row) => {
       const obj: Record<string, unknown> = {};
@@ -68,8 +79,14 @@ export default function ParquetViewerPage() {
     downloadBlob(JSON.stringify(records, null, 2), `${file.name.replace(/\.[^.]+$/, "")}.json`, "application/json");
   }
 
+  const totalPages = meta ? Math.ceil(meta.rowCount / PAGE_SIZE) : 0;
+
   const filteredRows = preview && search
-    ? preview.rows.filter((row) => row.some((v) => String(v ?? "").toLowerCase().includes(search.toLowerCase())))
+    ? preview.rows.filter((row) => {
+        if (searchCol === "__all__") return row.some((v) => String(v ?? "").toLowerCase().includes(search.toLowerCase()));
+        const idx = preview.columns.indexOf(searchCol);
+        return idx >= 0 && String(row[idx] ?? "").toLowerCase().includes(search.toLowerCase());
+      })
     : preview?.rows ?? [];
 
   const tabs = ["data", "schema", "metadata"] as const;
@@ -100,13 +117,10 @@ export default function ParquetViewerPage() {
               </div>
             </div>
 
-            {/* Tabs */}
             <div className="flex border-b-2 border-border">
               {tabs.map((t) => (
                 <button key={t} onClick={() => setTab(t)}
-                  className={`px-4 py-2 text-xs font-bold uppercase tracking-widest transition-colors border-b-2 -mb-[2px] ${
-                    tab === t ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
-                  }`}>
+                  className={`px-4 py-2 text-xs font-bold uppercase tracking-widest transition-colors border-b-2 -mb-[2px] ${tab === t ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
                   {t}
                 </button>
               ))}
@@ -114,11 +128,28 @@ export default function ParquetViewerPage() {
 
             {tab === "data" && preview && (
               <div className="space-y-3">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search rows..." className="pl-9 border-2" />
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search rows..." className="pl-9 border-2" />
+                  </div>
+                  <select value={searchCol} onChange={(e) => setSearchCol(e.target.value)} className="border-2 border-border bg-background px-2 py-1 text-xs rounded-md">
+                    <option value="__all__">All columns</option>
+                    {meta.columns.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
                 </div>
-                <DataTable columns={preview.columns} rows={filteredRows} types={preview.types} className="max-h-[500px]" maxRows={200} />
+                <DataTable columns={preview.columns} rows={filteredRows} types={preview.types} className="max-h-[500px]" maxRows={PAGE_SIZE} />
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2">
+                    <Button variant="outline" size="sm" disabled={page === 0} onClick={() => loadPage(tableName, page - 1)}>
+                      <ChevronLeft className="h-4 w-4" /> Previous
+                    </Button>
+                    <span className="text-xs text-muted-foreground">Page {page + 1} of {totalPages}</span>
+                    <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => loadPage(tableName, page + 1)}>
+                      Next <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -144,12 +175,8 @@ export default function ParquetViewerPage() {
                   <div className="text-xs"><strong>Columns:</strong> {meta.columns.length}</div>
                   <div className="text-xs"><strong>File size:</strong> {formatBytes(file.size)}</div>
                 </div>
-                {parquetMeta && (
-                  <DataTable columns={parquetMeta.columns} rows={parquetMeta.rows} className="max-h-[400px]" />
-                )}
-                {!parquetMeta && (
-                  <p className="text-xs text-muted-foreground">Detailed Parquet metadata not available for this file.</p>
-                )}
+                {parquetMeta && <DataTable columns={parquetMeta.columns} rows={parquetMeta.rows} className="max-h-[400px]" />}
+                {!parquetMeta && <p className="text-xs text-muted-foreground">Detailed Parquet metadata not available for this file.</p>}
               </div>
             )}
           </div>
