@@ -26,6 +26,17 @@ interface ColumnProfile {
   stddev?: string;
   topValues: { value: string; count: number }[];
   histogram?: { bucket: string; count: number }[];
+  // String-specific stats
+  strLenMin?: number;
+  strLenMax?: number;
+  strLenAvg?: number;
+  patterns?: { label: string; count: number; pct: number }[];
+  whitespaceOnly?: number;
+  // Boolean stats
+  boolTrue?: number;
+  boolFalse?: number;
+  // Date stats
+  dateRange?: string;
 }
 
 interface Finding {
@@ -37,6 +48,7 @@ interface Finding {
 
 function ColumnCard({ col, totalRows }: { col: ColumnProfile; totalRows: number }) {
   const isNumeric = col.mean !== undefined;
+  const isBool = col.boolTrue !== undefined;
   const maxCount = col.topValues.length > 0 ? col.topValues[0].count : 1;
   const nullBarPct = Math.min(col.nullPct, 100);
   const distinctPct = totalRows > 0 ? Math.min((col.distinctCount / totalRows) * 100, 100) : 0;
@@ -82,6 +94,56 @@ function ColumnCard({ col, totalRows }: { col: ColumnProfile; totalRows: number 
         </div>
       )}
 
+      {/* Boolean donut */}
+      {isBool && col.boolTrue !== undefined && col.boolFalse !== undefined && (
+        <div className="space-y-1">
+          <div className="text-[11px] text-muted-foreground">Boolean Distribution</div>
+          <div className="flex items-center gap-2">
+            <div className="flex-1 h-4 bg-muted/30 rounded overflow-hidden flex">
+              <div className="h-full bg-primary/70" style={{ width: `${(col.boolTrue / Math.max(col.boolTrue + col.boolFalse, 1)) * 100}%` }} />
+              <div className="h-full bg-destructive/50" style={{ width: `${(col.boolFalse / Math.max(col.boolTrue + col.boolFalse, 1)) * 100}%` }} />
+            </div>
+          </div>
+          <div className="flex justify-between text-[10px] font-mono text-muted-foreground">
+            <span>TRUE: {col.boolTrue}</span>
+            <span>FALSE: {col.boolFalse}</span>
+          </div>
+        </div>
+      )}
+
+      {/* String length stats */}
+      {col.strLenMin !== undefined && (
+        <div className="grid grid-cols-3 gap-x-2 text-[11px]">
+          <div><span className="text-muted-foreground">Len min:</span> <span className="font-mono">{col.strLenMin}</span></div>
+          <div><span className="text-muted-foreground">max:</span> <span className="font-mono">{col.strLenMax}</span></div>
+          <div><span className="text-muted-foreground">avg:</span> <span className="font-mono">{col.strLenAvg}</span></div>
+        </div>
+      )}
+
+      {/* Pattern detection */}
+      {col.patterns && col.patterns.length > 0 && (
+        <div className="space-y-1">
+          <div className="text-[11px] text-muted-foreground">Detected Patterns</div>
+          {col.patterns.map((p, i) => (
+            <div key={i} className="flex items-center justify-between text-[11px]">
+              <span className="font-mono">{p.label}</span>
+              <span className="text-muted-foreground">{p.count} ({p.pct.toFixed(1)}%)</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {col.whitespaceOnly !== undefined && col.whitespaceOnly > 0 && (
+        <div className="text-[11px] text-warning">⚠ {col.whitespaceOnly} whitespace-only values</div>
+      )}
+
+      {/* Date range */}
+      {col.dateRange && (
+        <div className="text-[11px]">
+          <span className="text-muted-foreground">Range:</span> <span className="font-mono">{col.dateRange}</span>
+        </div>
+      )}
+
       {/* Histogram for numeric columns */}
       {col.histogram && col.histogram.length > 0 && (
         <div className="space-y-1">
@@ -94,10 +156,7 @@ function ColumnCard({ col, totalRows }: { col: ColumnProfile; totalRows: number 
                     <Cell key={i} fill="hsl(var(--primary))" fillOpacity={0.6} />
                   ))}
                 </Bar>
-                <Tooltip
-                  contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "6px", fontSize: "11px" }}
-                  labelStyle={{ color: "hsl(var(--foreground))" }}
-                />
+                <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "6px", fontSize: "11px" }} labelStyle={{ color: "hsl(var(--foreground))" }} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -119,7 +178,7 @@ function ColumnCard({ col, totalRows }: { col: ColumnProfile; totalRows: number 
         </div>
       )}
 
-      {!isNumeric && col.min && (
+      {!isNumeric && !isBool && col.min && !col.dateRange && (
         <div className="text-[11px] space-y-0.5">
           <div><span className="text-muted-foreground">Min:</span> <span className="font-mono">{col.min}</span></div>
           <div><span className="text-muted-foreground">Max:</span> <span className="font-mono">{col.max}</span></div>
@@ -238,6 +297,79 @@ export default function ProfilerPage() {
           topValues = topRes.rows.map((r) => ({ value: String(r[0]), count: Number(r[1]) }));
         } catch {}
 
+        // String-specific stats
+        let strLenMin: number | undefined, strLenMax: number | undefined, strLenAvg: number | undefined;
+        let patterns: { label: string; count: number; pct: number }[] | undefined;
+        let whitespaceOnly: number | undefined;
+        const isString = /VARCHAR|TEXT|STRING/i.test(info.types[i]);
+        if (isString && !isNumeric) {
+          try {
+            const lenRes = await runQuery(db, `
+              SELECT MIN(LENGTH("${col}"))::INT, MAX(LENGTH("${col}"))::INT, ROUND(AVG(LENGTH("${col}")), 1)::DOUBLE
+              FROM "${tableName}" WHERE "${col}" IS NOT NULL
+            `);
+            strLenMin = lenRes.rows[0]?.[0] != null ? Number(lenRes.rows[0][0]) : undefined;
+            strLenMax = lenRes.rows[0]?.[1] != null ? Number(lenRes.rows[0][1]) : undefined;
+            strLenAvg = lenRes.rows[0]?.[2] != null ? Number(lenRes.rows[0][2]) : undefined;
+          } catch {}
+
+          // Pattern detection
+          const nonNullCount = info.rowCount - nullCount;
+          if (nonNullCount > 0) {
+            const pats: { label: string; count: number; pct: number }[] = [];
+            try {
+              const emailRes = await runQuery(db, `SELECT COUNT(*) FROM "${tableName}" WHERE "${col}" ~ '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$'`);
+              const emailCount = Number(emailRes.rows[0]?.[0] ?? 0);
+              if (emailCount > 0) pats.push({ label: "Email", count: emailCount, pct: (emailCount / nonNullCount) * 100 });
+            } catch {}
+            try {
+              const urlRes = await runQuery(db, `SELECT COUNT(*) FROM "${tableName}" WHERE "${col}" ~ '^https?://'`);
+              const urlCount = Number(urlRes.rows[0]?.[0] ?? 0);
+              if (urlCount > 0) pats.push({ label: "URL", count: urlCount, pct: (urlCount / nonNullCount) * 100 });
+            } catch {}
+            try {
+              const phoneRes = await runQuery(db, `SELECT COUNT(*) FROM "${tableName}" WHERE "${col}" ~ '^[\\+]?[0-9\\(\\)\\-\\s\\.]{7,20}$'`);
+              const phoneCount = Number(phoneRes.rows[0]?.[0] ?? 0);
+              if (phoneCount > 0) pats.push({ label: "Phone", count: phoneCount, pct: (phoneCount / nonNullCount) * 100 });
+            } catch {}
+            if (pats.length > 0) patterns = pats;
+          }
+
+          // Whitespace-only detection
+          try {
+            const wsRes = await runQuery(db, `SELECT COUNT(*) FROM "${tableName}" WHERE "${col}" IS NOT NULL AND TRIM("${col}") = ''`);
+            whitespaceOnly = Number(wsRes.rows[0]?.[0] ?? 0);
+          } catch {}
+        }
+
+        // Boolean stats
+        let boolTrue: number | undefined, boolFalse: number | undefined;
+        const isBool = /BOOL/i.test(info.types[i]);
+        if (isBool) {
+          try {
+            const boolRes = await runQuery(db, `
+              SELECT SUM(CASE WHEN "${col}" THEN 1 ELSE 0 END)::INT, SUM(CASE WHEN NOT "${col}" THEN 1 ELSE 0 END)::INT
+              FROM "${tableName}" WHERE "${col}" IS NOT NULL
+            `);
+            boolTrue = Number(boolRes.rows[0]?.[0] ?? 0);
+            boolFalse = Number(boolRes.rows[0]?.[1] ?? 0);
+          } catch {}
+        }
+
+        // Date stats
+        let dateRange: string | undefined;
+        const isDate = /DATE|TIMESTAMP/i.test(info.types[i]);
+        if (isDate) {
+          try {
+            const dateRes = await runQuery(db, `
+              SELECT MIN("${col}")::VARCHAR, MAX("${col}")::VARCHAR FROM "${tableName}" WHERE "${col}" IS NOT NULL
+            `);
+            const minD = dateRes.rows[0]?.[0] ? String(dateRes.rows[0][0]) : null;
+            const maxD = dateRes.rows[0]?.[1] ? String(dateRes.rows[0][1]) : null;
+            if (minD && maxD) dateRange = `${minD} → ${maxD}`;
+          } catch {}
+        }
+
         profiles.push({
           name: col, type: info.types[i], nullCount,
           nullPct: info.rowCount > 0 ? (nullCount / info.rowCount) * 100 : 0,
@@ -245,6 +377,8 @@ export default function ProfilerPage() {
           min: statsRes.rows[0][2] ? String(statsRes.rows[0][2]) : undefined,
           max: statsRes.rows[0][3] ? String(statsRes.rows[0][3]) : undefined,
           topValues, histogram,
+          strLenMin, strLenMax, strLenAvg, patterns, whitespaceOnly,
+          boolTrue, boolFalse, dateRange,
         });
       }
 
