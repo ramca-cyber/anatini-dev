@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { FileText, FlaskConical, Upload, Download, Check } from "lucide-react";
+import { useFileStore } from "@/contexts/FileStoreContext";
+import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
@@ -11,6 +13,8 @@ import { downloadBlob, formatBytes } from "@/lib/duckdb-helpers";
 import { generateSampleExcel } from "@/lib/sample-data";
 
 export default function ExcelCsvPage() {
+  const { addFile } = useFileStore();
+  const [storedFileId, setStoredFileId] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +40,8 @@ export default function ExcelCsvPage() {
   }
 
   async function handleFile(f: File) {
+    const stored = addFile(f);
+    setStoredFileId(stored.id);
     setFile(f);
     setLoading(true);
     setError(null);
@@ -304,6 +310,8 @@ export default function ExcelCsvPage() {
         {csvOutput && view === "raw-output" && mode === "excel-to-csv" && (
           <RawPreview content={csvOutput} label="Raw CSV Output" fileName="output.csv" onDownload={handleDownloadCsv} />
         )}
+
+        {file && <CrossToolLinks format={mode === "excel-to-csv" ? "csv" : "csv"} fileId={storedFileId ?? undefined} />}
       </div>
     </ToolPage>
   );

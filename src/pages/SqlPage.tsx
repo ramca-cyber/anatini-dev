@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { Terminal, Play, Download, Plus, Copy, Table2, FlaskConical, History, X, ChevronDown } from "lucide-react";
+import { useFileStore } from "@/contexts/FileStoreContext";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
@@ -47,6 +48,7 @@ function getSampleQueries(tables: LoadedTable[]): { label: string; sql: string }
 
 export default function SqlPage() {
   const { db } = useDuckDB();
+  const { addFile } = useFileStore();
   const [tables, setTables] = useState<LoadedTable[]>([]);
   const [sql, setSql] = useState("");
   const [result, setResult] = useState<QueryResult | null>(null);
@@ -60,6 +62,7 @@ export default function SqlPage() {
 
   async function handleFile(f: File) {
     if (!db) return;
+    addFile(f);
     setLoading(true);
     setError(null);
     try {

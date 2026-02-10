@@ -206,7 +206,9 @@ function QualityScoreBadge({ score }: { score: number }) {
 
 export default function ProfilerPage() {
   const { db } = useDuckDB();
+  const { addFile } = useFileStore();
   const [file, setFile] = useState<File | null>(null);
+  const [storedFileId, setStoredFileId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [overview, setOverview] = useState<{ rowCount: number; colCount: number; nullRate: number; duplicateRows: number; emptyRows: number; qualityScore: number; memoryEstimate: string } | null>(null);
@@ -214,8 +216,12 @@ export default function ProfilerPage() {
   const [findings, setFindings] = useState<Finding[]>([]);
   const [findingFilter, setFindingFilter] = useState<"all" | "critical" | "warning" | "info">("all");
 
+  useAutoLoadFile(handleFile, !!db);
+
   async function handleFile(f: File) {
     if (!db) return;
+    const stored = addFile(f);
+    setStoredFileId(stored.id);
     setFile(f);
     setLoading(true);
     setError(null);
@@ -525,7 +531,10 @@ ${findings.length === 0 ? "<p>No findings — data looks clean!</p>" : findings.
         {file && overview && (
           <>
             <div className="flex items-center justify-between flex-wrap gap-4">
-              <FileInfo name={file.name} size={formatBytes(file.size)} rows={overview.rowCount} columns={overview.colCount} />
+              <div className="flex items-center gap-2">
+                <FileInfo name={file.name} size={formatBytes(file.size)} rows={overview.rowCount} columns={overview.colCount} />
+                {storedFileId && <InspectLink fileId={storedFileId} format={file.name.endsWith('.json') ? 'json' : file.name.endsWith('.parquet') ? 'parquet' : 'csv'} />}
+              </div>
               <div className="flex gap-2">
                 <Link to="/sql-playground">
                   <Button variant="outline" size="sm"><ExternalLink className="h-3.5 w-3.5 mr-1" /> Open in SQL Playground</Button>
@@ -656,6 +665,8 @@ ${findings.length === 0 ? "<p>No findings — data looks clean!</p>" : findings.
                 </div>
               </TabsContent>
             </Tabs>
+
+            <CrossToolLinks format={file.name.endsWith('.json') ? 'json' : file.name.endsWith('.parquet') ? 'parquet' : 'csv'} fileId={storedFileId ?? undefined} />
           </>
         )}
       </div>
