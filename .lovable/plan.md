@@ -1,58 +1,229 @@
 
 
-# Add Raw File Preview to Converter Tools
+# Spec vs. Implementation Gap Analysis
 
-## Overview
+## Summary
 
-Add a "Raw View" toggle to all converter tool pages so users can inspect the raw text content of both their **input file** and **converted output**. For large files, content will be truncated with a clear indicator showing how much is hidden.
+The current implementation covers all 14 tools from the spec (plus 2 extras: Dataset Diff and Parquet to JSON), but many tools are missing configurable options, advanced features, and interactive elements specified in the detailed tool specs. Below is a comprehensive gap analysis organized by priority.
 
-## What Changes
+---
 
-### 1. New Shared Component: `RawPreview`
+## Currently Matching the Spec
 
-A reusable component (`src/components/shared/RawPreview.tsx`) that:
-- Accepts a label (e.g., "Input" / "Output"), raw text content, and an optional file name
-- Truncates content beyond a configurable limit (default: ~50KB / ~1000 lines) and shows a "Showing first X of Y lines" notice
-- Uses the existing `CodeBlock` component internally for consistent styling
-- For **binary formats** (Parquet), displays a message like "Binary file -- raw view not available" instead
+These areas are well-aligned:
 
-### 2. Tool Page Updates
+- All 14 routes exist and match the spec's routing structure
+- DuckDB-WASM initialized once via React context (DuckDBProvider)
+- Shared layout shell with header, privacy badge, SEO content, and footer
+- "Powered by DuckDB" in footer
+- Privacy badge on each tool page
+- Unique meta tags and SEO content per tool
+- BreadcrumbList JSON-LD schema
+- Sample data / "Try with sample data" button on all tools
+- JSON Formatter and JSON Flattener use pure JS (no DuckDB) as specified
+- SQL Playground has schema sidebar, query history, Ctrl+Enter, multi-file support
+- Data Profiler has column cards with completeness, uniqueness, top values, findings, and export (JSON/CSV/HTML)
+- Schema Generator has interactive column mapping, multi-dialect, editable types
+- CSV Viewer has search, sort, column quick stats, and "Open in SQL Playground" link
 
-Each converter page gets a **view toggle** (Table | Raw) where applicable, reading the input file as text and storing it alongside the converted output:
+---
 
-| Page | Input Raw | Output Raw | Notes |
-|------|-----------|------------|-------|
-| **CSV to JSON** | CSV text | JSON text (already shown) | Add input raw view |
-| **CSV to Parquet** | CSV text | "Binary output" notice | Add input raw view |
-| **CSV to SQL** | CSV text | SQL text (already shown) | Add input raw view |
-| **JSON to CSV** | JSON text | CSV text (already has raw toggle) | Add input raw view |
-| **JSON to Parquet** | JSON text | "Binary output" notice | Add input raw view |
-| **Parquet to CSV** | "Binary input" notice | CSV text preview | Add output raw view |
-| **Parquet to JSON** | "Binary input" notice | JSON text preview | Add output raw view |
-| **Excel to CSV** | "Binary input" notice | CSV text preview | Add output raw view |
+## Gaps by Tool
 
-### 3. Implementation Details
+### Tool 1: CSV to JSON
+| Spec Feature | Status |
+|---|---|
+| "Paste CSV data" textarea toggle | MISSING |
+| Delimiter selector (comma/tab/semicolon/pipe) | MISSING |
+| "First row is header" checkbox | MISSING |
+| Output format: Array of Arrays option | MISSING (only Array of Objects and NDJSON) |
+| Indent selector (2/4/tab) | MISSING |
+| Conversion stats ("Converted X rows, Y columns") | MISSING |
+| Copy to Clipboard button on output | MISSING (only download) |
 
-**Reading input text**: For text-based inputs (CSV, JSON), read the file via `FileReader.readAsText()` and store in state (truncated to first 50KB to avoid memory issues).
+### Tool 2: JSON to CSV
+| Spec Feature | Status |
+|---|---|
+| "Paste JSON data" textarea toggle | MISSING |
+| Delimiter selector (comma/tab/semicolon) | MISSING |
+| Flatten nested objects checkbox + separator config | MISSING |
+| Include header row toggle | MISSING |
+| Quote all values toggle | MISSING |
+| Handle arrays option (join/expand/stringify) | MISSING |
+| Conversion stats | MISSING |
+| Copy to Clipboard button | MISSING |
 
-**Generating output text**: For text outputs (CSV, JSON, SQL), store the conversion result string in state before downloading. For binary outputs (Parquet), skip raw preview.
+### Tool 3: CSV to Parquet
+| Spec Feature | Status |
+|---|---|
+| Delimiter selector | MISSING |
+| "First row is header" checkbox | MISSING |
+| Row group size option | MISSING |
+| GZIP compression option | MISSING (only Snappy/ZSTD/None) |
+| Schema preview table (Column/Type/Nullable) | MISSING |
 
-**Truncation logic** in `RawPreview`:
-- Split content by newlines
-- If lines exceed the max (1000), show only the first 1000 with a footer: "Truncated -- showing 1,000 of 15,432 lines"
-- If raw byte length exceeds 50KB, slice to 50KB boundary and show similar notice
+### Tool 4: Parquet to CSV
+| Spec Feature | Status |
+|---|---|
+| Delimiter selector | MISSING |
+| Include header toggle | MISSING |
+| Quote style selector | MISSING |
+| Null value representation | MISSING |
+| Timestamp format selector | MISSING |
+| Parquet metadata display (row groups, compression) | MISSING |
+| Copy to Clipboard (first 10k rows) | MISSING |
 
-**View toggle UI**: A simple two-button toggle bar (reusing the existing pill-button pattern already used in `JsonToCsvPage`) with options like "Table" and "Raw Input" and (where applicable) "Raw Output".
+### Tool 5: Parquet Viewer
+| Spec Feature | Status |
+|---|---|
+| Column-specific search/filter | MISSING (has global search only) |
+| Page navigation for large files (LIMIT/OFFSET) | MISSING |
+| Parquet Type + Encoding in schema tab | PARTIAL (missing Parquet-specific type and encoding) |
+| Per-row-group stats in metadata | PARTIAL |
+| "Copy Schema as SQL DDL" button | MISSING |
+| "Download as JSON" link in export | EXISTS |
 
-## Technical Steps
+### Tool 6: JSON Formatter
+| Spec Feature | Status |
+|---|---|
+| FileDropZone for .json files | MISSING (paste only) |
+| Status banner ("Valid JSON - 3 objects, 12 keys, 847B" or error with line/col) | PARTIAL (basic error shown, no stats) |
+| Tab indent option | PARTIAL (listed as "1 tab" but likely just 1 space) |
 
-1. Create `src/components/shared/RawPreview.tsx` -- truncation + CodeBlock wrapper
-2. Update `CsvToJsonPage` -- read input text on file load, add "Raw Input" tab alongside existing output
-3. Update `CsvToParquetPage` -- read input text, add raw input view; binary output notice
-4. Update `CsvToSqlPage` -- read input text, add raw input tab
-5. Update `JsonToCsvPage` -- read input text, extend existing table/raw toggle to 3 options (Table, Raw Input, Raw Output)
-6. Update `JsonToParquetPage` -- read input text, add raw input view
-7. Update `ParquetToCsvPage` -- store CSV output string after conversion, add raw output view; binary input notice
-8. Update `ParquetToJsonPage` -- store JSON output string after conversion, add raw output view; binary input notice
-9. Update `ExcelCsvPage` -- store CSV output string, add raw output view; binary input notice
+### Tool 7: CSV Viewer
+| Spec Feature | Status |
+|---|---|
+| Encoding selector | MISSING |
+| Delimiter selector | MISSING |
+| Column-specific search ("in [All cols]" dropdown) | MISSING (global only) |
+| Detected delimiter display | MISSING |
+| Column resize via drag | MISSING |
+| Freeze first column option | MISSING |
+| Alternating row colors | MISSING |
+| Null/empty cell red tint highlighting | PARTIAL (shows null symbol but no red tint) |
+| Top 5 values bar chart in column stats | MISSING |
+| "Download filtered results as CSV" | MISSING |
+
+### Tool 8: SQL Playground
+| Spec Feature | Status |
+|---|---|
+| Sample queries dropdown | MISSING |
+| Download results as JSON button | MISSING |
+| Error display with line/column highlighting | MISSING (basic error only) |
+
+### Tool 9: JSON Flattener
+| Spec Feature | Status |
+|---|---|
+| Paste textarea input option | MISSING |
+| Max depth selector | MISSING |
+| Array handling options (index/bracket/stringify) | MISSING |
+| Preserve empty objects toggle | MISSING |
+| Preserve null values toggle | MISSING |
+| Stats ("Depth reduced: 4 to 1, Keys: 6, Nested objects removed: 2") | MISSING |
+| "Convert to CSV" cross-link | MISSING |
+| Before/after tree comparison view | PARTIAL (shows original JSON text + flat table, not tree view) |
+
+### Tool 10: Data Profiler
+| Spec Feature | Status |
+|---|---|
+| Duplicate row detection | MISSING |
+| Empty row detection | MISSING |
+| Data Quality Score (0-100) | MISSING |
+| Histogram charts for numeric distributions | MISSING |
+| Date column stats (range, day of week, month distribution, sparkline) | MISSING |
+| Boolean column pie/donut chart | MISSING |
+| String pattern detection (email-like, phone-like, URL-like) | MISSING |
+| String length stats (min/max/avg) | MISSING |
+| Whitespace-only detection for strings | MISSING |
+| Correlation matrix heatmap | MISSING |
+| Memory usage estimate | MISSING |
+| "Open in SQL Playground" link | MISSING |
+
+### Tool 11: CSV to SQL
+| Spec Feature | Status |
+|---|---|
+| Paste textarea input | MISSING |
+| SQL Server dialect | MISSING (has BigQuery instead -- spec says PostgreSQL/MySQL/SQLite/SQL Server/DuckDB) |
+| DuckDB dialect | MISSING |
+| Schema name option | MISSING |
+| NOT NULL constraints on complete columns | MISSING |
+| Quoted identifiers toggle | MISSING |
+| Interactive schema editor (editable type dropdowns per column) | MISSING |
+
+### Tool 12: Schema Generator
+| Spec Feature | Status |
+|---|---|
+| SQLite dialect | MISSING (spec: PostgreSQL/MySQL/SQLite/SQL Server/DuckDB; current: Postgres/MySQL/BigQuery/Snowflake/DuckDB) |
+| SQL Server dialect | MISSING |
+| VARCHAR sizing options (exact max / +20% / +50% / fixed 255 / TEXT) | MISSING |
+| PRIMARY KEY selection | MISSING |
+| DEFAULT values toggle | MISSING |
+| Multi-dialect output tabs (show all DDLs simultaneously) | MISSING |
+| NOT NULL on complete columns toggle | MISSING |
+
+### Tool 13: Excel to CSV / CSV to Excel
+| Spec Feature | Status |
+|---|---|
+| CSV to Excel mode | MISSING (only Excel to CSV exists) |
+| Sheet selector with checkboxes | MISSING |
+| "Export as separate CSV files" vs "combined" | MISSING |
+| Date format selector | MISSING |
+| Encoding selector | MISSING |
+| Multi-file input for CSV to Excel with sheet naming | MISSING |
+| Download ZIP for multi-sheet | MISSING |
+
+### Tool 14: JSON to Parquet
+| Spec Feature | Status |
+|---|---|
+| Paste textarea input | MISSING |
+| Flatten nested objects option | MISSING |
+| Compression selector | MISSING |
+| Row group size option | MISSING |
+| Compression report (JSON size vs Parquet size) | MISSING |
+| Schema preview table | MISSING |
+
+---
+
+## Global/Cross-Cutting Gaps
+
+| Spec Feature | Status |
+|---|---|
+| Cross-tool linking (e.g., "Convert to CSV" from Parquet Viewer pre-loads file) | MOSTLY MISSING |
+| Paste/textarea input mode on text-based tools | MISSING on most tools |
+| DuckDB loading spinner ("Initializing data engine...") | MISSING |
+| Large file pagination (LIMIT/OFFSET with page nav) | MISSING everywhere |
+| localStorage note: spec says "NO localStorage" | VIOLATED -- SQL history uses localStorage |
+| "No server calls ever. No fetch()" | Compliant |
+| maxSizeMB on FileDropZone | NOT SHOWN in UI |
+
+---
+
+## Recommended Implementation Priority
+
+### Phase 1: High-Impact, Low-Effort
+1. Add paste/textarea input to CSV to JSON, JSON to CSV, JSON Flattener, JSON to Parquet, CSV to SQL
+2. Add DuckDB loading state ("Initializing data engine..." spinner)
+3. Add conversion stats line to converter tools
+4. Add Copy to Clipboard buttons where missing
+5. Fix localStorage usage in SQL Playground (move to React state only)
+
+### Phase 2: Options and Configuration
+6. Add delimiter selectors to CSV tools
+7. Add compression/row group size options to Parquet tools  
+8. Add missing dialect options (SQL Server, DuckDB, SQLite) to CSV to SQL and Schema Generator
+9. Add CSV to Excel mode in Excel converter
+10. Add "Array of Arrays" output format to CSV to JSON
+
+### Phase 3: Advanced Features
+11. Add Data Quality Score, duplicate/empty row detection, histograms, and correlation matrix to Data Profiler
+12. Add pagination (LIMIT/OFFSET) to viewers
+13. Add column-specific search to CSV Viewer and Parquet Viewer
+14. Add JSON Formatter file upload support
+15. Add cross-tool linking with React Router state
+
+### Phase 4: Polish
+16. Add string pattern detection to Data Profiler
+17. Add interactive schema editor to CSV to SQL
+18. Add multi-sheet selector and ZIP download to Excel converter
+19. Add date column sparklines and boolean pie charts to Data Profiler
 
