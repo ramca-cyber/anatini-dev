@@ -123,7 +123,6 @@ export default function JsonFormatterPage() {
       const parsed = JSON.parse(input);
       setError(null);
       computeStats(parsed, new Blob([input]).size);
-      setOutput("✓ Valid JSON");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Invalid JSON");
       setStats(null);
