@@ -7,10 +7,14 @@
   <url><loc>https://anatini.dev/json-to-csv</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://anatini.dev/json-to-parquet</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://anatini.dev/parquet-to-json</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://anatini.dev/excel-csv-converter</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://anatini.dev/excel-to-csv</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://anatini.dev/csv-to-excel</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://anatini.dev/csv-viewer</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://anatini.dev/parquet-viewer</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://anatini.dev/json-formatter</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://anatini.dev/csv-inspector</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://anatini.dev/json-inspector</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://anatini.dev/parquet-inspector</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://anatini.dev/sql-playground</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
   <url><loc>https://anatini.dev/data-profiler</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://anatini.dev/json-flattener</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>

@@ -13,7 +13,8 @@ const converters = [
   { path: "/json-to-csv", title: "JSON → CSV", description: "Flatten and convert to CSV.", icon: Table },
   { path: "/json-to-parquet", title: "JSON → Parquet", description: "Compress JSON into Parquet.", icon: Braces },
   { path: "/parquet-to-json", title: "Parquet → JSON", description: "Export Parquet to JSON/NDJSON.", icon: Braces },
-  { path: "/excel-csv-converter", title: "Excel ↔ CSV", description: "Multi-sheet support.", icon: FileText },
+  { path: "/excel-to-csv", title: "Excel → CSV", description: "Multi-sheet export to CSV.", icon: FileText },
+  { path: "/csv-to-excel", title: "CSV → Excel", description: "Combine CSVs into a workbook.", icon: FileText },
 ];
 
 const viewers = [

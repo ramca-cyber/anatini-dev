@@ -63,6 +63,28 @@ const seoData: Record<string, { whatIs: { title: string; content: string }; howT
       { question: "Is my data uploaded anywhere?", answer: "No. Everything runs locally in your browser using DuckDB-WASM. Your files never leave your machine." },
     ],
   },
+  "excel-to-csv": {
+    metaDescription: "Convert Excel (XLSX, XLS) files to CSV with multi-sheet export. Free, offline browser tool. No uploads.",
+    whatIs: { title: "What is Excel to CSV conversion?", content: "Excel files (.xlsx, .xls) store data in a binary format with support for multiple sheets, formulas, and formatting. CSV is a simpler plain-text format. Converting Excel to CSV makes your data accessible to any tool that reads text files." },
+    howToUse: "Drop an Excel file. Select which sheets to export, preview the data, and download as CSV. Multi-sheet workbooks are fully supported — export one sheet or all at once.",
+    faqs: [
+      { question: "Are formulas preserved?", answer: "No — formulas are evaluated and their resulting values are exported. Only the data values are converted." },
+      { question: "Can I convert specific sheets?", answer: "Yes. When you upload a multi-sheet Excel file, you can select which sheets to view and export individually." },
+      { question: "Is formatting preserved?", answer: "No — CSV is plain text and doesn't support formatting. Only the raw cell values are converted." },
+      { question: "What Excel formats are supported?", answer: "Both .xlsx (modern) and .xls (legacy) formats are supported via the SheetJS library." },
+    ],
+  },
+  "csv-to-excel": {
+    metaDescription: "Convert CSV files to Excel (XLSX) with multi-sheet support. Combine multiple CSVs into one workbook. Free, offline browser tool.",
+    whatIs: { title: "What is CSV to Excel conversion?", content: "CSV to Excel conversion takes plain-text tabular data and packages it into an Excel workbook (.xlsx). You can combine multiple CSV files into separate sheets within a single workbook, making it easy to organize related datasets." },
+    howToUse: "Drop a CSV file to start. Add more CSV files to create a multi-sheet Excel workbook. Name each sheet, then download the combined .xlsx file.",
+    faqs: [
+      { question: "Can I combine multiple CSVs into one Excel file?", answer: "Yes! Add multiple CSV files and each one becomes a named sheet in the output Excel workbook." },
+      { question: "Is my data uploaded anywhere?", answer: "No. All processing happens locally in your browser using the SheetJS library. Your files never leave your machine." },
+      { question: "What output format is used?", answer: "The output is a modern .xlsx file compatible with Excel, Google Sheets, LibreOffice, and other spreadsheet applications." },
+      { question: "Are data types preserved?", answer: "SheetJS infers numeric and date types from your CSV data. Review the output to ensure types are mapped correctly." },
+    ],
+  },
   "excel-csv-converter": {
     metaDescription: "Convert Excel (XLSX, XLS) to CSV and CSV to Excel. Multi-sheet support. Free, offline browser tool. No uploads.",
     whatIs: { title: "What is Excel to CSV conversion?", content: "Excel files (.xlsx, .xls) store data in a binary format with support for multiple sheets, formulas, and formatting. CSV is a simpler plain-text format. Converting between them lets you use data across different tools and workflows." },

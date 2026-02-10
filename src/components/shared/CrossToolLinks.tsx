@@ -25,7 +25,7 @@ const linksByFormat: Record<string, { label: string; route: string }[]> = {
     { label: "Profile Data", route: "/data-profiler" },
   ],
   excel: [
-    { label: "Convert to CSV", route: "/excel-csv-converter" },
+    { label: "Convert to CSV", route: "/excel-to-csv" },
     { label: "SQL Playground", route: "/sql-playground" },
   ],
 };
