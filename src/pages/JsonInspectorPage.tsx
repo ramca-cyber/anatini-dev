@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
-import { Search, FlaskConical, AlertTriangle, Info } from "lucide-react";
+import { Search, FlaskConical, AlertTriangle, Info, ChevronRight, ChevronDown } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
@@ -50,9 +50,11 @@ function detectJsonIdentity(text: string, parsed: any): JsonIdentity {
   const isArray = Array.isArray(parsed);
   const recordCount = isArray ? parsed.length : 1;
   const rootType = isArray ? `Array of ${recordCount.toLocaleString()} objects` : typeof parsed === "object" ? "Single object" : typeof parsed;
-  const minCheck = text.trim();
-  const isPretty = minCheck.includes("\n");
-  return { encoding: bom ? "UTF-8 (with BOM)" : "UTF-8 (no BOM)", bom, rootType, recordCount, format: isPretty ? "Pretty-printed JSON" : "Minified JSON" };
+  const trimmed = text.trim();
+  const isPretty = trimmed.includes("\n");
+  // Minified: no newlines and long enough to not be trivially single-line
+  const isMinified = !isPretty && trimmed.length > 80;
+  return { encoding: bom ? "UTF-8 (with BOM)" : "UTF-8 (no BOM)", bom, rootType, recordCount, format: isMinified ? "Minified JSON" : "Pretty-printed JSON" };
 }
 
 function analyzeStructure(parsed: any): StructureAnalysis {
@@ -83,7 +85,7 @@ function analyzeStructure(parsed: any): StructureAnalysis {
   const hasSnake = keys.some(k => k.includes("_"));
   const keyNaming = hasCamel ? "camelCase" : hasSnake ? "snake_case" : keys.length > 0 ? "flat" : "—";
 
-  return { totalKeys: allKeys.size, maxDepth, hasNestedObjects: Array.from(nestedObjs), hasNestedArrays: Array.from(nestedArrs), keyNaming, minified: false };
+  return { totalKeys: allKeys.size, maxDepth, hasNestedObjects: Array.from(nestedObjs), hasNestedArrays: Array.from(nestedArrs), keyNaming, minified: !sample.toString().includes("\n") };
 }
 
 function analyzeSchemaConsistency(records: any[]): SchemaSet[] {
@@ -112,9 +114,22 @@ function analyzeValueTypes(records: any[]): Record<string, number> {
   const counts: Record<string, number> = {};
   function count(v: any) {
     if (v === null) { counts["null"] = (counts["null"] || 0) + 1; return; }
-    if (Array.isArray(v)) { counts["array"] = (counts["array"] || 0) + 1; v.forEach(count); return; }
+    if (Array.isArray(v)) {
+      counts["array"] = (counts["array"] || 0) + 1;
+      if (v.length === 0) counts["empty array"] = (counts["empty array"] || 0) + 1;
+      v.forEach(count);
+      return;
+    }
     const t = typeof v;
-    if (t === "object") { counts["object"] = (counts["object"] || 0) + 1; Object.values(v).forEach(count); return; }
+    if (t === "object") {
+      counts["object"] = (counts["object"] || 0) + 1;
+      if (Object.keys(v).length === 0) counts["empty object"] = (counts["empty object"] || 0) + 1;
+      Object.values(v).forEach(count);
+      return;
+    }
+    if (t === "string" && (v as string) === "") {
+      counts["empty string"] = (counts["empty string"] || 0) + 1;
+    }
     counts[t] = (counts[t] || 0) + 1;
   }
   records.forEach(count);
@@ -146,6 +161,42 @@ function analyzeKeys(records: any[]): KeyInfo[] {
   }));
 }
 
+function TreeNodeInspector({ label, value, depth = 0 }: { label: string; value: any; depth?: number }) {
+  const [open, setOpen] = useState(depth < 2);
+  const isExpandable = value && typeof value === "object";
+  const display = isExpandable
+    ? Array.isArray(value) ? `Array(${value.length})` : `Object(${Object.keys(value).length})`
+    : JSON.stringify(value);
+
+  if (!isExpandable) {
+    return (
+      <div style={{ paddingLeft: depth * 16 }} className="flex items-center gap-1 py-0.5 text-xs font-mono">
+        <span className="w-3" />
+        <span className="text-foreground font-medium">{label}:</span>
+        <span className="text-primary">{display}</span>
+      </div>
+    );
+  }
+
+  const entries = Array.isArray(value) ? value.map((v, i) => [`[${i}]`, v]) : Object.entries(value);
+
+  return (
+    <div>
+      <div style={{ paddingLeft: depth * 16 }} className="flex items-center gap-1 py-0.5 text-xs font-mono cursor-pointer" onClick={() => setOpen(!open)}>
+        {open ? <ChevronDown className="h-3 w-3 text-muted-foreground" /> : <ChevronRight className="h-3 w-3 text-muted-foreground" />}
+        <span className="text-foreground font-medium">{label}:</span>
+        <span className="text-muted-foreground">{display}</span>
+      </div>
+      {open && entries.slice(0, 50).map(([k, v], i) => (
+        <TreeNodeInspector key={`${k}-${i}`} label={String(k)} value={v} depth={depth + 1} />
+      ))}
+      {open && entries.length > 50 && (
+        <div style={{ paddingLeft: (depth + 1) * 16 }} className="text-xs text-muted-foreground py-0.5">... {entries.length - 50} more items</div>
+      )}
+    </div>
+  );
+}
+
 export default function JsonInspectorPage() {
   const { addFile, getFile } = useFileStore();
   const [searchParams] = useSearchParams();
@@ -159,6 +210,7 @@ export default function JsonInspectorPage() {
   const [valueTypes, setValueTypes] = useState<Record<string, number>>({});
   const [keys, setKeys] = useState<KeyInfo[]>([]);
   const [warnings, setWarnings] = useState<Warning[]>([]);
+  const [rawParsed, setRawParsed] = useState<any>(null);
   const [inputMode, setInputMode] = useState<"file" | "paste">("file");
   const autoLoaded = useRef(false);
 
@@ -179,6 +231,7 @@ export default function JsonInspectorPage() {
       const id = detectJsonIdentity(text, parsed);
       setIdentity(id);
       const records = Array.isArray(parsed) ? parsed : [parsed];
+      setRawParsed(parsed);
       setStructure(analyzeStructure(parsed));
       setSchemas(analyzeSchemaConsistency(records));
       setValueTypes(analyzeValueTypes(records));
@@ -191,7 +244,7 @@ export default function JsonInspectorPage() {
       const emptyStrings = records.reduce((c, r) => c + (r && typeof r === "object" ? Object.values(r).filter(v => v === "").length : 0), 0);
       if (emptyStrings > 0) warns.push({ level: "info", message: `${emptyStrings.toLocaleString()} empty string values found` });
       setWarnings(warns);
-    } catch (e) { setError(e instanceof Error ? e.message : "Invalid JSON"); } finally { setLoading(false); }
+    } catch (e) { setError(e instanceof Error ? e.message : "Invalid JSON"); setRawParsed(null); } finally { setLoading(false); }
   }
 
   function handleFile(f: File) {
@@ -347,7 +400,22 @@ export default function JsonInspectorPage() {
               </div>
             )}
 
-            {/* Warnings */}
+            {/* Tree Preview */}
+            {rawParsed && (
+              <div className="border-2 border-border">
+                <div className="border-b-2 border-border bg-muted/50 px-4 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Tree Preview (first 50 records)</div>
+                <div className="p-4 overflow-auto max-h-[400px]">
+                  {Array.isArray(rawParsed) ? (
+                    rawParsed.slice(0, 50).map((item, i) => (
+                      <TreeNodeInspector key={i} label={`[${i}]`} value={item} depth={0} />
+                    ))
+                  ) : (
+                    <TreeNodeInspector label="root" value={rawParsed} depth={0} />
+                  )}
+                </div>
+              </div>
+            )}
+
             {warnings.length > 0 && (
               <div className="border-2 border-border">
                 <div className="border-b-2 border-border bg-muted/50 px-4 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Issues ({warnings.length})</div>

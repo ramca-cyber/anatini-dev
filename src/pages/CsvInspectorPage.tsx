@@ -42,6 +42,15 @@ interface Warning {
   level: "error" | "warning" | "info";
   message: string;
   detail?: string;
+  expandable?: boolean;
+  expandedContent?: string;
+}
+
+interface DataPattern {
+  label: string;
+  column: string;
+  count: number;
+  detail: string;
 }
 
 function detectFileIdentity(bytes: Uint8Array): FileIdentity {
@@ -80,6 +89,29 @@ const WarningIcon = ({ level }: { level: string }) => {
   return <Info className="h-4 w-4 text-primary flex-shrink-0" />;
 };
 
+function ExpandableWarning({ w }: { w: Warning }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="px-4 py-3">
+      <div className="flex items-start gap-3 cursor-pointer" onClick={() => w.expandable && setOpen(!open)}>
+        <WarningIcon level={w.level} />
+        <div className="flex-1">
+          <div className="text-sm font-medium">{w.message}</div>
+          {w.detail && <div className="text-xs text-muted-foreground mt-0.5">{w.detail}</div>}
+        </div>
+        {w.expandable && (
+          <span className="text-xs text-muted-foreground">{open ? "▲" : "▼"}</span>
+        )}
+      </div>
+      {open && w.expandedContent && (
+        <pre className="mt-2 ml-7 p-2 text-xs font-mono bg-muted/30 border border-border rounded overflow-auto max-h-[120px]">
+          {w.expandedContent}
+        </pre>
+      )}
+    </div>
+  );
+}
+
 export default function CsvInspectorPage() {
   const { db } = useDuckDB();
   const { addFile, getFile } = useFileStore();
@@ -93,6 +125,7 @@ export default function CsvInspectorPage() {
   const [columns, setColumns] = useState<ColumnInfo[]>([]);
   const [warnings, setWarnings] = useState<Warning[]>([]);
   const [preview, setPreview] = useState<{ columns: string[]; rows: any[][]; types: string[] } | null>(null);
+  const [patterns, setPatterns] = useState<DataPattern[]>([]);
   const [inputMode, setInputMode] = useState<"file" | "paste">("file");
   const autoLoaded = useRef(false);
 
@@ -108,7 +141,7 @@ export default function CsvInspectorPage() {
   async function processFile(f: File) {
     if (!db) return;
     setFile(f); setLoading(true); setError(null);
-    setIdentity(null); setStructure(null); setColumns([]); setWarnings([]); setPreview(null);
+    setIdentity(null); setStructure(null); setColumns([]); setWarnings([]); setPreview(null); setPatterns([]);
     try {
       const slice = await f.slice(0, 8192).arrayBuffer();
       const id = detectFileIdentity(new Uint8Array(slice));
@@ -153,10 +186,57 @@ export default function CsvInspectorPage() {
       const prev = await runQuery(db, `SELECT * FROM "${tableName}" LIMIT 50`);
       setPreview(prev);
 
+      // Data patterns detection
+      const detectedPatterns: DataPattern[] = [];
+      const stringCols = colInfos.filter((c, i) => info.types[i].includes("VARCHAR"));
+      for (const col of stringCols) {
+        try {
+          const patRes = await runQuery(db, `
+            SELECT
+              COUNT(CASE WHEN "${col.name}" IN ('NULL', 'null', 'NA', 'N/A', 'None', 'none', 'n/a', '#N/A') THEN 1 END) as null_strings,
+              COUNT(CASE WHEN "${col.name}" = '' THEN 1 END) as empty_strings
+            FROM "${tableName}"
+          `);
+          const nullStrings = Number(patRes.rows[0]?.[0] ?? 0);
+          const emptyStrings = Number(patRes.rows[0]?.[1] ?? 0);
+          if (nullStrings > 0) detectedPatterns.push({ label: "Null-like strings", column: col.name, count: nullStrings, detail: `Values like "NULL", "NA", "N/A", "None" in "${col.name}"` });
+          if (emptyStrings > 0) detectedPatterns.push({ label: "Empty strings", column: col.name, count: emptyStrings, detail: `Empty string values in "${col.name}"` });
+        } catch {}
+      }
+
+      // Header whitespace check
+      for (const col of colInfos) {
+        if (col.name !== col.name.trim()) {
+          detectedPatterns.push({ label: "Header whitespace", column: col.name, count: 1, detail: `Column header "${col.name}" has leading/trailing whitespace` });
+        }
+      }
+      setPatterns(detectedPatterns);
+
+      // Max line length
+      let maxLineLen = 0;
+      try {
+        const text = await f.slice(0, 100_000).text();
+        const lines = text.split(/\r?\n/);
+        maxLineLen = Math.max(...lines.map(l => l.length));
+      } catch {}
+
+      // Field count consistency
+      let inconsistentRows = 0;
+      try {
+        const text = await f.slice(0, 500_000).text();
+        const lines = text.split(/\r?\n/).filter(l => l.trim());
+        if (lines.length > 1) {
+          const headerFields = lines[0].split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).length;
+          inconsistentRows = lines.slice(1).filter(l => l.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).length !== headerFields).length;
+        }
+      } catch {}
+
       const warns: Warning[] = [];
       if (id.bom) warns.push({ level: "info", message: "File has BOM marker", detail: `${id.bom}. Some tools may show extra characters at the start.` });
       if (id.lineEndings.includes("Mixed")) warns.push({ level: "warning", message: "Mixed line endings detected", detail: "File contains both CRLF and LF. Consider standardizing." });
       if (duplicateRows > 0) warns.push({ level: "info", message: `${duplicateRows.toLocaleString()} duplicate rows (${((duplicateRows / info.rowCount) * 100).toFixed(1)}%)` });
+      if (inconsistentRows > 0) warns.push({ level: "warning", message: `${inconsistentRows} rows have inconsistent field count`, detail: "Some rows have a different number of fields than the header." });
+      if (maxLineLen > 10000) warns.push({ level: "info", message: `Max line length: ${maxLineLen.toLocaleString()} characters`, detail: "Very long lines may cause issues in some tools." });
       for (const col of colInfos) {
         if (col.name !== col.name.trim()) warns.push({ level: "warning", message: `Column "${col.name}" has whitespace in header` });
         if (info.rowCount > 0 && col.nulls / info.rowCount > 0.5) warns.push({ level: "warning", message: `"${col.name}" is >50% null (${col.nulls.toLocaleString()} nulls)` });
@@ -219,7 +299,7 @@ export default function CsvInspectorPage() {
             <div className="space-y-6">
               <div className="flex items-center justify-between gap-4 flex-wrap">
                 <FileInfo name={file.name} size={formatBytes(file.size)} rows={structure.rowCount} columns={structure.columnCount} />
-                <Button variant="outline" onClick={() => { setFile(null); setIdentity(null); setStructure(null); setColumns([]); setWarnings([]); setPreview(null); }}>New file</Button>
+                <Button variant="outline" onClick={() => { setFile(null); setIdentity(null); setStructure(null); setColumns([]); setWarnings([]); setPreview(null); setPatterns([]); }}>New file</Button>
               </div>
 
               {/* File Identity */}
@@ -269,21 +349,40 @@ export default function CsvInspectorPage() {
                 </div>
               </div>
 
+              {/* Data Patterns */}
+              {patterns.length > 0 && (
+                <div className="border-2 border-border">
+                  <div className="border-b-2 border-border bg-muted/50 px-4 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Data Patterns ({patterns.length})</div>
+                  <div className="overflow-auto">
+                    <table className="w-full text-xs">
+                      <thead><tr className="border-b border-border bg-muted/30">{["Pattern", "Column", "Count", "Detail"].map(h => <th key={h} className="px-3 py-2 text-left font-bold text-muted-foreground">{h}</th>)}</tr></thead>
+                      <tbody>
+                        {patterns.map((p, i) => (
+                          <tr key={i} className="border-b border-border/50 hover:bg-muted/20">
+                            <td className="px-3 py-1.5 font-medium">{p.label}</td>
+                            <td className="px-3 py-1.5 font-mono text-muted-foreground">{p.column}</td>
+                            <td className="px-3 py-1.5 font-mono text-amber-500">{p.count.toLocaleString()}</td>
+                            <td className="px-3 py-1.5 text-muted-foreground">{p.detail}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
               {/* Warnings */}
               {warnings.length > 0 && (
                 <div className="border-2 border-border">
                   <div className="border-b-2 border-border bg-muted/50 px-4 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Issues Found ({warnings.length})</div>
                   <div className="divide-y divide-border/50">
                     {warnings.map((w, i) => (
-                      <div key={i} className="flex items-start gap-3 px-4 py-3">
-                        <WarningIcon level={w.level} />
-                        <div><div className="text-sm font-medium">{w.message}</div>{w.detail && <div className="text-xs text-muted-foreground mt-0.5">{w.detail}</div>}</div>
-                      </div>
+                      <ExpandableWarning key={i} w={w} />
                     ))}
                   </div>
                 </div>
               )}
-              {warnings.length === 0 && (
+              {warnings.length === 0 && patterns.length === 0 && (
                 <div className="border-2 border-primary/30 bg-primary/5 px-4 py-3 text-sm text-primary font-medium">✓ No issues detected</div>
               )}
 

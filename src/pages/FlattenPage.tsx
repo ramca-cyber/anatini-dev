@@ -11,6 +11,7 @@ import { InspectLink } from "@/components/shared/InspectLink";
 import { Button } from "@/components/ui/button";
 import { downloadBlob, formatBytes } from "@/lib/duckdb-helpers";
 import { useFileStore } from "@/contexts/FileStoreContext";
+import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
 import { getSampleJSON } from "@/lib/sample-data";
 import { Link } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -130,6 +131,8 @@ export default function FlattenPage() {
   const [preserveNulls, setPreserveNulls] = useState(true);
   const [flatStats, setFlatStats] = useState<{ depth: number; keys: number; nested: number } | null>(null);
   const [copied, setCopied] = useState(false);
+
+  useAutoLoadFile(handleFile);
 
   async function handleFile(f: File) {
     const stored = addFile(f);

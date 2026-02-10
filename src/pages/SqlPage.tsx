@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from "react";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { Terminal, Play, Download, Plus, Copy, Table2, FlaskConical, History, X, ChevronDown } from "lucide-react";
 import { useFileStore } from "@/contexts/FileStoreContext";
+import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
@@ -59,6 +60,8 @@ export default function SqlPage() {
   const [showHistory, setShowHistory] = useState(false);
   const [showSamples, setShowSamples] = useState(false);
   const editorInsertRef = useRef<((text: string) => void) | null>(null);
+
+  useAutoLoadFile(handleFile, !!db);
 
   async function handleFile(f: File) {
     if (!db) return;

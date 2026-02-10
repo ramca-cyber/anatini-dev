@@ -317,6 +317,7 @@ export default function CsvToJsonPage() {
               )}
 
               <CrossToolLinks format="csv" fileId={storedFileId ?? undefined} />
+              {output && <CrossToolLinks format="json" />}
             </div>
           )}
 
