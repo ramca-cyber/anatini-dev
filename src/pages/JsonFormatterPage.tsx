@@ -3,8 +3,10 @@ import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { Code, Copy, Check, ChevronRight, ChevronDown } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
+import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { useFileStore } from "@/contexts/FileStoreContext";
 
 const SAMPLE = `{"name":"Alice","age":30,"address":{"city":"Portland","zip":"97201"},"tags":["dev","data"],"active":true}`;
 
@@ -55,6 +57,8 @@ function TreeNode({ node }: { node: JsonNode }) {
 }
 
 export default function JsonFormatterPage() {
+  const { addFile } = useFileStore();
+  const [storedFileId, setStoredFileId] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -126,6 +130,8 @@ export default function JsonFormatterPage() {
   }
 
   function handleFileUpload(f: File) {
+    const stored = addFile(f);
+    setStoredFileId(stored.id);
     const reader = new FileReader();
     reader.onload = (e) => {
       const text = e.target?.result as string;
@@ -221,6 +227,8 @@ export default function JsonFormatterPage() {
             )}
           </div>
         </div>
+
+        {(input || output) && <CrossToolLinks format="json" fileId={storedFileId ?? undefined} />}
       </div>
     </ToolPage>
   );

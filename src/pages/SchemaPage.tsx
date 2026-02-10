@@ -80,6 +80,7 @@ function generateDDL(tableName: string, cols: ColSchema[], dialect: Dialect, pre
 export default function SchemaPage() {
   const { db } = useDuckDB();
   const { addFile } = useFileStore();
+  useAutoLoadFile(handleFile, !!db);
   const [file, setFile] = useState<File | null>(null);
   const [storedFileId, setStoredFileId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -318,6 +319,8 @@ export default function SchemaPage() {
                 </div>
               </TabsContent>
             </Tabs>
+
+            <CrossToolLinks format={file.name.endsWith('.json') ? 'json' : file.name.endsWith('.parquet') ? 'parquet' : 'csv'} fileId={storedFileId ?? undefined} />
           </>
         )}
       </div>

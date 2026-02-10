@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { GitCompare, Download, FlaskConical } from "lucide-react";
+import { useFileStore } from "@/contexts/FileStoreContext";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
@@ -16,6 +17,7 @@ type RowFilter = "all" | "added" | "removed" | "modified";
 
 export default function DiffPage() {
   const { db } = useDuckDB();
+  const { addFile } = useFileStore();
   const [beforeFile, setBeforeFile] = useState<File | null>(null);
   const [afterFile, setAfterFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -39,6 +41,7 @@ export default function DiffPage() {
 
   async function handleBefore(f: File) {
     if (!db) return;
+    addFile(f);
     setBeforeFile(f);
     setLoading(true);
     setError(null);
@@ -54,6 +57,7 @@ export default function DiffPage() {
 
   async function handleAfter(f: File) {
     if (!db) return;
+    addFile(f);
     setAfterFile(f);
     setLoading(true);
     setError(null);
