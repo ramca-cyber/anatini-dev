@@ -10,6 +10,7 @@ import { PasteInput } from "@/components/shared/PasteInput";
 import { DuckDBGate } from "@/components/shared/DuckDBGate";
 import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
 import { InspectLink } from "@/components/shared/InspectLink";
+import { ToggleButton } from "@/components/shared/ToggleButton";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { useFileStore } from "@/contexts/FileStoreContext";
@@ -134,24 +135,19 @@ export default function JsonToCsvPage() {
         <div className="space-y-4">
           {!file && (
             <div className="space-y-4">
-              <div className="flex gap-2">
-                {(["file", "paste"] as const).map((m) => (
-                  <button key={m} onClick={() => setInputMode(m)}
-                    className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${inputMode === m ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                    {m === "file" ? "Upload File" : "Paste Data"}
-                  </button>
-                ))}
-              </div>
+              <ToggleButton
+                options={[{ label: "Upload File", value: "file" }, { label: "Paste Data", value: "paste" }]}
+                value={inputMode}
+                onChange={setInputMode}
+              />
 
               {inputMode === "file" ? (
-                <div className="space-y-3">
-                  <DropZone accept={[".json", ".jsonl"]} onFile={handleFile} label="Drop a JSON or JSONL file" />
-                  <div className="flex justify-center">
-                    <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={handleSampleJson}>
-                      <FlaskConical className="h-4 w-4 mr-1" /> Try with sample data
-                    </Button>
-                  </div>
-                </div>
+                <DropZone
+                  accept={[".json", ".jsonl"]}
+                  onFile={handleFile}
+                  label="Drop a JSON or JSONL file"
+                  sampleAction={{ label: "⚗ Try with sample data", onClick: handleSampleJson }}
+                />
               ) : (
                 <PasteInput
                   onSubmit={handlePaste}
@@ -166,8 +162,8 @@ export default function JsonToCsvPage() {
 
           {file && meta && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between gap-4 flex-wrap">
-                <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2 flex-wrap">
                   <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
                   {storedFileId && <InspectLink fileId={storedFileId} format="json" />}
                 </div>
@@ -180,17 +176,10 @@ export default function JsonToCsvPage() {
               </div>
 
               {/* Options */}
-              <div className="border-2 border-border p-3 flex flex-wrap items-center gap-4">
-                <div className="flex items-center gap-2">
+              <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center border border-border p-3 sm:gap-4">
+                <div className="flex items-center gap-2 col-span-2 sm:col-span-1">
                   <label className="text-xs text-muted-foreground font-bold">Delimiter:</label>
-                  <div className="flex gap-1">
-                    {DELIMITERS.map((d) => (
-                      <button key={d.value} onClick={() => setDelimiter(d.value)}
-                        className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${delimiter === d.value ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                        {d.label}
-                      </button>
-                    ))}
-                  </div>
+                  <ToggleButton options={DELIMITERS} value={delimiter} onChange={setDelimiter} />
                 </div>
                 <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
                   <input type="checkbox" checked={includeHeader} onChange={(e) => setIncludeHeader(e.target.checked)} className="rounded" />
@@ -202,14 +191,11 @@ export default function JsonToCsvPage() {
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Input</h3>
-                  <div className="flex gap-1">
-                    {([["table", "Table View"], ["raw-input", "Raw Input"]] as ["table" | "raw-input", string][]).map(([v, label]) => (
-                      <button key={v} onClick={() => setInputView(v)}
-                        className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${inputView === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                        {label}
-                      </button>
-                    ))}
-                  </div>
+                  <ToggleButton
+                    options={[{ label: "Table View", value: "table" }, { label: "Raw Input", value: "raw-input" }]}
+                    value={inputView}
+                    onChange={setInputView}
+                  />
                 </div>
 
                 {preview && inputView === "table" && (
@@ -223,7 +209,7 @@ export default function JsonToCsvPage() {
               {/* OUTPUT SECTION */}
               {csvOutput && conversionResult && (
                 <div className="space-y-3 border-t-2 border-border pt-4">
-                  <div className="flex items-center justify-between gap-4 flex-wrap">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Output</h3>
                     <div className="flex gap-2">
                       <Button size="sm" onClick={handleDownload}>
@@ -236,22 +222,18 @@ export default function JsonToCsvPage() {
                     </div>
                   </div>
 
-                  <div className="border-2 border-foreground bg-card p-4 flex items-center gap-6 flex-wrap">
-                    <div><div className="text-xs text-muted-foreground">Time</div><div className="text-lg font-bold">{(conversionResult.durationMs / 1000).toFixed(1)}s</div></div>
-                    <div><div className="text-xs text-muted-foreground">Output size</div><div className="text-lg font-bold">{formatBytes(conversionResult.outputSize)}</div></div>
-                    <div><div className="text-xs text-muted-foreground">Size change</div><div className="text-lg font-bold">{file.size > 0 ? `${Math.round((conversionResult.outputSize / file.size - 1) * 100)}% ${conversionResult.outputSize > file.size ? "larger" : "smaller"}` : "—"}</div></div>
+                  {/* Compact conversion stats */}
+                  <div className="flex items-center gap-4 flex-wrap border border-border bg-muted/30 px-4 py-2 text-xs">
+                    <span><span className="text-muted-foreground">Time:</span> <span className="font-bold">{(conversionResult.durationMs / 1000).toFixed(1)}s</span></span>
+                    <span><span className="text-muted-foreground">Output:</span> <span className="font-bold">{formatBytes(conversionResult.outputSize)}</span></span>
+                    <span><span className="text-muted-foreground">Change:</span> <span className="font-bold">{file.size > 0 ? `${Math.round((conversionResult.outputSize / file.size - 1) * 100)}% ${conversionResult.outputSize > file.size ? "larger" : "smaller"}` : "—"}</span></span>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <div className="flex gap-1">
-                      {([["table", "Table View"], ["raw", "Raw Output"]] as ["table" | "raw", string][]).map(([v, label]) => (
-                        <button key={v} onClick={() => setOutputView(v)}
-                          className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${outputView === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  <ToggleButton
+                    options={[{ label: "Table View", value: "table" }, { label: "Raw Output", value: "raw" }]}
+                    value={outputView}
+                    onChange={setOutputView}
+                  />
 
                   {outputView === "table" && outputPreview && (
                     <DataTable columns={outputPreview.columns} rows={outputPreview.rows} types={outputPreview.types} className="max-h-[500px]" />
@@ -262,7 +244,7 @@ export default function JsonToCsvPage() {
                 </div>
               )}
 
-              <div className="border-2 border-border p-4 space-y-4">
+              <div className="border border-border p-4 space-y-4">
                 <CrossToolLinks format="json" fileId={storedFileId ?? undefined} excludeRoute="/json-to-csv" heading={csvOutput ? "Source file" : undefined} inline />
                 {csvOutput && (
                   <CrossToolLinks format="csv" excludeRoute="/json-to-csv" heading="Converted output" inline />

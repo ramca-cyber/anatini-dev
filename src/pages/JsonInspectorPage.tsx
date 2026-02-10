@@ -276,7 +276,7 @@ export default function JsonInspectorPage() {
           <div className="space-y-4">
             <div className="flex gap-2">
               {(["file", "paste"] as const).map((m) => (
-                <button key={m} onClick={() => setInputMode(m)} className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${inputMode === m ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
+                <button key={m} onClick={() => setInputMode(m)} className={`px-3 py-1 text-xs font-bold border border-border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${inputMode === m ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
                   {m === "file" ? "Upload File" : "Paste Data"}
                 </button>
               ))}
@@ -308,7 +308,7 @@ export default function JsonInspectorPage() {
 
             {/* File Identity */}
             <div className="border-2 border-border">
-              <div className="border-b-2 border-border bg-muted/50 px-4 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">File Identity</div>
+              <div className="border-b-2 border-border border-l-4 border-l-foreground bg-muted/50 px-4 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">File Identity</div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-px bg-border">
                 {[["File name", file.name], ["File size", formatBytes(file.size)], ["Encoding", identity.encoding], ["Format", identity.format], ["Root type", identity.rootType], ["Records", identity.recordCount.toLocaleString()]].map(([k, v]) => (
                   <div key={k} className="bg-card px-4 py-3"><div className="text-[10px] text-muted-foreground font-bold uppercase">{k}</div><div className="text-sm font-medium font-mono">{v}</div></div>
@@ -318,7 +318,7 @@ export default function JsonInspectorPage() {
 
             {/* Structure Analysis */}
             <div className="border-2 border-border">
-              <div className="border-b-2 border-border bg-muted/50 px-4 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Structure Analysis</div>
+              <div className="border-b-2 border-border border-l-4 border-l-foreground bg-muted/50 px-4 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Structure Analysis</div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-px bg-border">
                 {[
                   ["Unique keys", String(structure.totalKeys)],
@@ -359,7 +359,7 @@ export default function JsonInspectorPage() {
             {/* Value Type Distribution */}
             {totalValues > 0 && (
               <div className="border-2 border-border">
-                <div className="border-b-2 border-border bg-muted/50 px-4 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Value Types</div>
+                <div className="border-b-2 border-border border-l-4 border-l-foreground bg-muted/50 px-4 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Value Types</div>
                 <div className="p-4 space-y-2">
                   {Object.entries(valueTypes).sort((a, b) => b[1] - a[1]).map(([type, count]) => {
                     const pct = (count / totalValues) * 100;
@@ -380,7 +380,7 @@ export default function JsonInspectorPage() {
             {/* Key Inventory */}
             {keys.length > 0 && (
               <div className="border-2 border-border">
-                <div className="border-b-2 border-border bg-muted/50 px-4 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">All Keys ({keys.length})</div>
+                <div className="border-b-2 border-border border-l-4 border-l-foreground bg-muted/50 px-4 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">All Keys ({keys.length})</div>
                 <div className="overflow-auto max-h-[400px]">
                   <table className="w-full text-xs">
                     <thead><tr className="border-b border-border bg-muted/30">{["Key path", "Type", "Present", "Null", "Sample"].map(h => <th key={h} className="px-3 py-2 text-left font-bold text-muted-foreground whitespace-nowrap">{h}</th>)}</tr></thead>
@@ -403,7 +403,7 @@ export default function JsonInspectorPage() {
             {/* Tree Preview */}
             {rawParsed && (
               <div className="border-2 border-border">
-                <div className="border-b-2 border-border bg-muted/50 px-4 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Tree Preview (first 50 records)</div>
+                <div className="border-b-2 border-border border-l-4 border-l-foreground bg-muted/50 px-4 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Tree Preview (first 50 records)</div>
                 <div className="p-4 overflow-auto max-h-[400px]">
                   {Array.isArray(rawParsed) ? (
                     rawParsed.slice(0, 50).map((item, i) => (
@@ -418,7 +418,7 @@ export default function JsonInspectorPage() {
 
             {warnings.length > 0 && (
               <div className="border-2 border-border">
-                <div className="border-b-2 border-border bg-muted/50 px-4 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Issues ({warnings.length})</div>
+                <div className="border-b-2 border-border border-l-4 border-l-amber-500 bg-muted/50 px-4 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Issues ({warnings.length})</div>
                 <div className="divide-y divide-border/50">
                   {warnings.map((w, i) => (
                     <div key={i} className="flex items-start gap-3 px-4 py-3">

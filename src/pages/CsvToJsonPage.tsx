@@ -10,6 +10,7 @@ import { PasteInput } from "@/components/shared/PasteInput";
 import { DuckDBGate } from "@/components/shared/DuckDBGate";
 import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
 import { InspectLink } from "@/components/shared/InspectLink";
+import { ToggleButton } from "@/components/shared/ToggleButton";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { useFileStore } from "@/contexts/FileStoreContext";
@@ -161,20 +162,17 @@ export default function CsvToJsonPage() {
         <div className="space-y-4">
           {!file && (
             <div className="space-y-4">
-              <div className="flex gap-2">
-                {(["file", "paste"] as const).map((m) => (
-                  <button key={m} onClick={() => setInputMode(m)}
-                    className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${inputMode === m ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                    {m === "file" ? "Upload File" : "Paste Data"}
-                  </button>
-                ))}
-              </div>
+              <ToggleButton
+                options={[{ label: "Upload File", value: "file" }, { label: "Paste Data", value: "paste" }]}
+                value={inputMode}
+                onChange={setInputMode}
+              />
 
               {/* Pre-load options */}
-              <div className="flex flex-wrap items-center gap-4 border-2 border-border p-3">
+              <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center border border-border p-3 sm:gap-4">
                 <div className="space-y-1">
                   <label className="text-xs text-muted-foreground font-bold">Delimiter</label>
-                  <select value={delimiter} onChange={(e) => setDelimiter(e.target.value as any)} className="border-2 border-border bg-background px-2 py-1 text-xs">
+                  <select value={delimiter} onChange={(e) => setDelimiter(e.target.value as any)} className="border border-border bg-background px-2 py-1 text-xs">
                     <option value=",">Comma (,)</option>
                     <option value={"\t"}>Tab</option>
                     <option value=";">Semicolon (;)</option>
@@ -188,14 +186,12 @@ export default function CsvToJsonPage() {
               </div>
 
               {inputMode === "file" ? (
-                <div className="space-y-3">
-                  <DropZone accept={[".csv", ".tsv"]} onFile={handleFile} label="Drop a CSV file" />
-                  <div className="flex justify-center">
-                    <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => handleFile(getSampleCSV())}>
-                      <FlaskConical className="h-4 w-4 mr-1" /> Try with sample data
-                    </Button>
-                  </div>
-                </div>
+                <DropZone
+                  accept={[".csv", ".tsv"]}
+                  onFile={handleFile}
+                  label="Drop a CSV file"
+                  sampleAction={{ label: "⚗ Try with sample data", onClick: () => handleFile(getSampleCSV()) }}
+                />
               ) : (
                 <PasteInput onSubmit={handlePaste} placeholder="Paste CSV data here..." label="Paste CSV data" accept={[".csv", ".tsv"]} onFile={handleFile} />
               )}
@@ -205,8 +201,8 @@ export default function CsvToJsonPage() {
           {file && meta && (
             <div className="space-y-4">
               {/* File info + actions */}
-              <div className="flex items-center justify-between gap-4 flex-wrap">
-                <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2 flex-wrap">
                   <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
                   {storedFileId && <InspectLink fileId={storedFileId} format="csv" />}
                 </div>
@@ -219,17 +215,14 @@ export default function CsvToJsonPage() {
               </div>
 
               {/* Output format options */}
-              <div className="flex flex-wrap items-center gap-4 border-2 border-border p-3">
-                <div className="space-y-1">
+              <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center border border-border p-3 sm:gap-4">
+                <div className="space-y-1 col-span-2 sm:col-span-1">
                   <label className="text-xs text-muted-foreground font-bold">Output Format</label>
-                  <div className="flex gap-1">
-                    {([["array", "JSON Array"], ["arrays", "Array of Arrays"], ["ndjson", "NDJSON"]] as const).map(([f, label]) => (
-                      <button key={f} onClick={() => setOutputFormat(f)}
-                        className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${outputFormat === f ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                        {label}
-                      </button>
-                    ))}
-                  </div>
+                  <ToggleButton
+                    options={[{ label: "JSON Array", value: "array" }, { label: "Array of Arrays", value: "arrays" }, { label: "NDJSON", value: "ndjson" }]}
+                    value={outputFormat}
+                    onChange={setOutputFormat}
+                  />
                 </div>
                 {outputFormat !== "ndjson" && (
                   <>
@@ -240,7 +233,7 @@ export default function CsvToJsonPage() {
                     {prettyPrint && (
                       <div className="space-y-1">
                         <label className="text-xs text-muted-foreground font-bold">Indent</label>
-                        <select value={indent} onChange={(e) => setIndent(e.target.value === "tab" ? "tab" as const : Number(e.target.value) as 2 | 4)} className="border-2 border-border bg-background px-2 py-1 text-xs">
+                        <select value={indent} onChange={(e) => setIndent(e.target.value === "tab" ? "tab" as const : Number(e.target.value) as 2 | 4)} className="border border-border bg-background px-2 py-1 text-xs">
                           <option value={2}>2 spaces</option>
                           <option value={4}>4 spaces</option>
                           <option value="tab">Tab</option>
@@ -255,14 +248,11 @@ export default function CsvToJsonPage() {
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Input</h3>
-                  <div className="flex gap-1">
-                    {([["table", "Table View"], ["raw-input", "Raw Input"]] as ["table" | "raw-input", string][]).map(([v, label]) => (
-                      <button key={v} onClick={() => setInputView(v)}
-                        className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${inputView === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                        {label}
-                      </button>
-                    ))}
-                  </div>
+                  <ToggleButton
+                    options={[{ label: "Table View", value: "table" }, { label: "Raw Input", value: "raw-input" }]}
+                    value={inputView}
+                    onChange={setInputView}
+                  />
                 </div>
 
                 {preview && inputView === "table" && (
@@ -276,7 +266,7 @@ export default function CsvToJsonPage() {
               {/* OUTPUT SECTION */}
               {output && conversionResult && (
                 <div className="space-y-3 border-t-2 border-border pt-4">
-                  <div className="flex items-center justify-between gap-4 flex-wrap">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Output</h3>
                     <div className="flex gap-2">
                       <Button size="sm" onClick={handleDownload}>
@@ -289,23 +279,18 @@ export default function CsvToJsonPage() {
                     </div>
                   </div>
 
-                  {/* Conversion stats */}
-                  <div className="border-2 border-foreground bg-card p-4 flex items-center gap-6 flex-wrap">
-                    <div><div className="text-xs text-muted-foreground">Time</div><div className="text-lg font-bold">{(conversionResult.durationMs / 1000).toFixed(1)}s</div></div>
-                    <div><div className="text-xs text-muted-foreground">Output size</div><div className="text-lg font-bold">{formatBytes(conversionResult.outputSize)}</div></div>
-                    <div><div className="text-xs text-muted-foreground">Size change</div><div className="text-lg font-bold">{file.size > 0 ? `${Math.round((conversionResult.outputSize / file.size - 1) * 100)}% ${conversionResult.outputSize > file.size ? "larger" : "smaller"}` : "—"}</div></div>
+                  {/* Compact conversion stats */}
+                  <div className="flex items-center gap-4 flex-wrap border border-border bg-muted/30 px-4 py-2 text-xs">
+                    <span><span className="text-muted-foreground">Time:</span> <span className="font-bold">{(conversionResult.durationMs / 1000).toFixed(1)}s</span></span>
+                    <span><span className="text-muted-foreground">Output:</span> <span className="font-bold">{formatBytes(conversionResult.outputSize)}</span></span>
+                    <span><span className="text-muted-foreground">Change:</span> <span className="font-bold">{file.size > 0 ? `${Math.round((conversionResult.outputSize / file.size - 1) * 100)}% ${conversionResult.outputSize > file.size ? "larger" : "smaller"}` : "—"}</span></span>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <div className="flex gap-1">
-                      {([["table", "Table View"], ["raw", "Raw Output"]] as ["table" | "raw", string][]).map(([v, label]) => (
-                        <button key={v} onClick={() => setOutputView(v)}
-                          className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${outputView === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  <ToggleButton
+                    options={[{ label: "Table View", value: "table" }, { label: "Raw Output", value: "raw" }]}
+                    value={outputView}
+                    onChange={setOutputView}
+                  />
 
                   {outputView === "table" && outputPreview && (
                     <DataTable columns={outputPreview.columns} rows={outputPreview.rows} types={outputPreview.types} className="max-h-[500px]" />
@@ -316,7 +301,7 @@ export default function CsvToJsonPage() {
                 </div>
               )}
 
-              <div className="border-2 border-border p-4 space-y-4">
+              <div className="border border-border p-4 space-y-4">
                 <CrossToolLinks format="csv" fileId={storedFileId ?? undefined} excludeRoute="/csv-to-json" heading={output ? "Source file" : undefined} inline />
                 {output && (
                   <CrossToolLinks format="json" excludeRoute="/csv-to-json" heading="Converted output" inline />

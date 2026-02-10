@@ -297,7 +297,7 @@ export default function CsvInspectorPage() {
             <div className="space-y-4">
               <div className="flex gap-2">
                 {(["file", "paste"] as const).map((m) => (
-                  <button key={m} onClick={() => setInputMode(m)} className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${inputMode === m ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
+                  <button key={m} onClick={() => setInputMode(m)} className={`px-3 py-1 text-xs font-bold border border-border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${inputMode === m ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
                     {m === "file" ? "Upload File" : "Paste Data"}
                   </button>
                 ))}
@@ -329,7 +329,7 @@ export default function CsvInspectorPage() {
 
               {/* File Identity */}
               <div className="border-2 border-border">
-                <div className="border-b-2 border-border bg-muted/50 px-4 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">File Identity</div>
+                <div className="border-b-2 border-border border-l-4 border-l-foreground bg-muted/50 px-4 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">File Identity</div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-px bg-border">
                   {[["File name", file.name], ["File size", formatBytes(file.size)], ["Encoding", identity.encoding], ["Line endings", identity.lineEndings], ["BOM present", identity.bom ? "Yes" : "No"], ["Character set", identity.charSet]].map(([k, v]) => (
                     <div key={k} className="bg-card px-4 py-3"><div className="text-[10px] text-muted-foreground font-bold uppercase">{k}</div><div className="text-sm font-medium font-mono">{v}</div></div>
@@ -339,7 +339,7 @@ export default function CsvInspectorPage() {
 
               {/* CSV Structure */}
               <div className="border-2 border-border">
-                <div className="border-b-2 border-border bg-muted/50 px-4 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">CSV Structure</div>
+                <div className="border-b-2 border-border border-l-4 border-l-foreground bg-muted/50 px-4 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">CSV Structure</div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-px bg-border">
                   {[["Delimiter", structure.delimiter], ["Quote character", `${structure.quoteChar === '"' ? 'Double quote (")' : structure.quoteChar}`], ["Row count", structure.rowCount.toLocaleString()], ["Column count", String(structure.columnCount)], ["Duplicate rows", `${structure.duplicateRows.toLocaleString()} (${structure.rowCount > 0 ? ((structure.duplicateRows / structure.rowCount) * 100).toFixed(1) : 0}%)`]].map(([k, v]) => (
                     <div key={k} className="bg-card px-4 py-3"><div className="text-[10px] text-muted-foreground font-bold uppercase">{k}</div><div className="text-sm font-medium font-mono">{v}</div></div>
@@ -377,7 +377,7 @@ export default function CsvInspectorPage() {
               {/* Data Patterns */}
               {patterns.length > 0 && (
                 <div className="border-2 border-border">
-                  <div className="border-b-2 border-border bg-muted/50 px-4 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Data Patterns ({patterns.length})</div>
+                  <div className="border-b-2 border-border border-l-4 border-l-foreground bg-muted/50 px-4 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Data Patterns ({patterns.length})</div>
                   <div className="overflow-auto">
                     <table className="w-full text-xs">
                       <thead><tr className="border-b border-border bg-muted/30">{["Pattern", "Column", "Count", "Detail"].map(h => <th key={h} className="px-3 py-2 text-left font-bold text-muted-foreground">{h}</th>)}</tr></thead>
@@ -399,7 +399,7 @@ export default function CsvInspectorPage() {
               {/* Warnings */}
               {warnings.length > 0 && (
                 <div className="border-2 border-border">
-                  <div className="border-b-2 border-border bg-muted/50 px-4 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Issues Found ({warnings.length})</div>
+                  <div className="border-b-2 border-border border-l-4 border-l-amber-500 bg-muted/50 px-4 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Issues Found ({warnings.length})</div>
                   <div className="divide-y divide-border/50">
                     {warnings.map((w, i) => (
                       <ExpandableWarning key={i} w={w} />

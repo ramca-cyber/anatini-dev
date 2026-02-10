@@ -5,15 +5,21 @@ interface FileInfoProps {
   size: string;
   rows?: number;
   columns?: number;
+  extras?: { label: string; value: string | number }[];
 }
 
-export function FileInfo({ name, size, rows, columns }: FileInfoProps) {
+export function FileInfo({ name, size, rows, columns, extras }: FileInfoProps) {
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm">
       <span className="font-mono font-medium text-foreground">{name}</span>
       <span className="text-muted-foreground">{size}</span>
       {rows !== undefined && <span className="text-muted-foreground">{rows.toLocaleString()} rows</span>}
       {columns !== undefined && <span className="text-muted-foreground">{columns} cols</span>}
+      {extras?.map((e) => (
+        <span key={e.label} className="text-muted-foreground">
+          {e.label}: <span className="font-mono">{e.value}</span>
+        </span>
+      ))}
     </div>
   );
 }

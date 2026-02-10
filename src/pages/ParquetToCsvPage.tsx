@@ -9,6 +9,7 @@ import { RawPreview } from "@/components/shared/RawPreview";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
 import { InspectLink } from "@/components/shared/InspectLink";
+import { ToggleButton } from "@/components/shared/ToggleButton";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { useFileStore } from "@/contexts/FileStoreContext";
@@ -123,26 +124,29 @@ export default function ParquetToCsvPage() {
     setConversionResult(null); setParquetInfo(null); setStoredFileId(null);
   }
 
+  const fileInfoExtras = parquetInfo ? [
+    { label: "Row groups", value: parquetInfo.rowGroups },
+    { label: "Compression", value: parquetInfo.compression },
+  ] : undefined;
+
   return (
     <ToolPage icon={FileSpreadsheet} title="Parquet to CSV" description="Export Parquet files to CSV format." pageTitle="Parquet to CSV — Free, Offline | Anatini.dev" metaDescription={getToolMetaDescription("parquet-to-csv")} seoContent={getToolSeo("parquet-to-csv")}>
       <DuckDBGate>
       <div className="space-y-4">
         {!file && (
-          <div className="space-y-3">
-            <DropZone accept={[".parquet"]} onFile={handleFile} label="Drop a Parquet file" />
-            <div className="flex justify-center">
-              <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={async () => { if (db) { const f = await generateSampleParquet(db); handleFile(f); } }}>
-                <FlaskConical className="h-4 w-4 mr-1" /> Try with sample data
-              </Button>
-            </div>
-          </div>
+          <DropZone
+            accept={[".parquet"]}
+            onFile={handleFile}
+            label="Drop a Parquet file"
+            sampleAction={{ label: "⚗ Try with sample data", onClick: async () => { if (db) { const f = await generateSampleParquet(db); handleFile(f); } } }}
+          />
         )}
 
         {file && meta && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div className="flex items-center gap-2">
-                <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2 flex-wrap">
+                <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} extras={fileInfoExtras} />
                 {storedFileId && <InspectLink fileId={storedFileId} format="parquet" />}
               </div>
               <div className="flex items-center gap-2">
@@ -153,25 +157,11 @@ export default function ParquetToCsvPage() {
               </div>
             </div>
 
-            {parquetInfo && (
-              <div className="border-2 border-border p-3 flex flex-wrap gap-6 text-xs">
-                <div><span className="text-muted-foreground font-bold">Row Groups:</span> <span className="font-mono">{parquetInfo.rowGroups}</span></div>
-                <div><span className="text-muted-foreground font-bold">Compression:</span> <span className="font-mono">{parquetInfo.compression}</span></div>
-              </div>
-            )}
-
             {/* Options */}
-            <div className="border-2 border-border p-3 flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-2">
+            <div className="border border-border p-3 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center sm:gap-4">
+              <div className="flex items-center gap-2 col-span-2 sm:col-span-1">
                 <label className="text-xs text-muted-foreground font-bold">Delimiter:</label>
-                <div className="flex gap-1">
-                  {DELIMITERS.map((d) => (
-                    <button key={d.value} onClick={() => setDelimiter(d.value)}
-                      className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${delimiter === d.value ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                      {d.label}
-                    </button>
-                  ))}
-                </div>
+                <ToggleButton options={DELIMITERS} value={delimiter} onChange={setDelimiter} />
               </div>
               <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
                 <input type="checkbox" checked={includeHeader} onChange={(e) => setIncludeHeader(e.target.checked)} className="rounded" />
@@ -179,25 +169,24 @@ export default function ParquetToCsvPage() {
               </label>
               <div className="flex items-center gap-2">
                 <label className="text-xs text-muted-foreground font-bold">Null as:</label>
-                <select value={nullRepr} onChange={(e) => setNullRepr(e.target.value)} className="border-2 border-border bg-background px-2 py-1 text-xs">
+                <select value={nullRepr} onChange={(e) => setNullRepr(e.target.value)} className="border border-border bg-background px-2 py-1 text-xs">
                   {NULL_REPRS.map((n) => <option key={n.value} value={n.value}>{n.label}</option>)}
                 </select>
               </div>
             </div>
 
-            {/* INPUT SECTION */}
-            <div className="space-y-3">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Input</h3>
-              {preview && (
+            {/* Input data */}
+            {preview && (
+              <div className="space-y-2">
                 <DataTable columns={preview.columns} rows={preview.rows} types={preview.types} className="max-h-[500px]" />
-              )}
-              <p className="text-xs text-muted-foreground">· Input is binary Parquet — showing first 100 rows</p>
-            </div>
+                <p className="text-xs text-muted-foreground">· Input is binary Parquet — showing first 100 rows</p>
+              </div>
+            )}
 
             {/* OUTPUT SECTION */}
             {conversionResult && csvOutput && (
               <div className="space-y-3 border-t-2 border-border pt-4">
-                <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Output</h3>
                   <div className="flex gap-2">
                     <Button size="sm" onClick={handleDownloadCsv}>
@@ -210,22 +199,18 @@ export default function ParquetToCsvPage() {
                   </div>
                 </div>
 
-                <div className="border-2 border-foreground bg-card p-4 flex items-center gap-6 flex-wrap">
-                  <div><div className="text-xs text-muted-foreground">Time</div><div className="text-lg font-bold">{(conversionResult.durationMs / 1000).toFixed(1)}s</div></div>
-                  <div><div className="text-xs text-muted-foreground">Output size</div><div className="text-lg font-bold">{formatBytes(conversionResult.outputSize)}</div></div>
-                  <div><div className="text-xs text-muted-foreground">Size change</div><div className="text-lg font-bold">{file.size > 0 ? `${Math.round((conversionResult.outputSize / file.size - 1) * 100)}% ${conversionResult.outputSize > file.size ? "larger" : "smaller"}` : "—"}</div></div>
+                {/* Compact conversion stats */}
+                <div className="flex items-center gap-4 flex-wrap border border-border bg-muted/30 px-4 py-2 text-xs">
+                  <span><span className="text-muted-foreground">Time:</span> <span className="font-bold">{(conversionResult.durationMs / 1000).toFixed(1)}s</span></span>
+                  <span><span className="text-muted-foreground">Output:</span> <span className="font-bold">{formatBytes(conversionResult.outputSize)}</span></span>
+                  <span><span className="text-muted-foreground">Change:</span> <span className="font-bold">{file.size > 0 ? `${Math.round((conversionResult.outputSize / file.size - 1) * 100)}% ${conversionResult.outputSize > file.size ? "larger" : "smaller"}` : "—"}</span></span>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <div className="flex gap-1">
-                    {([["table", "Table View"], ["raw", "Raw Output"]] as ["table" | "raw", string][]).map(([v, label]) => (
-                      <button key={v} onClick={() => setOutputView(v)}
-                        className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${outputView === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                <ToggleButton
+                  options={[{ label: "Table View", value: "table" }, { label: "Raw Output", value: "raw" }]}
+                  value={outputView}
+                  onChange={setOutputView}
+                />
 
                 {outputView === "table" && outputPreview && (
                   <DataTable columns={outputPreview.columns} rows={outputPreview.rows} types={outputPreview.types} className="max-h-[500px]" />
@@ -236,7 +221,7 @@ export default function ParquetToCsvPage() {
               </div>
             )}
 
-            <div className="border-2 border-border p-4 space-y-4">
+            <div className="border border-border p-4 space-y-4">
               <CrossToolLinks format="parquet" fileId={storedFileId ?? undefined} excludeRoute="/parquet-to-csv" heading={conversionResult ? "Source file" : undefined} inline />
               {conversionResult && (
                 <CrossToolLinks format="csv" excludeRoute="/parquet-to-csv" heading="Converted output" inline />

@@ -6,9 +6,10 @@ interface DropZoneProps {
   onFile: (file: File) => void;
   label?: string;
   maxSizeMB?: number;
+  sampleAction?: { label: string; onClick: () => void };
 }
 
-export function DropZone({ accept, onFile, label = "Drop a file here", maxSizeMB = 200 }: DropZoneProps) {
+export function DropZone({ accept, onFile, label = "Drop a file here", maxSizeMB = 200, sampleAction }: DropZoneProps) {
   const [dragOver, setDragOver] = useState(false);
   const [sizeWarning, setSizeWarning] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -47,7 +48,7 @@ export function DropZone({ accept, onFile, label = "Drop a file here", maxSizeMB
       onDragLeave={() => setDragOver(false)}
       onDrop={handleDrop}
       onClick={() => inputRef.current?.click()}
-      className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-10 transition-all ${
+      className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-6 md:p-10 transition-all ${
         dragOver
           ? "border-primary bg-primary/5 shadow-[0_0_30px_-5px_hsl(187_80%_55%/0.2)]"
           : "border-border hover:border-muted-foreground/30"
@@ -64,6 +65,15 @@ export function DropZone({ accept, onFile, label = "Drop a file here", maxSizeMB
         <Lock className="h-3 w-3" />
         Processed locally — never uploaded
       </div>
+      {sampleAction && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); sampleAction.onClick(); }}
+          className="mt-1 inline-flex items-center gap-1.5 border border-dashed border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-muted-foreground/50 transition-colors"
+        >
+          {sampleAction.label}
+        </button>
+      )}
       <input
         ref={inputRef}
         type="file"

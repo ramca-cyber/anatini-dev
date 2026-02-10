@@ -91,7 +91,7 @@ export default function Index() {
 
       {/* Hero */}
       <section className="border-b-2 border-border">
-        <div className="container py-20 md:py-28">
+        <div className="container py-12 md:py-20 lg:py-28">
           <div className="mx-auto max-w-3xl">
             <div className="inline-block border-2 border-border bg-secondary px-3 py-1 text-xs font-bold uppercase tracking-widest mb-6">
              18 Tools · 100% Offline · Zero Tracking
