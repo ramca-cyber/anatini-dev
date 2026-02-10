@@ -24,6 +24,8 @@ export default function ParquetToJsonPage() {
   const [format, setFormat] = useState<"array" | "ndjson">("array");
   const [pretty, setPretty] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [outputView, setOutputView] = useState<"table" | "raw">("table");
+  const [outputPreview, setOutputPreview] = useState<{ columns: string[]; rows: any[][]; types: string[] } | null>(null);
 
   async function handleFile(f: File) {
     if (!db) return;
@@ -69,6 +71,9 @@ export default function ParquetToJsonPage() {
       const outputSize = new Blob([output]).size;
       const durationMs = Math.round(performance.now() - start);
       setResult({ durationMs, outputSize });
+      const outPreview = await runQuery(db, `SELECT * FROM "${tableName}" LIMIT 100`);
+      setOutputPreview(outPreview);
+      setOutputView("table");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Conversion failed");
     } finally {
@@ -175,7 +180,23 @@ export default function ParquetToJsonPage() {
                   <div><div className="text-xs text-muted-foreground">Size change</div><div className="text-lg font-bold">{file.size > 0 ? `${Math.round((result.outputSize / file.size - 1) * 100)}% ${result.outputSize > file.size ? "larger" : "smaller"}` : "—"}</div></div>
                 </div>
 
-                <RawPreview content={jsonOutput} label="Raw JSON Output" fileName={`output.${format === "ndjson" ? "jsonl" : "json"}`} />
+                <div className="flex items-center gap-3">
+                  <div className="flex gap-1">
+                    {([["table", "Table View"], ["raw", "Raw Output"]] as ["table" | "raw", string][]).map(([v, label]) => (
+                      <button key={v} onClick={() => setOutputView(v)}
+                        className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${outputView === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {outputView === "table" && outputPreview && (
+                  <DataTable columns={outputPreview.columns} rows={outputPreview.rows} types={outputPreview.types} className="max-h-[500px]" />
+                )}
+                {outputView === "raw" && (
+                  <RawPreview content={jsonOutput} label="Raw JSON Output" fileName={`output.${format === "ndjson" ? "jsonl" : "json"}`} />
+                )}
               </div>
             )}
           </div>

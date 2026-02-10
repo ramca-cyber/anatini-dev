@@ -31,6 +31,8 @@ export default function ConvertPage() {
   const [conversionResult, setConversionResult] = useState<{ durationMs: number; outputSize: number } | null>(null);
   const [outputBlob, setOutputBlob] = useState<{ data: Uint8Array | string; name: string; mime: string } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [outputView, setOutputView] = useState<"table" | "raw">("table");
+  const [outputPreview, setOutputPreview] = useState<{ columns: string[]; rows: any[][]; types: string[] } | null>(null);
 
   const inputExt = file?.name.split(".").pop()?.toLowerCase();
   const outputFormat = inputExt === "parquet" ? "CSV" : "Parquet";
@@ -78,6 +80,9 @@ export default function ConvertPage() {
       }
       const durationMs = Math.round(performance.now() - start);
       setConversionResult({ durationMs, outputSize });
+      const outPreview = await runQuery(db, `SELECT * FROM "${tableName}" LIMIT 100`);
+      setOutputPreview(outPreview);
+      setOutputView("table");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Conversion failed");
     } finally {
@@ -217,15 +222,31 @@ export default function ConvertPage() {
                   </div>
                 </div>
 
-                {isBinaryOutput ? (
-                  <RawPreview content={null} label="Raw Output" binary />
-                ) : (
-                  <RawPreview
-                    content={typeof outputBlob?.data === "string" ? outputBlob.data : null}
-                    label="Raw Output"
-                    fileName={outputBlob?.name}
-                    onDownload={handleDownload}
-                  />
+                <div className="flex items-center gap-3">
+                  <div className="flex gap-1">
+                    {([["table", "Table View"], ["raw", "Raw Output"]] as ["table" | "raw", string][]).map(([v, label]) => (
+                      <button key={v} onClick={() => setOutputView(v)}
+                        className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${outputView === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {outputView === "table" && outputPreview && (
+                  <DataTable columns={outputPreview.columns} rows={outputPreview.rows} types={outputPreview.types} className="max-h-[500px]" />
+                )}
+                {outputView === "raw" && (
+                  isBinaryOutput ? (
+                    <RawPreview content={null} label="Raw Output" binary />
+                  ) : (
+                    <RawPreview
+                      content={typeof outputBlob?.data === "string" ? outputBlob.data : null}
+                      label="Raw Output"
+                      fileName={outputBlob?.name}
+                      onDownload={handleDownload}
+                    />
+                  )
                 )}
               </div>
             )}
