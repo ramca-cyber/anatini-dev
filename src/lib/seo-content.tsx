@@ -167,6 +167,35 @@ const seoData: Record<string, { whatIs: { title: string; content: string }; howT
       { question: "Can I compare large datasets?", answer: "Yes — DuckDB handles the comparison efficiently. However, very large result sets may be slow to render in the browser." },
     ],
   },
+  "csv-inspector": {
+    metaDescription: "Inspect CSV file encoding, delimiter, line endings, column types, null patterns, and data quality. Free, offline, in your browser.",
+    whatIs: { title: "What is a CSV Inspector?", content: "A CSV Inspector analyzes the structural properties of CSV files — encoding, delimiter, line endings, column types, null patterns, and data quality issues. Unlike a data profiler which focuses on statistical distributions, the inspector focuses on file format and parsing characteristics." },
+    howToUse: "Upload a CSV file and the inspector automatically analyzes encoding (UTF-8, BOM detection), delimiter, line endings, column types, null counts, unique values, and potential issues. Results are displayed in organized sections with warnings for common problems.",
+    faqs: [
+      { question: "What's the difference between CSV Inspector and Data Profiler?", answer: "CSV Inspector focuses on the file's structural properties (encoding, delimiter, format issues). Data Profiler focuses on the data itself (distributions, statistics, correlations, quality scores)." },
+      { question: "What is a BOM?", answer: "A Byte Order Mark (BOM) is a special character at the start of a file that indicates encoding. UTF-8 BOM is 3 bytes (EF BB BF). Some tools like Excel add it automatically." },
+      { question: "Why does my CSV have inconsistent column counts?", answer: "Usually this means some values contain unescaped delimiters or newlines. Check if text fields containing commas are properly quoted." },
+    ],
+  },
+  "json-inspector": {
+    metaDescription: "Inspect JSON file structure, schema consistency, value types, and nesting depth. Free, offline browser tool.",
+    whatIs: { title: "What is a JSON Inspector?", content: "A JSON Inspector analyzes the structure and schema of JSON files. It checks schema consistency across records, counts value types, maps all keys with their nesting paths, and detects inconsistencies — essential for understanding API responses and complex JSON datasets." },
+    howToUse: "Upload a JSON file and the inspector automatically analyzes structure, schema consistency, value type distribution, and all key paths. For arrays of objects, it compares key sets across records to find missing fields.",
+    faqs: [
+      { question: "What does 'schema consistency' mean?", answer: "For arrays of objects, it checks if every object has the same set of keys. Inconsistent schemas mean some records are missing fields — common in API responses." },
+      { question: "What is nesting depth?", answer: "How many levels of objects-within-objects exist. Depth 1 = flat. Depth 4 = like user.address.city.zipCode. Deep nesting may need flattening before CSV conversion." },
+    ],
+  },
+  "parquet-inspector": {
+    metaDescription: "Inspect Parquet file metadata, row groups, column encodings, compression stats. Free, offline browser tool powered by DuckDB-WASM.",
+    whatIs: { title: "What is a Parquet Inspector?", content: "A Parquet Inspector provides deep visibility into Apache Parquet file internals — row group structure, column encodings, compression statistics, min/max values, and file-level metadata. It helps understand how data is physically stored and optimized." },
+    howToUse: "Upload a Parquet file to see file overview, column schema with physical/logical types, row group details with compression ratios, key-value metadata, and a data preview. Navigate between tabs to explore different aspects.",
+    faqs: [
+      { question: "What is a row group?", answer: "A row group is a horizontal partition of data in a Parquet file. Each row group contains all column data for a subset of rows. Larger row groups = fewer I/O operations but more memory usage." },
+      { question: "What does dictionary encoding mean?", answer: "Dictionary encoding replaces repeated values with short integer codes. It's very efficient for columns with many repeated values (like country names or status codes)." },
+      { question: "What is the 'created by' field?", answer: "It shows which software wrote the Parquet file. Common values: Apache Spark, Apache Arrow, Pandas, DuckDB. This helps diagnose compatibility issues." },
+    ],
+  },
 };
 
 export function getToolSeo(toolId: string) {
