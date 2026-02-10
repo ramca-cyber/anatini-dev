@@ -24,7 +24,8 @@ export default function CsvToParquetPage() {
   const [compression, setCompression] = useState<"snappy" | "zstd" | "gzip" | "none">("snappy");
   const [rowGroupSize, setRowGroupSize] = useState<number | null>(null);
   const [conversionResult, setConversionResult] = useState<{ durationMs: number; outputSize: number } | null>(null);
-  const [view, setView] = useState<"table" | "raw-input">("table");
+  const [view, setView] = useState<"table" | "schema" | "raw-input">("table");
+  const [nullableInfo, setNullableInfo] = useState<boolean[]>([]);
 
   async function handleFile(f: File) {
     if (!db) return;
@@ -35,6 +36,7 @@ export default function CsvToParquetPage() {
     setRawInput(null);
     setConversionResult(null);
     setView("table");
+    setNullableInfo([]);
     try {
       const text = await f.text();
       setRawInput(text.slice(0, 50_000));
@@ -43,6 +45,15 @@ export default function CsvToParquetPage() {
       setMeta(info);
       const result = await runQuery(db, `SELECT * FROM "${tableName}" LIMIT 100`);
       setPreview(result);
+      // Check nullable per column
+      const nullChecks: boolean[] = [];
+      for (const col of info.columns) {
+        try {
+          const r = await runQuery(db, `SELECT COUNT(*) FROM "${tableName}" WHERE "${col}" IS NULL`);
+          nullChecks.push(Number(r.rows[0][0]) > 0);
+        } catch { nullChecks.push(true); }
+      }
+      setNullableInfo(nullChecks);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load file");
     } finally {
@@ -58,7 +69,7 @@ export default function CsvToParquetPage() {
     try {
       const tableName = sanitizeTableName(file.name);
       const baseName = file.name.replace(/\.[^.]+$/, "");
-      const buf = await exportToParquet(db, tableName);
+      const buf = await exportToParquet(db, tableName, { compression, rowGroupSize });
       const durationMs = Math.round(performance.now() - start);
       setConversionResult({ durationMs, outputSize: buf.byteLength });
       downloadBlob(buf, `${baseName}.parquet`, "application/octet-stream");
@@ -86,18 +97,17 @@ export default function CsvToParquetPage() {
 
         {file && meta && (
           <div className="space-y-4">
-            {/* Row 1: File info + actions */}
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
               <div className="flex items-center gap-2">
                 <Button onClick={handleConvert} disabled={loading}>
                   <ArrowRightLeft className="h-4 w-4 mr-1" /> Convert to Parquet
                 </Button>
-                <Button variant="outline" onClick={() => { setFile(null); setMeta(null); setPreview(null); setRawInput(null); setConversionResult(null); }}>New file</Button>
+                <Button variant="outline" onClick={() => { setFile(null); setMeta(null); setPreview(null); setRawInput(null); setConversionResult(null); setNullableInfo([]); }}>New file</Button>
               </div>
             </div>
 
-            {/* Row 2: Options (collapsible) */}
+            {/* Options (collapsible) */}
             <button onClick={() => setShowOptions(!showOptions)} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
               <Settings2 className="h-4 w-4" /> Compression Options
               {showOptions ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
@@ -127,10 +137,10 @@ export default function CsvToParquetPage() {
               </div>
             )}
 
-            {/* Row 3: View toggle */}
+            {/* View toggle */}
             <div className="flex items-center gap-3">
               <div className="flex gap-2">
-                {([["table", "Table View"], ["raw-input", "Raw Input"]] as const).map(([v, label]) => (
+                {([["table", "Table View"], ["schema", "Schema Preview"], ["raw-input", "Raw Input"]] as const).map(([v, label]) => (
                   <button key={v} onClick={() => setView(v)}
                     className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${view === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
                     {label}
@@ -154,13 +164,30 @@ export default function CsvToParquetPage() {
         {loading && <LoadingState message="Processing..." />}
         {error && <div className="border-2 border-destructive bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
-        {/* Row 4: Content */}
+        {/* Table preview */}
         {preview && view === "table" && (
           <div className="space-y-2">
             <h3 className="text-sm font-medium text-muted-foreground">Preview (first 100 rows)</h3>
             <DataTable columns={preview.columns} rows={preview.rows} types={preview.types} className="max-h-[500px]" />
           </div>
         )}
+
+        {/* Schema preview */}
+        {meta && view === "schema" && (
+          <div className="border-2 border-border">
+            <div className="grid grid-cols-3 border-b-2 border-border bg-muted/50 px-3 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+              <span>Column</span><span>Detected Type</span><span>Nullable</span>
+            </div>
+            {meta.columns.map((col, i) => (
+              <div key={col} className="grid grid-cols-3 border-b border-border/50 px-3 py-2 text-xs">
+                <span className="font-medium">{col}</span>
+                <span className="font-mono text-muted-foreground">{meta.types[i]}</span>
+                <span className={nullableInfo[i] ? "text-amber-500" : "text-muted-foreground"}>{nullableInfo[i] ? "YES" : "NO"}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
         {view === "raw-input" && (
           <RawPreview content={rawInput} label="Raw Input" fileName={file?.name} />
         )}

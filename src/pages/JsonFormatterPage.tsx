@@ -58,7 +58,7 @@ export default function JsonFormatterPage() {
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [indent, setIndent] = useState(2);
+  const [indent, setIndent] = useState<number | string>(2);
   const [sortKeys, setSortKeys] = useState(false);
   const [view, setView] = useState<"formatted" | "tree">("formatted");
   const [copied, setCopied] = useState(false);
@@ -83,11 +83,15 @@ export default function JsonFormatterPage() {
     setStats(`Valid JSON — ${topLevel}, ${keys} total keys, ${sizeStr}`);
   }
 
+  function getIndentArg(): string | number {
+    return indent === "\t" ? "\t" : Number(indent);
+  }
+
   function handleFormat() {
     try {
       let parsed = JSON.parse(input);
       if (sortKeys) parsed = sortObject(parsed);
-      setOutput(JSON.stringify(parsed, null, indent));
+      setOutput(JSON.stringify(parsed, null, getIndentArg()));
       setTreeNodes(flattenForTree(parsed));
       setError(null);
       computeStats(parsed, new Blob([input]).size);
@@ -147,12 +151,10 @@ export default function JsonFormatterPage() {
   return (
     <ToolPage icon={Code} title="JSON Formatter" seoContent={getToolSeo("json-formatter")} metaDescription={getToolMetaDescription("json-formatter")} description="Format, minify, and validate JSON with tree view and sorting.">
       <div className="space-y-4">
-        {/* File upload drop zone */}
         {!input && (
           <DropZone accept={[".json"]} onFile={handleFileUpload} label="Drop a JSON file or paste below" />
         )}
 
-        {/* Status banner */}
         {stats && (
           <div className="border-2 border-primary/30 bg-primary/5 px-3 py-2 text-xs text-primary font-medium rounded">
             {stats}
@@ -164,17 +166,16 @@ export default function JsonFormatterPage() {
           </div>
         )}
 
-        {/* Controls */}
         <div className="flex flex-wrap items-center gap-2">
           <Button onClick={handleFormat}>Format</Button>
           <Button variant="outline" onClick={handleMinify}>Minify</Button>
           <Button variant="outline" onClick={handleValidate}>Validate</Button>
           <div className="ml-auto flex items-center gap-2">
             <label className="text-xs text-muted-foreground">Indent:</label>
-            <select value={indent} onChange={(e) => setIndent(Number(e.target.value))} className="border-2 border-border bg-background px-2 py-1 text-xs">
-              <option value={2}>2 spaces</option>
-              <option value={4}>4 spaces</option>
-              <option value={0}>Tab</option>
+            <select value={String(indent)} onChange={(e) => setIndent(e.target.value === "\t" ? "\t" : Number(e.target.value))} className="border-2 border-border bg-background px-2 py-1 text-xs">
+              <option value="2">2 spaces</option>
+              <option value="4">4 spaces</option>
+              <option value={"\t"}>Tab</option>
             </select>
             <label className="flex items-center gap-1 text-xs text-muted-foreground">
               <input type="checkbox" checked={sortKeys} onChange={(e) => setSortKeys(e.target.checked)} />

@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
-import { Eye, FlaskConical, Search, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { Eye, FlaskConical, Search, ArrowUpDown, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useDuckDB } from "@/contexts/DuckDBContext";
-import { registerFile, runQuery, formatBytes, sanitizeTableName } from "@/lib/duckdb-helpers";
+import { registerFile, runQuery, exportToCSV, downloadBlob, formatBytes, sanitizeTableName } from "@/lib/duckdb-helpers";
 import { getSampleCSV } from "@/lib/sample-data";
 import { Link } from "react-router-dom";
 
@@ -80,6 +80,25 @@ export default function CsvViewerPage() {
     else { setSortCol(colIndex); setSortAsc(true); }
   }
 
+  async function handleDownloadFiltered() {
+    if (!db || !meta) return;
+    try {
+      let sql = `SELECT * FROM "${tableName}"`;
+      if (search) {
+        if (searchCol === "__all__") {
+          const conditions = meta.columns.map(c => `"${c}"::VARCHAR ILIKE '%${search.replace(/'/g, "''")}%'`);
+          sql += ` WHERE ${conditions.join(" OR ")}`;
+        } else {
+          sql += ` WHERE "${searchCol}"::VARCHAR ILIKE '%${search.replace(/'/g, "''")}%'`;
+        }
+      }
+      const csv = await exportToCSV(db, sql);
+      downloadBlob(csv, `${file?.name.replace(/\.[^.]+$/, "")}_filtered.csv`, "text/csv");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Export failed");
+    }
+  }
+
   const totalPages = meta ? Math.ceil(meta.rowCount / PAGE_SIZE) : 0;
 
   let displayRows = data?.rows ?? [];
@@ -133,6 +152,11 @@ export default function CsvViewerPage() {
                 <option value="__all__">All columns</option>
                 {meta.columns.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
+              {search && (
+                <Button variant="outline" size="sm" onClick={handleDownloadFiltered}>
+                  <Download className="h-4 w-4 mr-1" /> Download filtered
+                </Button>
+              )}
             </div>
 
             {colStats && (
