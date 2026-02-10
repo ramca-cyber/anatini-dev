@@ -9,6 +9,7 @@ import { RawPreview } from "@/components/shared/RawPreview";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
 import { InspectLink } from "@/components/shared/InspectLink";
+import { ToggleButton } from "@/components/shared/ToggleButton";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { useFileStore } from "@/contexts/FileStoreContext";
@@ -136,10 +137,10 @@ export default function CsvToParquetPage() {
     setParquetMeta(null); setOutputBuf(null); setStoredFileId(null);
   }
 
-  const inputTabs: ["table" | "schema" | "raw-input", string][] = [
-    ["table", "Table View"],
-    ["schema", "Schema"],
-    ["raw-input", "Raw Input"],
+  const inputTabs: { label: string; value: "table" | "schema" | "raw-input" }[] = [
+    { label: "Table View", value: "table" },
+    { label: "Schema", value: "schema" },
+    { label: "Raw Input", value: "raw-input" },
   ];
 
   return (
@@ -147,21 +148,19 @@ export default function CsvToParquetPage() {
       <DuckDBGate>
       <div className="space-y-4">
         {!file && (
-          <div className="space-y-3">
-            <DropZone accept={[".csv", ".tsv"]} onFile={handleFile} label="Drop a CSV file" />
-            <div className="flex justify-center">
-              <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => handleFile(getSampleCSV())}>
-                <FlaskConical className="h-4 w-4 mr-1" /> Try with sample data
-              </Button>
-            </div>
-          </div>
+          <DropZone
+            accept={[".csv", ".tsv"]}
+            onFile={handleFile}
+            label="Drop a CSV file"
+            sampleAction={{ label: "⚗ Try with sample data", onClick: () => handleFile(getSampleCSV()) }}
+          />
         )}
 
         {file && meta && (
           <div className="space-y-4">
             {/* File info + actions */}
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2 flex-wrap">
                 <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
                 {storedFileId && <InspectLink fileId={storedFileId} format="csv" />}
               </div>
@@ -174,26 +173,28 @@ export default function CsvToParquetPage() {
             </div>
 
             {/* Options (collapsible) */}
-            <button onClick={() => setShowOptions(!showOptions)} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <button onClick={() => setShowOptions(!showOptions)} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1">
               <Settings2 className="h-4 w-4" /> Compression Options
               {showOptions ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
             </button>
             {showOptions && (
-              <div className="border-2 border-border p-4 space-y-3">
+              <div className="border border-border p-4 space-y-3">
                 <div className="space-y-1">
                   <label className="text-xs text-muted-foreground font-bold">Parquet Compression</label>
-                  <div className="flex gap-1">
-                    {(["snappy", "zstd", "gzip", "none"] as const).map((c) => (
-                      <button key={c} onClick={() => setCompression(c)}
-                        className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${compression === c ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                        {c === "gzip" ? "GZIP" : c.charAt(0).toUpperCase() + c.slice(1)}
-                      </button>
-                    ))}
-                  </div>
+                  <ToggleButton
+                    options={[
+                      { label: "Snappy", value: "snappy" },
+                      { label: "Zstd", value: "zstd" },
+                      { label: "GZIP", value: "gzip" },
+                      { label: "None", value: "none" },
+                    ]}
+                    value={compression}
+                    onChange={setCompression}
+                  />
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs text-muted-foreground font-bold">Row Group Size</label>
-                  <select value={rowGroupSize ?? ""} onChange={(e) => setRowGroupSize(e.target.value ? Number(e.target.value) : null)} className="border-2 border-border bg-background px-2 py-1 text-xs">
+                  <select value={rowGroupSize ?? ""} onChange={(e) => setRowGroupSize(e.target.value ? Number(e.target.value) : null)} className="border border-border bg-background px-2 py-1 text-xs">
                     <option value="">Default</option>
                     <option value={10000}>10,000</option>
                     <option value={100000}>100,000</option>
@@ -207,14 +208,7 @@ export default function CsvToParquetPage() {
             <div className="space-y-3">
               <div className="flex items-center gap-3">
                 <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Input</h3>
-                <div className="flex gap-1">
-                  {inputTabs.map(([v, label]) => (
-                    <button key={v} onClick={() => setInputView(v)}
-                      className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${inputView === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                      {label}
-                    </button>
-                  ))}
-                </div>
+                <ToggleButton options={inputTabs} value={inputView} onChange={setInputView} />
               </div>
 
               {preview && inputView === "table" && (
@@ -242,38 +236,35 @@ export default function CsvToParquetPage() {
             {/* OUTPUT SECTION */}
             {conversionResult && (
               <div className="space-y-3 border-t-2 border-border pt-4">
-                <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Output</h3>
                   <Button size="sm" onClick={handleDownload}>
                     <Download className="h-4 w-4 mr-1" /> Download Parquet
                   </Button>
                 </div>
 
-                {/* Conversion stats */}
-                <div className="border-2 border-foreground bg-card p-4 flex items-center gap-6 flex-wrap">
-                  <div><div className="text-xs text-muted-foreground">Time</div><div className="text-lg font-bold">{(conversionResult.durationMs / 1000).toFixed(1)}s</div></div>
-                  <div><div className="text-xs text-muted-foreground">Output size</div><div className="text-lg font-bold">{formatBytes(conversionResult.outputSize)}</div></div>
-                  <div><div className="text-xs text-muted-foreground">Compression</div><div className="text-lg font-bold">{file.size > 0 ? `${Math.round((1 - conversionResult.outputSize / file.size) * 100)}% smaller` : "—"}</div></div>
+                {/* Compact conversion stats */}
+                <div className="flex items-center gap-4 flex-wrap border border-border bg-muted/30 px-4 py-2 text-xs">
+                  <span><span className="text-muted-foreground">Time:</span> <span className="font-bold">{(conversionResult.durationMs / 1000).toFixed(1)}s</span></span>
+                  <span><span className="text-muted-foreground">Output:</span> <span className="font-bold">{formatBytes(conversionResult.outputSize)}</span></span>
+                  <span><span className="text-muted-foreground">Compression:</span> <span className="font-bold">{file.size > 0 ? `${Math.round((1 - conversionResult.outputSize / file.size) * 100)}% smaller` : "—"}</span></span>
                 </div>
 
                 {/* Output tabs */}
-                <div className="flex gap-1">
-                  {([["preview", "Output Preview"], ["raw", "Raw Output"]] as ["preview" | "raw", string][]).map(([v, label]) => (
-                    <button key={v} onClick={() => setOutputView(v)}
-                      className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${outputView === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                      {label}
-                    </button>
-                  ))}
-                </div>
+                <ToggleButton
+                  options={[{ label: "Output Preview", value: "preview" }, { label: "Raw Output", value: "raw" }]}
+                  value={outputView}
+                  onChange={setOutputView}
+                />
 
                 {outputView === "preview" && outputPreview && (
                   <div className="space-y-3">
                     {parquetMeta && (
-                      <div className="border-2 border-border bg-card p-4 flex items-center gap-6 flex-wrap">
-                        <div><div className="text-xs text-muted-foreground">Row Groups</div><div className="text-lg font-bold">{parquetMeta.rowGroups}</div></div>
-                        <div><div className="text-xs text-muted-foreground">Compressed Size</div><div className="text-lg font-bold">{formatBytes(parquetMeta.totalCompressed)}</div></div>
-                        <div><div className="text-xs text-muted-foreground">Uncompressed Size</div><div className="text-lg font-bold">{formatBytes(parquetMeta.totalUncompressed)}</div></div>
-                        <div><div className="text-xs text-muted-foreground">Codec</div><div className="text-lg font-bold">{compression === "none" ? "None" : compression.toUpperCase()}</div></div>
+                      <div className="flex items-center gap-4 flex-wrap border border-border bg-muted/30 px-4 py-2 text-xs">
+                        <span><span className="text-muted-foreground">Row Groups:</span> <span className="font-bold">{parquetMeta.rowGroups}</span></span>
+                        <span><span className="text-muted-foreground">Compressed:</span> <span className="font-bold">{formatBytes(parquetMeta.totalCompressed)}</span></span>
+                        <span><span className="text-muted-foreground">Uncompressed:</span> <span className="font-bold">{formatBytes(parquetMeta.totalUncompressed)}</span></span>
+                        <span><span className="text-muted-foreground">Codec:</span> <span className="font-bold">{compression === "none" ? "None" : compression.toUpperCase()}</span></span>
                       </div>
                     )}
                     <DataTable columns={outputPreview.columns} rows={outputPreview.rows} types={outputPreview.types} className="max-h-[500px]" />
@@ -285,7 +276,7 @@ export default function CsvToParquetPage() {
               </div>
             )}
 
-            <div className="border-2 border-border p-4 space-y-4">
+            <div className="border border-border p-4 space-y-4">
               <CrossToolLinks format="csv" fileId={storedFileId ?? undefined} excludeRoute="/csv-to-parquet" heading={conversionResult ? "Source file" : undefined} inline />
               {conversionResult && (
                 <CrossToolLinks format="parquet" excludeRoute="/csv-to-parquet" heading="Converted output" inline />

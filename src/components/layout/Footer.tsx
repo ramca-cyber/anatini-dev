@@ -1,11 +1,60 @@
 import { Lock, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 
+const toolGrid = {
+  Converters: [
+    { label: "CSV → Parquet", path: "/csv-to-parquet" },
+    { label: "Parquet → CSV", path: "/parquet-to-csv" },
+    { label: "CSV → JSON", path: "/csv-to-json" },
+    { label: "JSON → CSV", path: "/json-to-csv" },
+    { label: "JSON → Parquet", path: "/json-to-parquet" },
+    { label: "Parquet → JSON", path: "/parquet-to-json" },
+    { label: "Excel ↔ CSV", path: "/excel-csv-converter" },
+  ],
+  Viewers: [
+    { label: "CSV Viewer", path: "/csv-viewer" },
+    { label: "Parquet Viewer", path: "/parquet-viewer" },
+    { label: "JSON Formatter", path: "/json-formatter" },
+  ],
+  Inspectors: [
+    { label: "CSV Inspector", path: "/csv-inspector" },
+    { label: "JSON Inspector", path: "/json-inspector" },
+    { label: "Parquet Inspector", path: "/parquet-inspector" },
+  ],
+  "Analysis & SQL": [
+    { label: "SQL Playground", path: "/sql-playground" },
+    { label: "Data Profiler", path: "/data-profiler" },
+    { label: "JSON Flattener", path: "/json-flattener" },
+    { label: "Schema Generator", path: "/schema-generator" },
+    { label: "CSV → SQL", path: "/csv-to-sql" },
+    { label: "Dataset Diff", path: "/diff" },
+  ],
+};
+
 export function Footer() {
   return (
     <footer className="border-t border-border bg-background/50">
-      <div className="container py-8">
-        <div className="flex flex-col items-center gap-4 text-sm text-muted-foreground md:flex-row md:justify-between">
+      <div className="container py-10">
+        {/* Tool grid */}
+        <div className="grid grid-cols-2 gap-6 sm:grid-cols-4 mb-8">
+          {Object.entries(toolGrid).map(([category, tools]) => (
+            <div key={category}>
+              <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">{category}</h4>
+              <ul className="space-y-1.5">
+                {tools.map((t) => (
+                  <li key={t.path}>
+                    <Link to={t.path} className="text-xs text-muted-foreground/80 hover:text-foreground transition-colors">
+                      {t.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        {/* Bottom bar */}
+        <div className="border-t border-border pt-6 flex flex-col items-center gap-4 text-sm text-muted-foreground md:flex-row md:justify-between">
           <div className="flex items-center gap-2">
             <Lock className="h-3.5 w-3.5" />
             <span>Your data never leaves your browser</span>
@@ -23,10 +72,6 @@ export function Footer() {
             <span className="text-border">·</span>
             <Link to="/about" className="hover:text-foreground transition-colors">
               Privacy
-            </Link>
-            <span className="text-border">·</span>
-            <Link to="/" className="hover:text-foreground transition-colors">
-              All Tools
             </Link>
           </div>
 

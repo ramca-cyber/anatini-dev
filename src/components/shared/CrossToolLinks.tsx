@@ -56,7 +56,7 @@ export function CrossToolLinks({ format, fileId, excludeRoute, heading, inline }
           <Link
             key={link.route}
             to={fileId ? `${link.route}?fileId=${fileId}` : link.route}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border-2 border-border bg-background text-foreground hover:bg-secondary transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
           >
             {link.label} <ArrowRight className="h-3 w-3" />
           </Link>
@@ -70,7 +70,7 @@ export function CrossToolLinks({ format, fileId, excludeRoute, heading, inline }
   }
 
   return (
-    <div className="border-2 border-border p-4 space-y-3">
+    <div className="border border-border p-4 space-y-3">
       {content}
     </div>
   );

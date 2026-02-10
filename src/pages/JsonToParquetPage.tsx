@@ -10,6 +10,7 @@ import { PasteInput } from "@/components/shared/PasteInput";
 import { DuckDBGate } from "@/components/shared/DuckDBGate";
 import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
 import { InspectLink } from "@/components/shared/InspectLink";
+import { ToggleButton } from "@/components/shared/ToggleButton";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { useFileStore } from "@/contexts/FileStoreContext";
@@ -152,10 +153,10 @@ export default function JsonToParquetPage() {
     setParquetMeta(null); setOutputBuf(null); setStoredFileId(null);
   }
 
-  const inputTabs: ["data" | "schema" | "raw-input", string][] = [
-    ["data", "Data Preview"],
-    ["schema", "Schema"],
-    ["raw-input", "Raw Input"],
+  const inputTabs: { label: string; value: "data" | "schema" | "raw-input" }[] = [
+    { label: "Data Preview", value: "data" },
+    { label: "Schema", value: "schema" },
+    { label: "Raw Input", value: "raw-input" },
   ];
 
   return (
@@ -164,24 +165,19 @@ export default function JsonToParquetPage() {
         <div className="space-y-4">
           {!file && (
             <div className="space-y-4">
-              <div className="flex gap-2">
-                {(["file", "paste"] as const).map((m) => (
-                  <button key={m} onClick={() => setInputMode(m)}
-                    className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${inputMode === m ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                    {m === "file" ? "Upload File" : "Paste Data"}
-                  </button>
-                ))}
-              </div>
+              <ToggleButton
+                options={[{ label: "Upload File", value: "file" }, { label: "Paste Data", value: "paste" }]}
+                value={inputMode}
+                onChange={setInputMode}
+              />
 
               {inputMode === "file" ? (
-                <div className="space-y-3">
-                  <DropZone accept={[".json", ".jsonl"]} onFile={handleFile} label="Drop a JSON or JSONL file" />
-                  <div className="flex justify-center">
-                    <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={handleSample}>
-                      <FlaskConical className="h-4 w-4 mr-1" /> Try with sample data
-                    </Button>
-                  </div>
-                </div>
+                <DropZone
+                  accept={[".json", ".jsonl"]}
+                  onFile={handleFile}
+                  label="Drop a JSON or JSONL file"
+                  sampleAction={{ label: "⚗ Try with sample data", onClick: handleSample }}
+                />
               ) : (
                 <PasteInput
                   onSubmit={handlePaste}
@@ -196,8 +192,8 @@ export default function JsonToParquetPage() {
 
           {file && meta && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between gap-4 flex-wrap">
-                <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2 flex-wrap">
                   <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
                   {storedFileId && <InspectLink fileId={storedFileId} format="json" />}
                 </div>
@@ -210,21 +206,23 @@ export default function JsonToParquetPage() {
               </div>
 
               {/* Options */}
-              <div className="border-2 border-border p-3 space-y-3">
+              <div className="border border-border p-3 space-y-3">
                 <div className="space-y-1">
                   <label className="text-xs text-muted-foreground font-bold">Compression</label>
-                  <div className="flex gap-1">
-                    {(["snappy", "zstd", "gzip", "none"] as const).map((c) => (
-                      <button key={c} onClick={() => setCompression(c)}
-                        className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${compression === c ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                        {c === "gzip" ? "GZIP" : c.charAt(0).toUpperCase() + c.slice(1)}
-                      </button>
-                    ))}
-                  </div>
+                  <ToggleButton
+                    options={[
+                      { label: "Snappy", value: "snappy" },
+                      { label: "Zstd", value: "zstd" },
+                      { label: "GZIP", value: "gzip" },
+                      { label: "None", value: "none" },
+                    ]}
+                    value={compression}
+                    onChange={setCompression}
+                  />
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs text-muted-foreground font-bold">Row Group Size</label>
-                  <select value={rowGroupSize ?? ""} onChange={(e) => setRowGroupSize(e.target.value ? Number(e.target.value) : null)} className="border-2 border-border bg-background px-2 py-1 text-xs">
+                  <select value={rowGroupSize ?? ""} onChange={(e) => setRowGroupSize(e.target.value ? Number(e.target.value) : null)} className="border border-border bg-background px-2 py-1 text-xs">
                     <option value="">Default</option>
                     <option value={10000}>10,000</option>
                     <option value={100000}>100,000</option>
@@ -237,14 +235,7 @@ export default function JsonToParquetPage() {
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Input</h3>
-                  <div className="flex gap-1">
-                    {inputTabs.map(([v, label]) => (
-                      <button key={v} onClick={() => setInputView(v)}
-                        className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${inputView === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                        {label}
-                      </button>
-                    ))}
-                  </div>
+                  <ToggleButton options={inputTabs} value={inputView} onChange={setInputView} />
                 </div>
 
                 {preview && inputView === "data" && (
@@ -272,36 +263,34 @@ export default function JsonToParquetPage() {
               {/* OUTPUT SECTION */}
               {result && (
                 <div className="space-y-3 border-t-2 border-border pt-4">
-                  <div className="flex items-center justify-between gap-4 flex-wrap">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Output</h3>
                     <Button size="sm" onClick={handleDownload}>
                       <Download className="h-4 w-4 mr-1" /> Download Parquet
                     </Button>
                   </div>
 
-                  <div className="border-2 border-foreground bg-card p-4 flex items-center gap-6 flex-wrap">
-                    <div><div className="text-xs text-muted-foreground">Time</div><div className="text-lg font-bold">{(result.durationMs / 1000).toFixed(1)}s</div></div>
-                    <div><div className="text-xs text-muted-foreground">Output size</div><div className="text-lg font-bold">{formatBytes(result.outputSize)}</div></div>
-                    <div><div className="text-xs text-muted-foreground">Compression ratio</div><div className="text-lg font-bold">{file.size > 0 ? `${Math.round((1 - result.outputSize / file.size) * 100)}%` : "—"} smaller</div></div>
+                  {/* Compact conversion stats */}
+                  <div className="flex items-center gap-4 flex-wrap border border-border bg-muted/30 px-4 py-2 text-xs">
+                    <span><span className="text-muted-foreground">Time:</span> <span className="font-bold">{(result.durationMs / 1000).toFixed(1)}s</span></span>
+                    <span><span className="text-muted-foreground">Output:</span> <span className="font-bold">{formatBytes(result.outputSize)}</span></span>
+                    <span><span className="text-muted-foreground">Compression:</span> <span className="font-bold">{file.size > 0 ? `${Math.round((1 - result.outputSize / file.size) * 100)}%` : "—"} smaller</span></span>
                   </div>
 
-                  <div className="flex gap-1">
-                    {([["preview", "Output Preview"], ["raw", "Raw Output"]] as ["preview" | "raw", string][]).map(([v, label]) => (
-                      <button key={v} onClick={() => setOutputView(v)}
-                        className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${outputView === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                        {label}
-                      </button>
-                    ))}
-                  </div>
+                  <ToggleButton
+                    options={[{ label: "Output Preview", value: "preview" }, { label: "Raw Output", value: "raw" }]}
+                    value={outputView}
+                    onChange={setOutputView}
+                  />
 
                   {outputView === "preview" && outputPreview && (
                     <div className="space-y-3">
                       {parquetMeta && (
-                        <div className="border-2 border-border bg-card p-4 flex items-center gap-6 flex-wrap">
-                          <div><div className="text-xs text-muted-foreground">Row Groups</div><div className="text-lg font-bold">{parquetMeta.rowGroups}</div></div>
-                          <div><div className="text-xs text-muted-foreground">Compressed Size</div><div className="text-lg font-bold">{formatBytes(parquetMeta.totalCompressed)}</div></div>
-                          <div><div className="text-xs text-muted-foreground">Uncompressed Size</div><div className="text-lg font-bold">{formatBytes(parquetMeta.totalUncompressed)}</div></div>
-                          <div><div className="text-xs text-muted-foreground">Codec</div><div className="text-lg font-bold">{compression === "none" ? "None" : compression.toUpperCase()}</div></div>
+                        <div className="flex items-center gap-4 flex-wrap border border-border bg-muted/30 px-4 py-2 text-xs">
+                          <span><span className="text-muted-foreground">Row Groups:</span> <span className="font-bold">{parquetMeta.rowGroups}</span></span>
+                          <span><span className="text-muted-foreground">Compressed:</span> <span className="font-bold">{formatBytes(parquetMeta.totalCompressed)}</span></span>
+                          <span><span className="text-muted-foreground">Uncompressed:</span> <span className="font-bold">{formatBytes(parquetMeta.totalUncompressed)}</span></span>
+                          <span><span className="text-muted-foreground">Codec:</span> <span className="font-bold">{compression === "none" ? "None" : compression.toUpperCase()}</span></span>
                         </div>
                       )}
                       <DataTable columns={outputPreview.columns} rows={outputPreview.rows} types={outputPreview.types} className="max-h-[500px]" />
@@ -313,7 +302,7 @@ export default function JsonToParquetPage() {
                 </div>
               )}
 
-              <div className="border-2 border-border p-4 space-y-4">
+              <div className="border border-border p-4 space-y-4">
                 <CrossToolLinks format="json" fileId={storedFileId ?? undefined} excludeRoute="/json-to-parquet" heading={result ? "Source file" : undefined} inline />
                 {result && (
                   <CrossToolLinks format="parquet" excludeRoute="/json-to-parquet" heading="Converted output" inline />

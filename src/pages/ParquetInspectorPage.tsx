@@ -349,7 +349,7 @@ export default function ParquetInspectorPage() {
                   </div>
                   {kvMeta.length > 0 ? (
                     <div className="border-2 border-border">
-                      <div className="border-b-2 border-border bg-muted/50 px-4 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Key-Value Metadata</div>
+                      <div className="border-b-2 border-border border-l-4 border-l-foreground bg-muted/50 px-4 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Key-Value Metadata</div>
                       <div className="divide-y divide-border/50">
                         {kvMeta.map((kv, i) => (
                           <div key={i} className="px-4 py-2 text-xs">
@@ -370,7 +370,7 @@ export default function ParquetInspectorPage() {
               {/* Warnings */}
               {parquetWarnings.length > 0 && (
                 <div className="border-2 border-border">
-                  <div className="border-b-2 border-border bg-muted/50 px-4 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Observations ({parquetWarnings.length})</div>
+                  <div className="border-b-2 border-border border-l-4 border-l-amber-500 bg-muted/50 px-4 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Observations ({parquetWarnings.length})</div>
                   <div className="divide-y divide-border/50">
                     {parquetWarnings.map((w, i) => (
                       <div key={i} className="flex items-start gap-3 px-4 py-3 text-sm">{w}</div>
