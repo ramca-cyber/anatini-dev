@@ -21,7 +21,8 @@ export default function JsonToParquetPage() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ durationMs: number; outputSize: number } | null>(null);
   const [view, setView] = useState<"schema" | "raw-input">("schema");
-  const [compression, setCompression] = useState<"snappy" | "zstd" | "none">("snappy");
+  const [compression, setCompression] = useState<"snappy" | "zstd" | "gzip" | "none">("snappy");
+  const [rowGroupSize, setRowGroupSize] = useState<number | null>(null);
   const [inputMode, setInputMode] = useState<"file" | "paste">("file");
 
   async function handleFile(f: File) {
@@ -128,15 +129,26 @@ export default function JsonToParquetPage() {
 
               {result && meta && <ConversionStats rows={meta.rowCount} columns={meta.columns.length} inputFormat="JSON" outputFormat="Parquet" />}
 
-              <div className="border-2 border-border p-3">
-                <label className="text-xs text-muted-foreground font-bold">Compression</label>
-                <div className="flex gap-1 mt-1">
-                  {(["snappy", "zstd", "none"] as const).map((c) => (
-                    <button key={c} onClick={() => setCompression(c)}
-                      className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${compression === c ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                      {c.charAt(0).toUpperCase() + c.slice(1)}
-                    </button>
-                  ))}
+              <div className="border-2 border-border p-3 space-y-3">
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground font-bold">Compression</label>
+                  <div className="flex gap-1">
+                    {(["snappy", "zstd", "gzip", "none"] as const).map((c) => (
+                      <button key={c} onClick={() => setCompression(c)}
+                        className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${compression === c ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
+                        {c === "gzip" ? "GZIP" : c.charAt(0).toUpperCase() + c.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground font-bold">Row Group Size</label>
+                  <select value={rowGroupSize ?? ""} onChange={(e) => setRowGroupSize(e.target.value ? Number(e.target.value) : null)} className="border-2 border-border bg-background px-2 py-1 text-xs">
+                    <option value="">Default</option>
+                    <option value={10000}>10,000</option>
+                    <option value={100000}>100,000</option>
+                    <option value={1000000}>1,000,000</option>
+                  </select>
                 </div>
               </div>
 
