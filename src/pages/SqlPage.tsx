@@ -27,18 +27,7 @@ interface HistoryEntry {
   durationMs: number;
 }
 
-const HISTORY_KEY = "ducktools_sql_history";
 const MAX_HISTORY = 20;
-
-function loadHistory(): HistoryEntry[] {
-  try {
-    return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
-  } catch { return []; }
-}
-
-function saveHistory(entries: HistoryEntry[]) {
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(entries.slice(0, MAX_HISTORY)));
-}
 
 export default function SqlPage() {
   const { db } = useDuckDB();
@@ -48,7 +37,7 @@ export default function SqlPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showDropZone, setShowDropZone] = useState(true);
-  const [history, setHistory] = useState<HistoryEntry[]>(loadHistory);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const editorInsertRef = useRef<((text: string) => void) | null>(null);
 
@@ -82,7 +71,6 @@ export default function SqlPage() {
       const entry: HistoryEntry = { sql: sql.trim(), timestamp: new Date().toISOString(), rowCount: res.rowCount, durationMs };
       const updated = [entry, ...history.filter(h => h.sql !== sql.trim()).slice(0, MAX_HISTORY - 1)];
       setHistory(updated);
-      saveHistory(updated);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Query failed");
       setResult(null);

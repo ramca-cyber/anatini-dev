@@ -5,6 +5,9 @@ import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { RawPreview } from "@/components/shared/RawPreview";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
+import { PasteInput } from "@/components/shared/PasteInput";
+import { ConversionStats } from "@/components/shared/ConversionStats";
+import { DuckDBGate } from "@/components/shared/DuckDBGate";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { registerFile, exportToParquet, downloadBlob, formatBytes, sanitizeTableName } from "@/lib/duckdb-helpers";
@@ -19,6 +22,7 @@ export default function JsonToParquetPage() {
   const [result, setResult] = useState<{ durationMs: number; outputSize: number } | null>(null);
   const [view, setView] = useState<"schema" | "raw-input">("schema");
   const [compression, setCompression] = useState<"snappy" | "zstd" | "none">("snappy");
+  const [inputMode, setInputMode] = useState<"file" | "paste">("file");
 
   async function handleFile(f: File) {
     if (!db) return;
@@ -39,6 +43,12 @@ export default function JsonToParquetPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function handlePaste(text: string) {
+    const blob = new Blob([text], { type: "application/json" });
+    const f = new File([blob], "pasted_data.json", { type: "application/json" });
+    handleFile(f);
   }
 
   async function handleConvert() {
@@ -72,87 +82,107 @@ export default function JsonToParquetPage() {
 
   return (
     <ToolPage icon={Braces} title="JSON to Parquet" description="Convert JSON files to Parquet with compression options." metaDescription={getToolMetaDescription("json-to-parquet")} seoContent={getToolSeo("json-to-parquet")}>
-      <div className="space-y-4">
-        {!file && (
-          <div className="space-y-3">
-            <DropZone accept={[".json", ".jsonl"]} onFile={handleFile} label="Drop a JSON or JSONL file" />
-            <div className="flex justify-center">
-              <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={handleSample}>
-                <FlaskConical className="h-4 w-4 mr-1" /> Try with sample data
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {file && meta && (
-          <div className="space-y-4">
-            {/* Row 1: File info + actions */}
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
+      <DuckDBGate>
+        <div className="space-y-4">
+          {!file && (
+            <div className="space-y-4">
               <div className="flex gap-2">
-                <Button onClick={handleConvert} disabled={loading}>Convert to Parquet</Button>
-                <Button variant="outline" onClick={() => { setFile(null); setMeta(null); setResult(null); setRawInput(null); }}>New file</Button>
-              </div>
-            </div>
-
-            {/* Row 2: Compression options */}
-            <div className="border-2 border-border p-3">
-              <label className="text-xs text-muted-foreground font-bold">Compression</label>
-              <div className="flex gap-1 mt-1">
-                {(["snappy", "zstd", "none"] as const).map((c) => (
-                  <button key={c} onClick={() => setCompression(c)}
-                    className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${compression === c ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                    {c.charAt(0).toUpperCase() + c.slice(1)}
+                {(["file", "paste"] as const).map((m) => (
+                  <button key={m} onClick={() => setInputMode(m)}
+                    className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${inputMode === m ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
+                    {m === "file" ? "Upload File" : "Paste Data"}
                   </button>
                 ))}
               </div>
-            </div>
 
-            {/* Row 3: View toggle */}
-            <div className="flex items-center gap-3">
-              <div className="flex gap-2">
-                {([["schema", "Schema"], ["raw-input", "Raw Input"]] as const).map(([v, label]) => (
-                  <button key={v} onClick={() => setView(v)}
-                    className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${view === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                    {label}
-                  </button>
-                ))}
-              </div>
-              <span className="text-xs text-muted-foreground">· Output is binary Parquet</span>
-            </div>
-
-            {/* Conversion result */}
-            {result && (
-              <div className="border-2 border-foreground bg-card p-4 flex items-center gap-6 flex-wrap">
-                <div><div className="text-xs text-muted-foreground">Time</div><div className="text-lg font-bold">{(result.durationMs / 1000).toFixed(1)}s</div></div>
-                <div><div className="text-xs text-muted-foreground">Output size</div><div className="text-lg font-bold">{formatBytes(result.outputSize)}</div></div>
-                <div><div className="text-xs text-muted-foreground">Compression ratio</div><div className="text-lg font-bold">{file.size > 0 ? `${Math.round((1 - result.outputSize / file.size) * 100)}%` : "—"} smaller</div></div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {loading && <LoadingState message="Processing..." />}
-        {error && <div className="border-2 border-destructive bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
-
-        {/* Row 4: Content */}
-        {meta && view === "schema" && file && (
-          <div className="border-2 border-border">
-            <div className="border-b-2 border-border bg-muted/50 px-3 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Schema</div>
-            <div className="divide-y divide-border">
-              {meta.columns.map((col, i) => (
-                <div key={col} className="flex items-center justify-between px-3 py-1.5 text-xs">
-                  <span className="font-medium">{col}</span>
-                  <span className="font-mono text-muted-foreground">{meta.types[i]}</span>
+              {inputMode === "file" ? (
+                <div className="space-y-3">
+                  <DropZone accept={[".json", ".jsonl"]} onFile={handleFile} label="Drop a JSON or JSONL file" />
+                  <div className="flex justify-center">
+                    <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={handleSample}>
+                      <FlaskConical className="h-4 w-4 mr-1" /> Try with sample data
+                    </Button>
+                  </div>
                 </div>
-              ))}
+              ) : (
+                <PasteInput
+                  onSubmit={handlePaste}
+                  placeholder='Paste JSON here... e.g. [{"name": "Alice", "score": 95.5}]'
+                  label="Paste JSON data"
+                  accept={[".json", ".jsonl"]}
+                  onFile={handleFile}
+                />
+              )}
             </div>
-          </div>
-        )}
-        {view === "raw-input" && (
-          <RawPreview content={rawInput} label="Raw Input" fileName={file?.name} />
-        )}
-      </div>
+          )}
+
+          {file && meta && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
+                <div className="flex gap-2">
+                  <Button onClick={handleConvert} disabled={loading}>Convert to Parquet</Button>
+                  <Button variant="outline" onClick={() => { setFile(null); setMeta(null); setResult(null); setRawInput(null); }}>New file</Button>
+                </div>
+              </div>
+
+              {result && meta && <ConversionStats rows={meta.rowCount} columns={meta.columns.length} inputFormat="JSON" outputFormat="Parquet" />}
+
+              <div className="border-2 border-border p-3">
+                <label className="text-xs text-muted-foreground font-bold">Compression</label>
+                <div className="flex gap-1 mt-1">
+                  {(["snappy", "zstd", "none"] as const).map((c) => (
+                    <button key={c} onClick={() => setCompression(c)}
+                      className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${compression === c ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
+                      {c.charAt(0).toUpperCase() + c.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="flex gap-2">
+                  {([["schema", "Schema"], ["raw-input", "Raw Input"]] as const).map(([v, label]) => (
+                    <button key={v} onClick={() => setView(v)}
+                      className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${view === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <span className="text-xs text-muted-foreground">· Output is binary Parquet</span>
+              </div>
+
+              {result && (
+                <div className="border-2 border-foreground bg-card p-4 flex items-center gap-6 flex-wrap">
+                  <div><div className="text-xs text-muted-foreground">Time</div><div className="text-lg font-bold">{(result.durationMs / 1000).toFixed(1)}s</div></div>
+                  <div><div className="text-xs text-muted-foreground">Output size</div><div className="text-lg font-bold">{formatBytes(result.outputSize)}</div></div>
+                  <div><div className="text-xs text-muted-foreground">Compression ratio</div><div className="text-lg font-bold">{file.size > 0 ? `${Math.round((1 - result.outputSize / file.size) * 100)}%` : "—"} smaller</div></div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {loading && <LoadingState message="Processing..." />}
+          {error && <div className="border-2 border-destructive bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+
+          {meta && view === "schema" && file && (
+            <div className="border-2 border-border">
+              <div className="border-b-2 border-border bg-muted/50 px-3 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Schema</div>
+              <div className="divide-y divide-border">
+                {meta.columns.map((col, i) => (
+                  <div key={col} className="flex items-center justify-between px-3 py-1.5 text-xs">
+                    <span className="font-medium">{col}</span>
+                    <span className="font-mono text-muted-foreground">{meta.types[i]}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {view === "raw-input" && (
+            <RawPreview content={rawInput} label="Raw Input" fileName={file?.name} />
+          )}
+        </div>
+      </DuckDBGate>
     </ToolPage>
   );
 }
