@@ -6,8 +6,11 @@ import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { PasteInput } from "@/components/shared/PasteInput";
+import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
+import { InspectLink } from "@/components/shared/InspectLink";
 import { Button } from "@/components/ui/button";
 import { downloadBlob, formatBytes } from "@/lib/duckdb-helpers";
+import { useFileStore } from "@/contexts/FileStoreContext";
 import { getSampleJSON } from "@/lib/sample-data";
 import { Link } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -110,7 +113,9 @@ function flattenData(data: any[], sep: string, maxDepth: number, preserveNulls: 
 }
 
 export default function FlattenPage() {
+  const { addFile } = useFileStore();
   const [file, setFile] = useState<File | null>(null);
+  const [storedFileId, setStoredFileId] = useState<string | null>(null);
   const [rawText, setRawText] = useState("");
   const [parsed, setParsed] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -127,6 +132,8 @@ export default function FlattenPage() {
   const [copied, setCopied] = useState(false);
 
   async function handleFile(f: File) {
+    const stored = addFile(f);
+    setStoredFileId(stored.id);
     setFile(f);
     setLoading(true);
     setError(null);
@@ -309,7 +316,10 @@ export default function FlattenPage() {
         {file && flattened && (
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-4 flex-wrap">
-              <FileInfo name={file.name} size={formatBytes(file.size)} rows={flattened.rows.length} columns={flattened.columns.length} />
+              <div className="flex items-center gap-2">
+                <FileInfo name={file.name} size={formatBytes(file.size)} rows={flattened.rows.length} columns={flattened.columns.length} />
+                {storedFileId && <InspectLink fileId={storedFileId} format="json" />}
+              </div>
               <div className="flex items-center gap-2">
                 <Button variant="ghost" size="sm" onClick={() => setShowSideBySide(!showSideBySide)} title="Toggle side-by-side view">
                   <Columns className="h-4 w-4 mr-1" /> {showSideBySide ? "Table only" : "Side-by-side"}
@@ -353,6 +363,8 @@ export default function FlattenPage() {
             )}
           </div>
         )}
+
+        {file && storedFileId && <CrossToolLinks format="json" fileId={storedFileId} />}
 
         {loading && <LoadingState message="Processing JSON..." />}
         {error && <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}

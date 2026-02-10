@@ -4,9 +4,13 @@ import { Eye, FlaskConical, Search, ArrowUpDown, ChevronLeft, ChevronRight, Down
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
+import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
+import { InspectLink } from "@/components/shared/InspectLink";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useDuckDB } from "@/contexts/DuckDBContext";
+import { useFileStore } from "@/contexts/FileStoreContext";
+import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
 import { registerFile, runQuery, exportToCSV, downloadBlob, formatBytes, sanitizeTableName } from "@/lib/duckdb-helpers";
 import { getSampleCSV } from "@/lib/sample-data";
 import { Link } from "react-router-dom";
@@ -15,6 +19,7 @@ const PAGE_SIZE = 200;
 
 export default function CsvViewerPage() {
   const { db } = useDuckDB();
+  const { addFile } = useFileStore();
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [meta, setMeta] = useState<{ columns: string[]; rowCount: number; types: string[] } | null>(null);
@@ -27,6 +32,7 @@ export default function CsvViewerPage() {
   const [colStats, setColStats] = useState<{ col: string; stats: Record<string, string> } | null>(null);
   const [page, setPage] = useState(0);
   const [tableName, setTableName] = useState("");
+  const [storedFileId, setStoredFileId] = useState<string | null>(null);
 
   async function loadPage(tName: string, pageNum: number) {
     if (!db) return;
@@ -38,6 +44,8 @@ export default function CsvViewerPage() {
 
   async function handleFile(f: File) {
     if (!db) return;
+    const stored = addFile(f);
+    setStoredFileId(stored.id);
     setFile(f);
     setLoading(true);
     setError(null);
@@ -57,6 +65,8 @@ export default function CsvViewerPage() {
       setLoading(false);
     }
   }
+
+  useAutoLoadFile(handleFile, !!db);
 
   async function handleColumnClick(colIndex: number) {
     if (!db || !file || !meta) return;
@@ -135,10 +145,13 @@ export default function CsvViewerPage() {
         {file && meta && (
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-4 flex-wrap">
-              <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
+              <div className="flex items-center gap-2">
+                <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
+                {storedFileId && <InspectLink fileId={storedFileId} format="csv" />}
+              </div>
               <div className="flex gap-2">
                 <Link to="/sql-playground"><Button variant="outline" size="sm">Open in SQL Playground</Button></Link>
-                <Button variant="outline" size="sm" onClick={() => { setFile(null); setMeta(null); setData(null); setColStats(null); }}>New file</Button>
+                <Button variant="outline" size="sm" onClick={() => { setFile(null); setMeta(null); setData(null); setColStats(null); setStoredFileId(null); }}>New file</Button>
               </div>
             </div>
 
@@ -169,6 +182,8 @@ export default function CsvViewerPage() {
                 </div>
               </div>
             )}
+
+            <CrossToolLinks format="csv" fileId={storedFileId ?? undefined} />
           </div>
         )}
 

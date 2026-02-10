@@ -4,9 +4,13 @@ import { Database, Copy, Download, FlaskConical } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
+import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
+import { InspectLink } from "@/components/shared/InspectLink";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDuckDB } from "@/contexts/DuckDBContext";
+import { useFileStore } from "@/contexts/FileStoreContext";
+import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
 import { registerFile, runQuery, formatBytes, sanitizeTableName, downloadBlob } from "@/lib/duckdb-helpers";
 import { getSampleSchemaCSV } from "@/lib/sample-data";
 import { toast } from "@/hooks/use-toast";
@@ -75,7 +79,9 @@ function generateDDL(tableName: string, cols: ColSchema[], dialect: Dialect, pre
 
 export default function SchemaPage() {
   const { db } = useDuckDB();
+  const { addFile } = useFileStore();
   const [file, setFile] = useState<File | null>(null);
+  const [storedFileId, setStoredFileId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cols, setCols] = useState<ColSchema[]>([]);
@@ -88,6 +94,8 @@ export default function SchemaPage() {
 
   async function handleFile(f: File) {
     if (!db) return;
+    const stored = addFile(f);
+    setStoredFileId(stored.id);
     setFile(f);
     setLoading(true);
     setError(null);
@@ -179,8 +187,11 @@ export default function SchemaPage() {
         {file && cols.length > 0 && (
           <>
             <div className="flex items-center justify-between gap-4 flex-wrap">
-              <FileInfo name={file.name} size={formatBytes(file.size)} columns={cols.length} />
-              <Button variant="outline" onClick={() => { setFile(null); setCols([]); }}>New file</Button>
+              <div className="flex items-center gap-2">
+                <FileInfo name={file.name} size={formatBytes(file.size)} columns={cols.length} />
+                {storedFileId && <InspectLink fileId={storedFileId} format={file.name.endsWith('.json') ? 'json' : file.name.endsWith('.parquet') ? 'parquet' : 'csv'} />}
+              </div>
+              <Button variant="outline" onClick={() => { setFile(null); setCols([]); setStoredFileId(null); }}>New file</Button>
             </div>
 
             {/* Dialect toggle */}
