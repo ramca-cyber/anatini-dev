@@ -1,182 +1,181 @@
 
 
-# UI/UX Audit & Optimization Plan
+# End-to-End Website Audit
 
-## 1. Information Hierarchy & Visual Clutter
+## A. Dead Code / Orphaned Pages
 
-### Problem: Too many small bordered boxes stacked vertically
-Every tool page stacks multiple `border-2 border-border` boxes (file info, parquet info, options, input, output, conversion stats, cross-tool links). On a single converter page, there can be 6-8 bordered containers in a row, creating a "wall of boxes" effect that makes scanning difficult.
+### 1. ExcelCsvPage.tsx is still in the codebase
+The old bidirectional `ExcelCsvPage.tsx` (at `/excel-csv-converter`) was replaced by two separate pages (`ExcelToCsvPage.tsx` and `CsvToExcelPage.tsx`). The route now redirects, but the 321-line file is still in the repo as dead code.
 
-### Fix
-- **Collapse file metadata into the options bar.** The FileInfo component (name, size, rows, cols) and the parquet metadata (row groups, compression) should merge into a single top bar with the action buttons. Currently they're 3 separate rows.
-- **Remove the standalone "Parquet Info" box** (row groups + compression) and fold those 2 values into the existing FileInfo component as additional chips.
-- **Reduce border weight from `border-2` to `border`** on secondary containers (options, cross-tool links) to create visual hierarchy -- only the primary data sections (input table, output table, conversion stats) should use `border-2`.
+**Fix:** Delete `src/pages/ExcelCsvPage.tsx` and remove its import from `App.tsx`.
 
-### Files
-- `src/components/shared/FileInfo.tsx` -- add optional `extras` prop for additional metadata chips
-- All converter pages -- consolidate the parquet/json info boxes into FileInfo
+### 2. ConvertPage.tsx is orphaned
+`ConvertPage.tsx` is a legacy bidirectional CSV/Parquet converter (276 lines). The route `/convert` redirects to `/csv-to-parquet`, so this page is never rendered. It also uses the old oversized conversion stats (`border-2 border-foreground`, `text-lg font-bold`) that were already fixed everywhere else.
+
+**Fix:** Delete `src/pages/ConvertPage.tsx` and remove its import from `App.tsx`.
 
 ---
 
-## 2. Conversion Stats Box: Oversized for the data shown
+## B. Inconsistent UI Patterns (Post-Optimization Gaps)
 
-### Problem
-The conversion stats panel (`border-2 border-foreground bg-card p-4`) uses `text-lg font-bold` for just 3 values (time, output size, size change). It's the most visually heavy element on the page, but the information it shows is secondary. The `border-foreground` (full white/black border) makes it scream louder than the actual data.
+### 3. ConversionStats component is unused
+`src/components/shared/ConversionStats.tsx` was created as a shared component but is imported by zero pages -- all converters use inline stats bars instead. Dead code.
 
-### Fix
-- Reduce to a compact inline bar: a single row with the 3 stats as small chips, using `border-border` instead of `border-foreground`
-- Change from `text-lg` to `text-sm` for values
-- This saves ~60px of vertical space per converter page
+**Fix:** Delete `src/components/shared/ConversionStats.tsx`.
 
-### Files
-- All 6 converter pages (CsvToJson, CsvToParquet, JsonToCsv, JsonToParquet, ParquetToCsv, ParquetToJson)
+### 4. Several pages still use old-style toggle buttons instead of ToggleButton component
+The following pages use raw inline `<button>` elements with `border-2` styling instead of the shared `ToggleButton` component:
+- `CsvInspectorPage.tsx` (line 300: file/paste toggle)
+- `FlattenPage.tsx` (lines 217-222: file/paste; lines 279-284: naming toggle; all use `border-2`)
+- `CsvToSqlPage.tsx` (lines 236-241: file/paste; lines 344-349: input view toggle; all `border-2`)
+- `SchemaPage.tsx` (lines 199-205: dialect toggle uses `border-2`)
+- `DiffPage.tsx` (lines 338-349: row filter uses rounded pills instead of ToggleButton)
+- `ExcelCsvPage.tsx` (legacy, but its replacement `ExcelToCsvPage.tsx` line 162 also uses raw buttons)
 
----
+These pages are inconsistent with the `ToggleButton` shared component (which uses `border` not `border-2`).
 
-## 3. Redundant "Input" section label on converters
+**Fix:** Replace all inline toggle button patterns with the `ToggleButton` component. This standardizes styling and guarantees focus-visible states.
 
-### Problem
-On pages like Parquet-to-CSV, the "Input" section header sits between the file info and the data table, but the context is already obvious -- you just uploaded a file and you're looking at its data. The label adds noise without clarity.
+### 5. Sample data button inconsistency across pages
+After the DropZone optimization, some pages integrated the sample button into DropZone's `sampleAction` prop, but several still use a standalone `Button variant="ghost"` outside the DropZone:
+- `CsvViewerPage.tsx` (lines 137-142)
+- `ParquetViewerPage.tsx` (lines 139-143)
+- `CsvInspectorPage.tsx` (lines 308-311)
+- `SchemaPage.tsx` (lines 179-182)
+- `SqlPage.tsx` (lines 177-181)
+- `DiffPage.tsx` (lines 261-265)
+- `FlattenPage.tsx` (lines 228-232)
+- `CsvToSqlPage.tsx` (lines 246-249)
 
-### Fix
-- Remove the standalone "INPUT" heading when there's only one input source (file upload pages)
-- Keep it only on pages that have both a Table View and Raw Input toggle (like CSV-to-JSON), where it serves as a toggle label
+**Fix:** Move these to use DropZone's `sampleAction` prop for consistency.
 
-### Files
-- `ParquetToCsvPage.tsx`, `ParquetToJsonPage.tsx` -- remove redundant "Input" h3
+### 6. CsvViewerPage.tsx has no DuckDBGate wrapper
+All DuckDB-dependent pages use `<DuckDBGate>` to show a loading spinner while DuckDB initializes, except `CsvViewerPage.tsx`. If a user loads the page before DuckDB is ready, clicking "Try with sample data" silently fails because `db` is null.
 
----
+**Fix:** Wrap CsvViewerPage content in `<DuckDBGate>`.
 
-## 4. Mobile layout issues
+### 7. ParquetToJsonPage.tsx is missing DuckDBGate wrapper
+Same issue. The page uses `useDuckDB()` but has no `<DuckDBGate>` wrapper. The DropZone is rendered even when DuckDB hasn't loaded yet.
 
-### Problem (observed on 390px viewport)
-- The DropZone padding (`p-10`) is excessive on mobile -- the upload area takes nearly the full viewport
-- The options bar (delimiter, header checkbox, null repr) wraps poorly -- each control breaks to a new line, creating a very tall stack
-- The FileInfo + InspectLink + action buttons row wraps into 3 lines on mobile
-- Tool cards on homepage are single-column which is fine, but the hero section has excessive padding (`py-20 md:py-28`)
-
-### Fix
-- Reduce DropZone to `p-6 md:p-10` for mobile comfort
-- Make the options bar a 2-column grid on mobile: `grid grid-cols-2 gap-3 sm:flex sm:flex-wrap`
-- Stack action buttons below file info on mobile using `flex-col sm:flex-row`
-- Reduce hero padding to `py-12 md:py-20 lg:py-28`
-
-### Files
-- `src/components/shared/DropZone.tsx`
-- `src/pages/Index.tsx` (hero padding)
-- All converter pages (options bar layout)
+**Fix:** Add `<DuckDBGate>` wrapper.
 
 ---
 
-## 5. Toggle buttons lack accessible focus states
+## C. Border Inconsistencies
 
-### Problem
-The custom toggle buttons (delimiter selector, output format, view switcher) use raw `<button>` elements with no visible focus ring. Keyboard users can't see which button is focused. The active state is purely background color.
+### 8. Mixed border weights across tool pages
+The UI optimization reduced secondary containers to `border` (1px), but several pages still use `border-2`:
+- `CsvToSqlPage.tsx`: Options panel (line 274), schema editor (line 315), dialect buttons (line 281)
+- `FlattenPage.tsx`: Toggle buttons (line 219, 281, 289), flatten stats (line 346)
+- `SchemaPage.tsx`: Dialect buttons (line 202), varchar sizing select (line 303)
+- `CsvViewerPage.tsx`: Column stats box (line 176 -- uses `border-2 border-foreground`, the old heavy style)
+- `ConvertPage.tsx`: Entire options + stats (legacy, to be deleted)
+- `ExcelCsvPage.tsx`: Direction info + sheet controls (legacy, to be deleted)
 
-### Fix
-- Add `focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1` to all toggle button classes
-- Extract a shared `ToggleButton` component to eliminate the 15+ duplicate class strings across pages
+**Fix:** Normalize to `border` (1px) for secondary containers and `border-2` only for primary data sections (tables, output areas).
 
-### Files
-- New: `src/components/shared/ToggleButton.tsx`
-- All pages using inline toggle button patterns (converters, inspectors, viewers)
+### 9. CsvViewerPage column stats uses old heavy styling
+Line 176: `border-2 border-foreground bg-card p-3` -- this is the same heavy style that was reduced in converter stats. It should be `border border-border bg-muted/30` for consistency.
 
----
-
-## 6. Empty states after "New file" click
-
-### Problem
-Clicking "New file" resets all state but the transition is jarring -- the entire page content disappears instantly and you're back to the upload zone. There's no visual continuity.
-
-### Fix
-- This is minor and cosmetic. No change needed for now -- the instant reset is fast and functional. Flagging for awareness only.
+**Fix:** Update column stats container to match the compact stats pattern.
 
 ---
 
-## 7. CrossToolLinks visual weight
+## D. Missing Inspector Section Accents
 
-### Problem
-The cross-tool links section at the bottom of every page is visually heavy with its `border-2 border-border p-4` container. Each link chip also has `border-2 border-border`, creating a border-within-border effect. The section competes visually with the actual tool output.
+### 10. CsvInspectorPage "Column Overview" header missing left accent
+The audit plan added `border-l-4 border-l-foreground` accents to inspector sections, but the "Column Overview" header (line 352) was missed. It still uses the plain style without the accent border.
 
-### Fix
-- Reduce the outer container to `border border-border` (1px)
-- Reduce link chips to `border border-border` (1px)
-- Add subtle `text-muted-foreground` to the link text instead of `text-foreground` so they read as secondary navigation, not primary actions
-
-### Files
-- `src/components/shared/CrossToolLinks.tsx`
+**Fix:** Add `border-l-4 border-l-foreground` to the Column Overview header.
 
 ---
 
-## 8. Inspector pages: section headers all look identical
+## E. Navigation Issues
 
-### Problem
-All inspector sections (File Identity, CSV Structure, Column Overview, Data Patterns, Warnings) use the same visual treatment: `border-b-2 border-border bg-muted/50 px-4 py-2 text-xs font-bold uppercase`. When there are 5-6 sections stacked, they blur together and the user can't quickly locate a specific section.
+### 11. Dataset Diff is outside the main tool groups
+In the navbar (line 107), footer tool grid, and homepage Index, "Dataset Diff" is listed separately or appended outside the Analysis group. On the Navbar, it appears as a standalone item after the dropdown separator. In the footer, it's correctly inside "Analysis & SQL". On the Index homepage, it's inside the `analysis` array. But the Navbar has it dangling.
 
-### Fix
-- Add a subtle left-border accent to the section header: `border-l-4 border-l-foreground` on the header bar to create a visual anchor
-- For warning sections specifically, use `border-l-4 border-l-amber-500` to draw attention
+**Fix:** Move "Dataset Diff" into the "Analysis & SQL" group in the Navbar's `toolGroups` array (it's already in the analysis array on other pages).
 
-### Files
-- `src/pages/CsvInspectorPage.tsx`
-- `src/pages/JsonInspectorPage.tsx`
-- `src/pages/ParquetInspectorPage.tsx`
+### 12. DiffPage route is `/diff` but could be `/dataset-diff`
+All other tools use descriptive slugs (`/data-profiler`, `/json-flattener`, `/schema-generator`). `/diff` is terse and less SEO-friendly.
+
+**Fix:** This is a minor SEO consideration. Add a redirect from `/diff` to `/dataset-diff` and update all internal links. Low priority.
 
 ---
 
-## 9. "Try with sample data" button is too subtle
+## F. Functional Issues
 
-### Problem
-The sample data button (`variant="ghost"`) with muted text is almost invisible. For first-time users, this is the most important call-to-action after the upload zone -- it lets them explore the tool without having data ready. It's buried and easy to miss.
+### 13. CsvToExcelPage has no sample data button
+Unlike all other tool pages, `CsvToExcelPage.tsx` has no sample data option (neither inline nor standalone). First-time users can't try the tool without having a CSV file ready.
 
-### Fix
-- Change from `variant="ghost"` to `variant="outline"` with slightly bolder text
-- Add a subtle dashed border to make it feel like an "alternative action"
-- Position it inside the DropZone component itself, below the "Click or drag" text, rather than as a separate element below
+**Fix:** Add `sampleAction` to the DropZone using `getSampleCSV()`.
 
-### Files
-- `src/components/shared/DropZone.tsx` -- add optional `sampleAction` prop
-- All pages that use the sample data pattern
+### 14. ExcelToCsvPage sample data uses `generateSampleExcel()` but no DuckDBGate
+`ExcelToCsvPage.tsx` doesn't require DuckDB (it uses the `xlsx` library), so no gate is needed. However, the sample data works correctly. No issue here.
 
----
+### 15. CrossToolLinks missing `excludeRoute` on non-converter pages
+Viewer, inspector, and analysis pages show CrossToolLinks but don't pass `excludeRoute`. For example, `CsvViewerPage` shows a "View Data" link pointing to `/csv-viewer` -- linking to itself.
 
-## 10. Footer is minimal and lacks utility
-
-### Problem
-The footer has 3 links (DuckDB, Privacy, All Tools) and a copyright line. It doesn't help users navigate between tools or discover related features. Given this is a 21-tool suite, the footer is a missed navigation opportunity.
-
-### Fix
-- Add a compact tool grid to the footer: 4 columns with the tool categories (Converters, Viewers, Inspectors, Analysis) and their links
-- Keep the existing privacy/DuckDB line at the bottom
-
-### Files
-- `src/components/layout/Footer.tsx`
+**Fix:** Add `excludeRoute` to all non-converter pages that display CrossToolLinks.
 
 ---
 
-## Summary of Priority
+## G. SEO / Meta Issues
 
-| Priority | Item | Impact |
-|----------|------|--------|
-| High | #4 Mobile layout | Usability on 40%+ of traffic |
-| High | #5 Focus states | Accessibility compliance |
-| Medium | #1 Visual clutter reduction | Scannability |
-| Medium | #2 Conversion stats sizing | Visual hierarchy |
-| Medium | #7 CrossToolLinks weight | Visual noise |
-| Medium | #9 Sample data visibility | First-time user experience |
-| Low | #3 Input label removal | Minor noise |
-| Low | #8 Inspector section accents | Differentiation |
-| Low | #10 Footer navigation | Discoverability |
-| Skip | #6 Empty state transition | Cosmetic only |
+### 16. About page has no PageMeta
+`About.tsx` doesn't use `<PageMeta>` component, so it falls back to whatever the previous page set. If a user navigates directly to `/about`, the document title and meta description will be stale defaults from `index.html`.
 
-## Technical Approach
+**Fix:** Add `<PageMeta>` to About page.
 
-1. Create `ToggleButton` shared component first (used everywhere)
-2. Update `DropZone` with responsive padding and optional sample action
-3. Update `CrossToolLinks` border weights
-4. Update `FileInfo` to accept extra metadata
-5. Update converter pages to use new components and consolidated layout
-6. Update inspector section headers with accent borders
-7. Update `Footer` with tool grid
-8. Mobile-test all pages at 390px
+### 17. DiffPage not using descriptive route
+Already noted in item 12.
+
+---
+
+## H. Mobile-Specific Issues (Observed at 390px)
+
+### 18. Homepage renders well on mobile
+The hero padding reduction to `py-12` is effective. Tool cards stack properly in single-column. Footer tool grid uses 2-column layout. No issues observed.
+
+### 19. Converter pages options bars are properly responsive
+The `grid grid-cols-2 gap-3 sm:flex` pattern is applied on updated converter pages. No issues on pages that were updated.
+
+### 20. Pages that weren't updated still have layout issues on mobile
+`CsvToSqlPage.tsx` and `FlattenPage.tsx` still have `flex-wrap` on options without the responsive grid pattern, causing tall stacks of controls on mobile.
+
+**Fix:** Apply the `grid grid-cols-2 gap-3 sm:flex sm:flex-wrap` pattern to these pages.
+
+---
+
+## Summary & Priority
+
+| Priority | Item | Description |
+|----------|------|-------------|
+| High | #6, #7 | Missing DuckDBGate on CsvViewer + ParquetToJson |
+| High | #1, #2, #3 | Delete dead code (ExcelCsvPage, ConvertPage, ConversionStats) |
+| High | #15 | Self-links in CrossToolLinks on viewer/inspector/analysis pages |
+| Medium | #4 | Standardize all toggle buttons to ToggleButton component |
+| Medium | #5 | Move sample data buttons into DropZone sampleAction |
+| Medium | #8, #9 | Normalize border weights |
+| Medium | #11 | Move Dataset Diff into Navbar tool group |
+| Medium | #13 | Add sample data to CsvToExcelPage |
+| Low | #10 | Add accent to Column Overview inspector header |
+| Low | #16 | Add PageMeta to About page |
+| Low | #12 | Rename /diff to /dataset-diff |
+| Low | #20 | Mobile grid layout on CsvToSql + Flatten pages |
+
+## Implementation Order
+
+1. Delete dead files (ExcelCsvPage.tsx, ConvertPage.tsx, ConversionStats.tsx) and clean App.tsx imports
+2. Add DuckDBGate to CsvViewerPage and ParquetToJsonPage
+3. Add excludeRoute to CrossToolLinks on all non-converter pages
+4. Replace all inline toggle buttons with ToggleButton component
+5. Move standalone sample buttons into DropZone sampleAction
+6. Normalize border weights across remaining pages
+7. Move Dataset Diff into Navbar toolGroups
+8. Add sample data to CsvToExcelPage
+9. Add PageMeta to About page
+10. Add accent border to Column Overview inspector header
+11. Apply responsive grid to CsvToSqlPage and FlattenPage options
 
