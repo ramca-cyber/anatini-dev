@@ -28,6 +28,7 @@ export default function JsonToParquetPage() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ durationMs: number; outputSize: number } | null>(null);
   const [inputView, setInputView] = useState<"data" | "schema" | "raw-input">("data");
+  const [outputView, setOutputView] = useState<"preview" | "raw">("preview");
   const [compression, setCompression] = useState<"snappy" | "zstd" | "gzip" | "none">("snappy");
   const [rowGroupSize, setRowGroupSize] = useState<number | null>(null);
   const [inputMode, setInputMode] = useState<"file" | "paste">("file");
@@ -92,12 +93,12 @@ export default function JsonToParquetPage() {
       const durationMs = Math.round(performance.now() - start);
       setResult({ durationMs, outputSize: buf.byteLength });
       setOutputBuf(buf);
+      setOutputView("preview");
 
       const outName = `${tableName}_export.parquet`;
       try {
         const outData = await runQuery(db, `SELECT * FROM read_parquet('${outName}') LIMIT 100`);
         setOutputPreview(outData);
-
         const metaResult = await runQuery(db, `SELECT * FROM parquet_metadata('${outName}')`);
         const rowGroups = metaResult.rowCount;
         let totalCompressed = 0;
@@ -272,7 +273,17 @@ export default function JsonToParquetPage() {
                     <div><div className="text-xs text-muted-foreground">Compression ratio</div><div className="text-lg font-bold">{file.size > 0 ? `${Math.round((1 - result.outputSize / file.size) * 100)}%` : "—"} smaller</div></div>
                   </div>
 
-                  {outputPreview && (
+                  {/* Output tabs */}
+                  <div className="flex gap-1">
+                    {([["preview", "Output Preview"], ["raw", "Raw Output"]] as ["preview" | "raw", string][]).map(([v, label]) => (
+                      <button key={v} onClick={() => setOutputView(v)}
+                        className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${outputView === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {outputView === "preview" && outputPreview && (
                     <div className="space-y-3">
                       {parquetMeta && (
                         <div className="border-2 border-border bg-card p-4 flex items-center gap-6 flex-wrap">
@@ -282,9 +293,11 @@ export default function JsonToParquetPage() {
                           <div><div className="text-xs text-muted-foreground">Codec</div><div className="text-lg font-bold">{compression === "none" ? "None" : compression.toUpperCase()}</div></div>
                         </div>
                       )}
-                      <h4 className="text-sm font-medium text-muted-foreground">Output Preview (first 100 rows from Parquet)</h4>
                       <DataTable columns={outputPreview.columns} rows={outputPreview.rows} types={outputPreview.types} className="max-h-[500px]" />
                     </div>
+                  )}
+                  {outputView === "raw" && (
+                    <RawPreview content={null} label="Raw Output" binary />
                   )}
                 </div>
               )}
