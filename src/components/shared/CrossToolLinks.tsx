@@ -30,14 +30,26 @@ const linksByFormat: Record<string, { label: string; route: string }[]> = {
   ],
 };
 
-export function CrossToolLinks({ format, fileId }: { format: string; fileId?: string }) {
-  const links = linksByFormat[format] ?? [];
+interface CrossToolLinksProps {
+  format: string;
+  fileId?: string;
+  /** Filter out a link whose route matches (e.g. the current page) */
+  excludeRoute?: string;
+  /** Sub-heading label, e.g. "Source file" or "Converted output" */
+  heading?: string;
+  /** Render without the outer border container (for nesting inside a shared wrapper) */
+  inline?: boolean;
+}
+
+export function CrossToolLinks({ format, fileId, excludeRoute, heading, inline }: CrossToolLinksProps) {
+  const allLinks = linksByFormat[format] ?? [];
+  const links = excludeRoute ? allLinks.filter((l) => l.route !== excludeRoute) : allLinks;
   if (links.length === 0) return null;
 
-  return (
-    <div className="border-2 border-border p-4 space-y-3">
+  const content = (
+    <>
       <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-        Work with this file
+        {heading ?? "Work with this file"}
       </h3>
       <div className="flex flex-wrap gap-2">
         {links.map((link) => (
@@ -50,6 +62,16 @@ export function CrossToolLinks({ format, fileId }: { format: string; fileId?: st
           </Link>
         ))}
       </div>
+    </>
+  );
+
+  if (inline) {
+    return <div className="space-y-2">{content}</div>;
+  }
+
+  return (
+    <div className="border-2 border-border p-4 space-y-3">
+      {content}
     </div>
   );
 }

@@ -212,8 +212,12 @@ export default function ParquetToJsonPage() {
               </div>
             )}
 
-            <CrossToolLinks format="parquet" fileId={storedFileId ?? undefined} />
-            {result && <CrossToolLinks format="json" />}
+            <div className="border-2 border-border p-4 space-y-4">
+              <CrossToolLinks format="parquet" fileId={storedFileId ?? undefined} excludeRoute="/parquet-to-json" heading={result ? "Source file" : undefined} inline />
+              {result && (
+                <CrossToolLinks format="json" excludeRoute="/parquet-to-json" heading="Converted output" inline />
+              )}
+            </div>
           </div>
         )}
 
