@@ -38,7 +38,7 @@ export async function registerFile(
   const ext = file.name.split(".").pop()?.toLowerCase();
   const conn = await db.connect();
   try {
-    if (ext === "csv") {
+    if (ext === "csv" || ext === "tsv") {
       await conn.query(`CREATE OR REPLACE TABLE "${tableName}" AS SELECT * FROM read_csv_auto('${file.name}')`);
     } else if (ext === "parquet") {
       await conn.query(`CREATE OR REPLACE TABLE "${tableName}" AS SELECT * FROM read_parquet('${file.name}')`);
@@ -67,20 +67,26 @@ export async function registerFile(
   }
 }
 
-export async function exportToCSV(db: duckdb.AsyncDuckDB, sql: string): Promise<string> {
+export async function exportToCSV(db: duckdb.AsyncDuckDB, sql: string, options?: { delimiter?: string; header?: boolean; nullValue?: string }): Promise<string> {
+  const delim = options?.delimiter ?? ",";
+  const includeHeader = options?.header !== false;
+  const nullVal = options?.nullValue ?? "";
   const conn = await db.connect();
   try {
     const result = await conn.query(sql);
     const columns = result.schema.fields.map((f) => f.name);
-    let csv = columns.join(",") + "\n";
+    let csv = "";
+    if (includeHeader) {
+      csv = columns.map(c => c.includes(delim) || c.includes('"') ? `"${c.replace(/"/g, '""')}"` : c).join(delim) + "\n";
+    }
     for (let i = 0; i < result.numRows; i++) {
       const row: string[] = [];
       for (let j = 0; j < columns.length; j++) {
         const val = result.getChildAt(j)?.get(i);
-        const str = val === null || val === undefined ? "" : String(val);
-        row.push(str.includes(",") || str.includes('"') || str.includes("\n") ? `"${str.replace(/"/g, '""')}"` : str);
+        const str = val === null || val === undefined ? nullVal : String(val);
+        row.push(str.includes(delim) || str.includes('"') || str.includes("\n") ? `"${str.replace(/"/g, '""')}"` : str);
       }
-      csv += row.join(",") + "\n";
+      csv += row.join(delim) + "\n";
     }
     return csv;
   } finally {
@@ -88,16 +94,33 @@ export async function exportToCSV(db: duckdb.AsyncDuckDB, sql: string): Promise<
   }
 }
 
-export async function exportToParquet(db: duckdb.AsyncDuckDB, tableName: string): Promise<Uint8Array> {
+export async function exportToParquet(db: duckdb.AsyncDuckDB, tableName: string, options?: { compression?: string; rowGroupSize?: number | null }): Promise<Uint8Array> {
   const conn = await db.connect();
   try {
     const outName = `${tableName}_export.parquet`;
-    await conn.query(`COPY "${tableName}" TO '${outName}' (FORMAT PARQUET)`);
+    const parts = ["FORMAT PARQUET"];
+    if (options?.compression && options.compression !== "snappy") {
+      parts.push(`COMPRESSION '${options.compression.toUpperCase()}'`);
+    }
+    if (options?.rowGroupSize) {
+      parts.push(`ROW_GROUP_SIZE ${options.rowGroupSize}`);
+    }
+    await conn.query(`COPY "${tableName}" TO '${outName}' (${parts.join(", ")})`);
     const buf = await db.copyFileToBuffer(outName);
     return buf;
   } finally {
     await conn.close();
   }
+}
+
+export async function exportQueryToJSON(db: duckdb.AsyncDuckDB, sql: string): Promise<string> {
+  const result = await runQuery(db, sql);
+  const records = result.rows.map((row) => {
+    const obj: Record<string, unknown> = {};
+    result.columns.forEach((col, i) => { obj[col] = row[i]; });
+    return obj;
+  });
+  return JSON.stringify(records, null, 2);
 }
 
 export function downloadBlob(data: string | ArrayBuffer | Uint8Array, filename: string, mimeType: string) {

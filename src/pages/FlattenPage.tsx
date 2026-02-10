@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
-import { Braces, Download, FlaskConical, Eye, Columns } from "lucide-react";
+import { Braces, Download, FlaskConical, Eye, Columns, Copy, Check, ArrowRight } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
@@ -9,6 +9,8 @@ import { PasteInput } from "@/components/shared/PasteInput";
 import { Button } from "@/components/ui/button";
 import { downloadBlob, formatBytes } from "@/lib/duckdb-helpers";
 import { getSampleJSON } from "@/lib/sample-data";
+import { Link } from "react-router-dom";
+import { toast } from "@/hooks/use-toast";
 
 interface StructureInfo {
   rootType: string;
@@ -47,20 +49,31 @@ function analyzeJSON(parsed: any): StructureInfo {
   return { rootType: isArray ? `Array of ${objectCount} objects` : "Single object", objectCount, depth: maxDepth, paths };
 }
 
-function flattenObject(obj: any, sep: string, prefix = ""): Record<string, any> {
+function flattenObject(obj: any, sep: string, prefix = "", maxDepth: number = Infinity, currentDepth: number = 0, preserveNulls: boolean = true, arrayHandling: string = "index"): Record<string, any> {
   const result: Record<string, any> = {};
   for (const [key, val] of Object.entries(obj)) {
     const newKey = prefix ? `${prefix}${sep}${key}` : key;
     if (val === null || val === undefined) {
-      result[newKey] = val;
+      if (preserveNulls) result[newKey] = val;
     } else if (Array.isArray(val)) {
-      if (val.length === 0 || typeof val[0] !== "object") {
-        result[newKey] = val.join(", ");
+      if (currentDepth >= maxDepth) {
+        result[newKey] = arrayHandling === "stringify" ? JSON.stringify(val) : val.join(", ");
+      } else if (val.length === 0 || typeof val[0] !== "object") {
+        if (arrayHandling === "stringify") result[newKey] = JSON.stringify(val);
+        else if (arrayHandling === "bracket") {
+          val.forEach((item, i) => { result[`${newKey}[${i}]`] = item; });
+        } else {
+          val.forEach((item, i) => { result[`${newKey}${sep}${i}`] = item; });
+        }
       } else {
         result[newKey] = val;
       }
     } else if (typeof val === "object") {
-      Object.assign(result, flattenObject(val, sep, newKey));
+      if (currentDepth >= maxDepth) {
+        result[newKey] = JSON.stringify(val);
+      } else {
+        Object.assign(result, flattenObject(val, sep, newKey, maxDepth, currentDepth + 1, preserveNulls, arrayHandling));
+      }
     } else {
       result[newKey] = val;
     }
@@ -68,21 +81,22 @@ function flattenObject(obj: any, sep: string, prefix = ""): Record<string, any> 
   return result;
 }
 
-function flattenData(data: any[], sep: string): { columns: string[]; rows: any[][] } {
+function flattenData(data: any[], sep: string, maxDepth: number, preserveNulls: boolean, arrayHandling: string): { columns: string[]; rows: any[][]; nestedRemoved: number } {
+  let nestedRemoved = 0;
+
   function expandAndFlatten(item: any): Record<string, any>[] {
-    const flat = flattenObject(item, sep);
+    const flat = flattenObject(item, sep, "", maxDepth, 0, preserveNulls, arrayHandling);
     const arrayKeys = Object.keys(flat).filter(k => Array.isArray(flat[k]));
     if (arrayKeys.length === 0) return [flat];
+    nestedRemoved += arrayKeys.length;
     const key = arrayKeys[0];
     const arr = flat[key] as any[];
     delete flat[key];
     return arr.flatMap((el) => {
-      const expanded = typeof el === "object" && el !== null ? flattenObject(el, sep, key) : { [key]: el };
+      const expanded = typeof el === "object" && el !== null ? flattenObject(el, sep, key, maxDepth, 0, preserveNulls, arrayHandling) : { [key]: el };
       const merged = { ...flat, ...expanded };
       const remaining = Object.keys(merged).filter(k => Array.isArray(merged[k]));
-      if (remaining.length > 0) {
-        return expandAndFlatten(merged);
-      }
+      if (remaining.length > 0) return expandAndFlatten(merged);
       return [merged];
     });
   }
@@ -92,7 +106,7 @@ function flattenData(data: any[], sep: string): { columns: string[]; rows: any[]
   allRows.forEach(r => Object.keys(r).forEach(k => colSet.add(k)));
   const columns = Array.from(colSet);
   const rows = allRows.map(r => columns.map(c => r[c] ?? null));
-  return { columns, rows };
+  return { columns, rows, nestedRemoved };
 }
 
 export default function FlattenPage() {
@@ -106,6 +120,11 @@ export default function FlattenPage() {
   const [flattened, setFlattened] = useState<{ columns: string[]; rows: any[][] } | null>(null);
   const [showSideBySide, setShowSideBySide] = useState(true);
   const [inputMode, setInputMode] = useState<"file" | "paste">("file");
+  const [maxDepth, setMaxDepth] = useState<number>(Infinity);
+  const [arrayHandling, setArrayHandling] = useState<"index" | "bracket" | "stringify">("index");
+  const [preserveNulls, setPreserveNulls] = useState(true);
+  const [flatStats, setFlatStats] = useState<{ depth: number; keys: number; nested: number } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   async function handleFile(f: File) {
     setFile(f);
@@ -113,6 +132,7 @@ export default function FlattenPage() {
     setError(null);
     setFlattened(null);
     setStructure(null);
+    setFlatStats(null);
     try {
       const text = await f.text();
       setRawText(text);
@@ -139,8 +159,9 @@ export default function FlattenPage() {
     try {
       const data = Array.isArray(parsed) ? parsed : [parsed];
       const sep = naming === "dot" ? "." : "_";
-      const result = flattenData(data, sep);
-      setFlattened(result);
+      const result = flattenData(data, sep, maxDepth, preserveNulls, arrayHandling);
+      setFlattened({ columns: result.columns, rows: result.rows });
+      setFlatStats({ depth: structure?.depth ?? 0, keys: result.columns.length, nested: result.nestedRemoved });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to flatten JSON");
     } finally {
@@ -158,6 +179,17 @@ export default function FlattenPage() {
       }).join(",")
     );
     downloadBlob([header, ...rows].join("\n"), file!.name.replace(/\.[^.]+$/, "") + "_flat.csv", "text/csv");
+  }
+
+  async function handleCopyFlat() {
+    if (!flattened) return;
+    const data = Array.isArray(parsed) ? parsed : [parsed];
+    const sep = naming === "dot" ? "." : "_";
+    const flatArr = data.map(item => flattenObject(item, sep, "", maxDepth, 0, preserveNulls, arrayHandling));
+    await navigator.clipboard.writeText(JSON.stringify(flatArr, null, 2));
+    setCopied(true);
+    toast({ title: "Flat JSON copied to clipboard" });
+    setTimeout(() => setCopied(false), 2000);
   }
 
   const truncatedJson = useMemo(() => {
@@ -228,17 +260,44 @@ export default function FlattenPage() {
                   </tbody>
                 </table>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="text-xs text-muted-foreground">Naming:</span>
-                <div className="flex gap-1">
-                  {(["underscore", "dot"] as const).map((n) => (
-                    <button key={n} onClick={() => setNaming(n)}
-                      className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${naming === n ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-secondary/80"}`}>
-                      {n === "dot" ? "address.city" : "address_city"}
-                    </button>
-                  ))}
+
+              {/* Options */}
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground font-bold">Naming:</span>
+                  <div className="flex gap-1">
+                    {(["underscore", "dot"] as const).map((n) => (
+                      <button key={n} onClick={() => setNaming(n)}
+                        className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${naming === n ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
+                        {n === "dot" ? "address.city" : "address_city"}
+                      </button>
+                    ))}
+                  </div>
                 </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground font-bold">Max depth:</span>
+                  <select value={maxDepth === Infinity ? "" : maxDepth} onChange={(e) => setMaxDepth(e.target.value ? Number(e.target.value) : Infinity)} className="border-2 border-border bg-background px-2 py-1 text-xs">
+                    <option value="">Unlimited</option>
+                    <option value={1}>1</option>
+                    <option value={2}>2</option>
+                    <option value={3}>3</option>
+                    <option value={5}>5</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground font-bold">Arrays:</span>
+                  <select value={arrayHandling} onChange={(e) => setArrayHandling(e.target.value as any)} className="border-2 border-border bg-background px-2 py-1 text-xs">
+                    <option value="index">Index notation (key_0)</option>
+                    <option value="bracket">Bracket notation (key[0])</option>
+                    <option value="stringify">Stringify</option>
+                  </select>
+                </div>
+                <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                  <input type="checkbox" checked={preserveNulls} onChange={(e) => setPreserveNulls(e.target.checked)} className="rounded" />
+                  <span className="font-bold">Preserve null values</span>
+                </label>
               </div>
+
               <Button onClick={handleFlatten} disabled={loading}>
                 <Braces className="h-4 w-4 mr-1" /> Flatten
               </Button>
@@ -255,10 +314,26 @@ export default function FlattenPage() {
                 <Button variant="ghost" size="sm" onClick={() => setShowSideBySide(!showSideBySide)} title="Toggle side-by-side view">
                   <Columns className="h-4 w-4 mr-1" /> {showSideBySide ? "Table only" : "Side-by-side"}
                 </Button>
+                <Button variant="outline" size="sm" onClick={handleCopyFlat}>
+                  {copied ? <Check className="h-4 w-4 mr-1" /> : <Copy className="h-4 w-4 mr-1" />}
+                  {copied ? "Copied" : "Copy JSON"}
+                </Button>
+                <Link to="/json-to-csv">
+                  <Button variant="outline" size="sm">
+                    <ArrowRight className="h-4 w-4 mr-1" /> Convert to CSV
+                  </Button>
+                </Link>
                 <Button onClick={handleDownload}><Download className="h-4 w-4 mr-1" /> Download CSV</Button>
-                <Button variant="outline" onClick={() => { setFile(null); setFlattened(null); setStructure(null); setParsed(null); setRawText(""); }}>New file</Button>
+                <Button variant="outline" onClick={() => { setFile(null); setFlattened(null); setStructure(null); setParsed(null); setRawText(""); setFlatStats(null); }}>New file</Button>
               </div>
             </div>
+
+            {/* Flattening stats */}
+            {flatStats && (
+              <div className="border-2 border-border p-3 text-xs text-muted-foreground">
+                <strong>Depth:</strong> {flatStats.depth} → 1 · <strong>Keys:</strong> {flatStats.keys} · <strong>Nested objects removed:</strong> {flatStats.nested}
+              </div>
+            )}
 
             {showSideBySide ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

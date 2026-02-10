@@ -45,11 +45,13 @@ export default function ExcelCsvPage() {
     setView("table");
     setCsvFiles([]);
 
-    const ext = f.name.split(".").pop()?.toLowerCase();
+    const isExcel = /\.(xlsx?|xls)$/i.test(f.name);
+    const actualMode = isExcel ? "excel-to-csv" : "csv-to-excel";
+    setMode(actualMode);
+
     try {
       const XLSX = await loadXlsx();
-      if (ext === "csv" || ext === "tsv") {
-        setMode("csv-to-excel");
+      if (actualMode === "csv-to-excel") {
         const text = await f.text();
         const wb = XLSX.read(text, { type: "string" });
         setWorkbook(wb);
@@ -60,7 +62,6 @@ export default function ExcelCsvPage() {
         setCsvSheetNames([f.name.replace(/\.[^.]+$/, "")]);
         loadSheet(wb, wb.SheetNames[0], XLSX);
       } else {
-        setMode("excel-to-csv");
         const buf = await f.arrayBuffer();
         const wb = XLSX.read(buf);
         setWorkbook(wb);
@@ -86,7 +87,7 @@ export default function ExcelCsvPage() {
       const rows = data.slice(1, 201).map((row: any[]) => columns.map((_, i) => row[i] ?? null));
       setPreview({ columns, rows });
     }
-    if (mode === "excel-to-csv") {
+    if (mode === "excel-to-csv" || /\.(xlsx?|xls)$/i.test(file?.name ?? "")) {
       setCsvOutput(XLSX.utils.sheet_to_csv(ws));
     }
   }
@@ -115,7 +116,6 @@ export default function ExcelCsvPage() {
         const csv = XLSX.utils.sheet_to_csv(ws);
         downloadBlob(csv, `${file.name.replace(/\.[^.]+$/, "")}_${sheetsToExport[0]}.csv`, "text/csv");
       } else {
-        // Download all selected sheets as separate CSV files (combined in a single zip-like download)
         for (const s of sheetsToExport) {
           const ws = workbook.Sheets[s];
           const csv = XLSX.utils.sheet_to_csv(ws);
@@ -154,17 +154,48 @@ export default function ExcelCsvPage() {
     setCsvSheetNames(prev => prev.filter((_, i) => i !== index));
   }
 
+  function handleModeSwitch(newMode: "excel-to-csv" | "csv-to-excel") {
+    setMode(newMode);
+    setFile(null);
+    setPreview(null);
+    setSheets([]);
+    setWorkbook(null);
+    setCsvOutput(null);
+    setCsvFiles([]);
+    setCsvSheetNames([]);
+    setSelectedSheets(new Set());
+    setError(null);
+  }
+
   return (
     <ToolPage icon={FileText} title="Excel ↔ CSV Converter" description="Convert between Excel and CSV with multi-sheet support." metaDescription={getToolMetaDescription("excel-csv-converter")} seoContent={getToolSeo("excel-csv-converter")}>
       <div className="space-y-4">
+        {/* Mode toggle */}
+        <div className="flex gap-0 border-2 border-border w-fit">
+          <button onClick={() => handleModeSwitch("excel-to-csv")}
+            className={`px-4 py-2 text-sm font-bold transition-colors ${mode === "excel-to-csv" ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
+            Excel → CSV
+          </button>
+          <button onClick={() => handleModeSwitch("csv-to-excel")}
+            className={`px-4 py-2 text-sm font-bold transition-colors border-l-2 border-border ${mode === "csv-to-excel" ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
+            CSV → Excel
+          </button>
+        </div>
+
         {!file && (
           <div className="space-y-3">
-            <DropZone accept={[".xlsx", ".xls", ".csv", ".tsv"]} onFile={handleFile} label="Drop an Excel or CSV file" />
-            <div className="flex justify-center">
-              <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={async () => { const f = await generateSampleExcel(); handleFile(f); }}>
-                <FlaskConical className="h-4 w-4 mr-1" /> Try with sample data
-              </Button>
-            </div>
+            <DropZone
+              accept={mode === "excel-to-csv" ? [".xlsx", ".xls"] : [".csv", ".tsv"]}
+              onFile={handleFile}
+              label={mode === "excel-to-csv" ? "Drop an Excel file" : "Drop a CSV file"}
+            />
+            {mode === "excel-to-csv" && (
+              <div className="flex justify-center">
+                <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={async () => { const f = await generateSampleExcel(); handleFile(f); }}>
+                  <FlaskConical className="h-4 w-4 mr-1" /> Try with sample data
+                </Button>
+              </div>
+            )}
           </div>
         )}
 
@@ -177,7 +208,7 @@ export default function ExcelCsvPage() {
                   <Download className="h-4 w-4 mr-1" />
                   {mode === "excel-to-csv" ? (selectedSheets.size > 1 ? `Download ${selectedSheets.size} CSVs` : "Download CSV") : "Download Excel"}
                 </Button>
-                <Button variant="outline" onClick={() => { setFile(null); setPreview(null); setSheets([]); setWorkbook(null); setCsvOutput(null); setCsvFiles([]); setCsvSheetNames([]); setSelectedSheets(new Set()); }}>New file</Button>
+                <Button variant="outline" onClick={() => handleModeSwitch(mode)}>New file</Button>
               </div>
             </div>
 

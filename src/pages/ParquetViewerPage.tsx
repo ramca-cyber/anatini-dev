@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
-import { Eye, FlaskConical, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Eye, FlaskConical, Search, ChevronLeft, ChevronRight, Copy, Check } from "lucide-react";
 import { DuckDBGate } from "@/components/shared/DuckDBGate";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { registerFile, runQuery, exportToCSV, downloadBlob, formatBytes, sanitizeTableName } from "@/lib/duckdb-helpers";
 import { generateSampleParquet } from "@/lib/sample-data";
+import { toast } from "@/hooks/use-toast";
 
 const PAGE_SIZE = 200;
 
@@ -27,6 +28,7 @@ export default function ParquetViewerPage() {
   const [parquetMeta, setParquetMeta] = useState<{ columns: string[]; rows: any[][] } | null>(null);
   const [page, setPage] = useState(0);
   const [tableName, setTableName] = useState("");
+  const [ddlCopied, setDdlCopied] = useState(false);
 
   async function loadPage(tName: string, pageNum: number) {
     if (!db) return;
@@ -77,6 +79,31 @@ export default function ParquetViewerPage() {
       return obj;
     });
     downloadBlob(JSON.stringify(records, null, 2), `${file.name.replace(/\.[^.]+$/, "")}.json`, "application/json");
+  }
+
+  function generateSchemaDDL(): string {
+    if (!meta) return "";
+    const typeMap: Record<string, string> = {
+      VARCHAR: "TEXT", BIGINT: "BIGINT", INTEGER: "INTEGER", DOUBLE: "DOUBLE PRECISION",
+      BOOLEAN: "BOOLEAN", DATE: "DATE", TIMESTAMP: "TIMESTAMP", FLOAT: "REAL",
+    };
+    const mapType = (t: string) => {
+      const upper = t.toUpperCase();
+      for (const [k, v] of Object.entries(typeMap)) {
+        if (upper.includes(k)) return v;
+      }
+      return "TEXT";
+    };
+    const cols = meta.columns.map((col, i) => `  "${col}" ${mapType(meta.types[i])}`).join(",\n");
+    return `CREATE TABLE "${tableName}" (\n${cols}\n);`;
+  }
+
+  async function handleCopyDDL() {
+    const ddl = generateSchemaDDL();
+    await navigator.clipboard.writeText(ddl);
+    setDdlCopied(true);
+    toast({ title: "Schema DDL copied to clipboard" });
+    setTimeout(() => setDdlCopied(false), 2000);
   }
 
   const totalPages = meta ? Math.ceil(meta.rowCount / PAGE_SIZE) : 0;
@@ -154,17 +181,25 @@ export default function ParquetViewerPage() {
             )}
 
             {tab === "schema" && meta && (
-              <div className="border-2 border-border">
-                <div className="grid grid-cols-3 border-b-2 border-border bg-muted/50 px-3 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                  <span>#</span><span>Column</span><span>Type</span>
+              <div className="space-y-3">
+                <div className="flex justify-end">
+                  <Button variant="outline" size="sm" onClick={handleCopyDDL}>
+                    {ddlCopied ? <Check className="h-4 w-4 mr-1" /> : <Copy className="h-4 w-4 mr-1" />}
+                    {ddlCopied ? "Copied" : "Copy Schema as SQL DDL"}
+                  </Button>
                 </div>
-                {meta.columns.map((col, i) => (
-                  <div key={col} className="grid grid-cols-3 border-b border-border/50 px-3 py-2 text-xs">
-                    <span className="text-muted-foreground">{i + 1}</span>
-                    <span className="font-medium">{col}</span>
-                    <span className="font-mono text-muted-foreground">{meta.types[i]}</span>
+                <div className="border-2 border-border">
+                  <div className="grid grid-cols-3 border-b-2 border-border bg-muted/50 px-3 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                    <span>#</span><span>Column</span><span>Type</span>
                   </div>
-                ))}
+                  {meta.columns.map((col, i) => (
+                    <div key={col} className="grid grid-cols-3 border-b border-border/50 px-3 py-2 text-xs">
+                      <span className="text-muted-foreground">{i + 1}</span>
+                      <span className="font-medium">{col}</span>
+                      <span className="font-mono text-muted-foreground">{meta.types[i]}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 

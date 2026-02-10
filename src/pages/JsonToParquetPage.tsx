@@ -3,6 +3,7 @@ import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { Braces, FlaskConical } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
+import { DataTable } from "@/components/shared/DataTable";
 import { RawPreview } from "@/components/shared/RawPreview";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { PasteInput } from "@/components/shared/PasteInput";
@@ -10,20 +11,22 @@ import { ConversionStats } from "@/components/shared/ConversionStats";
 import { DuckDBGate } from "@/components/shared/DuckDBGate";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
-import { registerFile, exportToParquet, downloadBlob, formatBytes, sanitizeTableName } from "@/lib/duckdb-helpers";
+import { registerFile, runQuery, exportToParquet, downloadBlob, formatBytes, sanitizeTableName } from "@/lib/duckdb-helpers";
 
 export default function JsonToParquetPage() {
   const { db } = useDuckDB();
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [meta, setMeta] = useState<{ columns: string[]; rowCount: number; types: string[] } | null>(null);
+  const [preview, setPreview] = useState<{ columns: string[]; rows: any[][]; types: string[] } | null>(null);
   const [rawInput, setRawInput] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ durationMs: number; outputSize: number } | null>(null);
-  const [view, setView] = useState<"schema" | "raw-input">("schema");
+  const [view, setView] = useState<"data" | "schema" | "raw-input">("data");
   const [compression, setCompression] = useState<"snappy" | "zstd" | "gzip" | "none">("snappy");
   const [rowGroupSize, setRowGroupSize] = useState<number | null>(null);
   const [inputMode, setInputMode] = useState<"file" | "paste">("file");
+  const [nullableInfo, setNullableInfo] = useState<boolean[]>([]);
 
   async function handleFile(f: File) {
     if (!db) return;
@@ -32,13 +35,26 @@ export default function JsonToParquetPage() {
     setError(null);
     setResult(null);
     setRawInput(null);
-    setView("schema");
+    setPreview(null);
+    setView("data");
+    setNullableInfo([]);
     try {
       const text = await f.text();
       setRawInput(text.slice(0, 50_000));
       const tableName = sanitizeTableName(f.name);
       const info = await registerFile(db, f, tableName);
       setMeta(info);
+      const dataPreview = await runQuery(db, `SELECT * FROM "${tableName}" LIMIT 50`);
+      setPreview(dataPreview);
+      // Check nullable
+      const checks: boolean[] = [];
+      for (const col of info.columns) {
+        try {
+          const r = await runQuery(db, `SELECT COUNT(*) FROM "${tableName}" WHERE "${col}" IS NULL`);
+          checks.push(Number(r.rows[0][0]) > 0);
+        } catch { checks.push(true); }
+      }
+      setNullableInfo(checks);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load file");
     } finally {
@@ -59,7 +75,7 @@ export default function JsonToParquetPage() {
     const start = performance.now();
     try {
       const tableName = sanitizeTableName(file.name);
-      const buf = await exportToParquet(db, tableName);
+      const buf = await exportToParquet(db, tableName, { compression, rowGroupSize });
       const durationMs = Math.round(performance.now() - start);
       setResult({ durationMs, outputSize: buf.byteLength });
       const baseName = file.name.replace(/\.[^.]+$/, "");
@@ -123,7 +139,7 @@ export default function JsonToParquetPage() {
                 <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
                 <div className="flex gap-2">
                   <Button onClick={handleConvert} disabled={loading}>Convert to Parquet</Button>
-                  <Button variant="outline" onClick={() => { setFile(null); setMeta(null); setResult(null); setRawInput(null); }}>New file</Button>
+                  <Button variant="outline" onClick={() => { setFile(null); setMeta(null); setResult(null); setRawInput(null); setPreview(null); setNullableInfo([]); }}>New file</Button>
                 </div>
               </div>
 
@@ -154,7 +170,7 @@ export default function JsonToParquetPage() {
 
               <div className="flex items-center gap-3">
                 <div className="flex gap-2">
-                  {([["schema", "Schema"], ["raw-input", "Raw Input"]] as const).map(([v, label]) => (
+                  {([["data", "Data Preview"], ["schema", "Schema"], ["raw-input", "Raw Input"]] as const).map(([v, label]) => (
                     <button key={v} onClick={() => setView(v)}
                       className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${view === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
                       {label}
@@ -177,19 +193,30 @@ export default function JsonToParquetPage() {
           {loading && <LoadingState message="Processing..." />}
           {error && <div className="border-2 border-destructive bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
-          {meta && view === "schema" && file && (
-            <div className="border-2 border-border">
-              <div className="border-b-2 border-border bg-muted/50 px-3 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Schema</div>
-              <div className="divide-y divide-border">
-                {meta.columns.map((col, i) => (
-                  <div key={col} className="flex items-center justify-between px-3 py-1.5 text-xs">
-                    <span className="font-medium">{col}</span>
-                    <span className="font-mono text-muted-foreground">{meta.types[i]}</span>
-                  </div>
-                ))}
-              </div>
+          {/* Data preview */}
+          {preview && view === "data" && file && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium text-muted-foreground">Preview (first 50 rows)</h3>
+              <DataTable columns={preview.columns} rows={preview.rows} types={preview.types} className="max-h-[500px]" />
             </div>
           )}
+
+          {/* Schema */}
+          {meta && view === "schema" && file && (
+            <div className="border-2 border-border">
+              <div className="grid grid-cols-3 border-b-2 border-border bg-muted/50 px-3 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                <span>Column</span><span>Type</span><span>Nullable</span>
+              </div>
+              {meta.columns.map((col, i) => (
+                <div key={col} className="grid grid-cols-3 border-b border-border/50 px-3 py-2 text-xs">
+                  <span className="font-medium">{col}</span>
+                  <span className="font-mono text-muted-foreground">{meta.types[i]}</span>
+                  <span className={nullableInfo[i] ? "text-amber-500" : "text-muted-foreground"}>{nullableInfo[i] ? "YES" : "NO"}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
           {view === "raw-input" && (
             <RawPreview content={rawInput} label="Raw Input" fileName={file?.name} />
           )}

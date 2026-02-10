@@ -12,6 +12,7 @@ import { getSampleSchemaCSV } from "@/lib/sample-data";
 import { toast } from "@/hooks/use-toast";
 
 type Dialect = "postgresql" | "mysql" | "sqlite" | "sqlserver" | "bigquery" | "snowflake" | "duckdb";
+type VarcharSizing = "exact" | "plus20" | "plus50" | "fixed255" | "text";
 
 interface ColSchema {
   name: string;
@@ -19,6 +20,7 @@ interface ColSchema {
   mappedType: string;
   nullable: boolean;
   sampleValue?: string;
+  maxLength?: number;
 }
 
 const TYPE_MAP: Record<Dialect, Record<string, string>> = {
@@ -31,20 +33,39 @@ const TYPE_MAP: Record<Dialect, Record<string, string>> = {
   duckdb: { VARCHAR: "VARCHAR", BIGINT: "BIGINT", INTEGER: "INTEGER", DOUBLE: "DOUBLE", BOOLEAN: "BOOLEAN", DATE: "DATE", TIMESTAMP: "TIMESTAMP", FLOAT: "FLOAT" },
 };
 
-function mapType(duckType: string, dialect: Dialect): string {
+function mapType(duckType: string, dialect: Dialect, varcharSizing: VarcharSizing, maxLength?: number): string {
   const upper = duckType.toUpperCase();
   const map = TYPE_MAP[dialect];
+
+  if (upper.includes("VARCHAR") && maxLength !== undefined && varcharSizing !== "text") {
+    let size: number;
+    switch (varcharSizing) {
+      case "exact": size = maxLength; break;
+      case "plus20": size = Math.ceil(maxLength * 1.2); break;
+      case "plus50": size = Math.ceil(maxLength * 1.5); break;
+      case "fixed255": size = 255; break;
+      default: size = maxLength;
+    }
+    if (dialect === "postgresql") return `VARCHAR(${size})`;
+    if (dialect === "mysql") return `VARCHAR(${size})`;
+    if (dialect === "sqlserver") return `NVARCHAR(${size})`;
+    if (dialect === "snowflake") return `VARCHAR(${size})`;
+    if (dialect === "bigquery") return "STRING";
+    if (dialect === "sqlite") return "TEXT";
+    if (dialect === "duckdb") return `VARCHAR(${size})`;
+  }
+
   for (const [key, val] of Object.entries(map)) {
     if (upper.includes(key)) return val;
   }
   return map.VARCHAR || "TEXT";
 }
 
-function generateDDL(tableName: string, cols: ColSchema[], dialect: Dialect, prefix: string, addComments: boolean): string {
+function generateDDL(tableName: string, cols: ColSchema[], dialect: Dialect, prefix: string, addComments: boolean, notNullComplete: boolean): string {
   const quote = dialect === "bigquery" ? "`" : '"';
   const fullName = prefix ? `${prefix}.${tableName}` : tableName;
   const lines = cols.map((c) => {
-    const nullable = c.nullable ? "" : " NOT NULL";
+    const nullable = notNullComplete && !c.nullable ? " NOT NULL" : (c.nullable ? "" : " NOT NULL");
     const comment = addComments && c.sampleValue ? ` -- e.g. ${c.sampleValue}` : "";
     return `  ${quote}${c.name}${quote} ${c.mappedType}${nullable}${comment}`;
   });
@@ -62,6 +83,8 @@ export default function SchemaPage() {
   const [dialect, setDialect] = useState<Dialect>("postgresql");
   const [schemaPrefix, setSchemaPrefix] = useState("");
   const [addComments, setAddComments] = useState(false);
+  const [notNullComplete, setNotNullComplete] = useState(false);
+  const [varcharSizing, setVarcharSizing] = useState<VarcharSizing>("text");
 
   async function handleFile(f: File) {
     if (!db) return;
@@ -78,16 +101,25 @@ export default function SchemaPage() {
         const nullRes = await runQuery(db, `SELECT COUNT(*) FROM "${tName}" WHERE "${info.columns[i]}" IS NULL`);
         const hasNulls = Number(nullRes.rows[0][0]) > 0;
         let sampleValue: string | undefined;
+        let maxLength: number | undefined;
         try {
           const sampleRes = await runQuery(db, `SELECT "${info.columns[i]}"::VARCHAR FROM "${tName}" WHERE "${info.columns[i]}" IS NOT NULL LIMIT 1`);
           sampleValue = sampleRes.rows[0]?.[0] ? String(sampleRes.rows[0][0]) : undefined;
         } catch {}
+        // Get max length for VARCHAR columns
+        if (info.types[i].toUpperCase().includes("VARCHAR")) {
+          try {
+            const lenRes = await runQuery(db, `SELECT MAX(LENGTH("${info.columns[i]}"::VARCHAR)) FROM "${tName}" WHERE "${info.columns[i]}" IS NOT NULL`);
+            maxLength = Number(lenRes.rows[0]?.[0] ?? 0);
+          } catch {}
+        }
         schemas.push({
           name: info.columns[i],
           detectedType: info.types[i],
-          mappedType: mapType(info.types[i], dialect),
+          mappedType: mapType(info.types[i], dialect, varcharSizing, maxLength),
           nullable: hasNulls,
           sampleValue,
+          maxLength,
         });
       }
       setCols(schemas);
@@ -100,29 +132,32 @@ export default function SchemaPage() {
 
   function updateMappedTypes(newDialect: Dialect) {
     setDialect(newDialect);
-    setCols((prev) => prev.map((c) => ({ ...c, mappedType: mapType(c.detectedType, newDialect) })));
+    setCols((prev) => prev.map((c) => ({ ...c, mappedType: mapType(c.detectedType, newDialect, varcharSizing, c.maxLength) })));
+  }
+
+  function updateVarcharSizing(newSizing: VarcharSizing) {
+    setVarcharSizing(newSizing);
+    setCols((prev) => prev.map((c) => ({ ...c, mappedType: mapType(c.detectedType, dialect, newSizing, c.maxLength) })));
   }
 
   function updateColType(index: number, newType: string) {
     setCols((prev) => prev.map((c, i) => i === index ? { ...c, mappedType: newType } : c));
   }
 
-  const ddl = cols.length > 0 ? generateDDL(tableName, cols, dialect, schemaPrefix, addComments) : "";
+  const ddl = cols.length > 0 ? generateDDL(tableName, cols, dialect, schemaPrefix, addComments, notNullComplete) : "";
 
-  function handleCopy() {
-    navigator.clipboard.writeText(ddl);
+  // Generate all dialects for multi-tab view
+  const allDialectDDLs = cols.length > 0
+    ? dialects.map(d => ({
+        ...d,
+        ddl: generateDDL(tableName, cols.map(c => ({ ...c, mappedType: mapType(c.detectedType, d.id, varcharSizing, c.maxLength) })), d.id, schemaPrefix, addComments, notNullComplete),
+      }))
+    : [];
+
+  function handleCopy(text?: string) {
+    navigator.clipboard.writeText(text ?? ddl);
     toast({ title: "DDL copied to clipboard" });
   }
-
-  const dialects: { id: Dialect; label: string }[] = [
-    { id: "postgresql", label: "Postgres" },
-    { id: "mysql", label: "MySQL" },
-    { id: "sqlite", label: "SQLite" },
-    { id: "sqlserver", label: "SQL Server" },
-    { id: "bigquery", label: "BigQuery" },
-    { id: "snowflake", label: "Snowflake" },
-    { id: "duckdb", label: "DuckDB" },
-  ];
 
   return (
     <ToolPage icon={Database} title="Schema Generator" description="Infer schemas and generate DDL for Postgres, MySQL, BigQuery and more."
@@ -152,7 +187,7 @@ export default function SchemaPage() {
             <div className="flex flex-wrap gap-2">
               {dialects.map((d) => (
                 <button key={d.id} onClick={() => updateMappedTypes(d.id)}
-                  className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${dialect === d.id ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-secondary/80"}`}>
+                  className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${dialect === d.id ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
                   {d.label}
                 </button>
               ))}
@@ -162,6 +197,7 @@ export default function SchemaPage() {
               <TabsList>
                 <TabsTrigger value="schema">Column Mapping</TabsTrigger>
                 <TabsTrigger value="ddl">DDL Output</TabsTrigger>
+                <TabsTrigger value="all-dialects">All Dialects</TabsTrigger>
                 <TabsTrigger value="settings">Settings</TabsTrigger>
               </TabsList>
 
@@ -174,6 +210,7 @@ export default function SchemaPage() {
                         <th className="px-3 py-2 text-left font-medium">Detected</th>
                         <th className="px-3 py-2 text-left font-medium">Mapped ({dialect})</th>
                         <th className="px-3 py-2 text-left font-medium">Nullable</th>
+                        <th className="px-3 py-2 text-left font-medium">Max Len</th>
                         <th className="px-3 py-2 text-left font-medium">Sample</th>
                       </tr>
                     </thead>
@@ -190,6 +227,7 @@ export default function SchemaPage() {
                             />
                           </td>
                           <td className="px-3 py-1.5 text-xs">{c.nullable ? "YES" : "NO"}</td>
+                          <td className="px-3 py-1.5 text-xs font-mono text-muted-foreground">{c.maxLength ?? "—"}</td>
                           <td className="px-3 py-1.5 font-mono text-xs text-muted-foreground truncate max-w-[150px]" title={c.sampleValue}>{c.sampleValue ?? "—"}</td>
                         </tr>
                       ))}
@@ -200,9 +238,9 @@ export default function SchemaPage() {
 
               <TabsContent value="ddl" className="pt-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium text-muted-foreground">Generated DDL</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground">Generated DDL ({dialect})</h3>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={handleCopy}>
+                    <Button variant="outline" size="sm" onClick={() => handleCopy()}>
                       <Copy className="h-4 w-4 mr-1" /> Copy
                     </Button>
                     <Button variant="outline" size="sm" onClick={() => downloadBlob(ddl, `${tableName}.sql`, "text/sql")}>
@@ -211,6 +249,20 @@ export default function SchemaPage() {
                   </div>
                 </div>
                 <pre className="rounded-lg border border-border bg-card p-4 font-mono text-sm text-foreground overflow-auto">{ddl}</pre>
+              </TabsContent>
+
+              <TabsContent value="all-dialects" className="pt-4 space-y-4">
+                {allDialectDDLs.map((d) => (
+                  <div key={d.id} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-bold">{d.label}</h4>
+                      <Button variant="ghost" size="sm" onClick={() => handleCopy(d.ddl)}>
+                        <Copy className="h-3 w-3 mr-1" /> Copy
+                      </Button>
+                    </div>
+                    <pre className="rounded border border-border bg-card p-3 font-mono text-xs text-foreground overflow-auto max-h-[200px]">{d.ddl}</pre>
+                  </div>
+                ))}
               </TabsContent>
 
               <TabsContent value="settings" className="pt-4 space-y-4">
@@ -234,9 +286,23 @@ export default function SchemaPage() {
                       />
                     </div>
                   </div>
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm text-muted-foreground">VARCHAR sizing:</label>
+                    <select value={varcharSizing} onChange={(e) => updateVarcharSizing(e.target.value as VarcharSizing)} className="border-2 border-border bg-background px-2 py-1 text-xs">
+                      <option value="text">TEXT (no size)</option>
+                      <option value="exact">Exact max</option>
+                      <option value="plus20">Max + 20%</option>
+                      <option value="plus50">Max + 50%</option>
+                      <option value="fixed255">Fixed 255</option>
+                    </select>
+                  </div>
                   <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
                     <input type="checkbox" checked={addComments} onChange={(e) => setAddComments(e.target.checked)} className="rounded" />
                     Add sample value comments in DDL
+                  </label>
+                  <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
+                    <input type="checkbox" checked={notNullComplete} onChange={(e) => setNotNullComplete(e.target.checked)} className="rounded" />
+                    NOT NULL on 100% complete columns
                   </label>
                 </div>
               </TabsContent>
@@ -247,3 +313,13 @@ export default function SchemaPage() {
     </ToolPage>
   );
 }
+
+const dialects: { id: Dialect; label: string }[] = [
+  { id: "postgresql", label: "Postgres" },
+  { id: "mysql", label: "MySQL" },
+  { id: "sqlite", label: "SQLite" },
+  { id: "sqlserver", label: "SQL Server" },
+  { id: "bigquery", label: "BigQuery" },
+  { id: "snowflake", label: "Snowflake" },
+  { id: "duckdb", label: "DuckDB" },
+];

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
-import { Table, FlaskConical } from "lucide-react";
+import { Table, FlaskConical, Copy, Check } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
@@ -13,6 +13,14 @@ import { DuckDBGate } from "@/components/shared/DuckDBGate";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { registerFile, runQuery, exportToCSV, downloadBlob, formatBytes, sanitizeTableName } from "@/lib/duckdb-helpers";
+import { toast } from "@/hooks/use-toast";
+
+const DELIMITERS = [
+  { label: "Comma", value: "," },
+  { label: "Tab", value: "\t" },
+  { label: "Semicolon", value: ";" },
+  { label: "Pipe", value: "|" },
+];
 
 export default function JsonToCsvPage() {
   const { db } = useDuckDB();
@@ -25,6 +33,9 @@ export default function JsonToCsvPage() {
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<"table" | "raw-output" | "raw-input">("table");
   const [inputMode, setInputMode] = useState<"file" | "paste">("file");
+  const [delimiter, setDelimiter] = useState(",");
+  const [includeHeader, setIncludeHeader] = useState(true);
+  const [copied, setCopied] = useState(false);
 
   async function handleFile(f: File) {
     if (!db) return;
@@ -43,13 +54,22 @@ export default function JsonToCsvPage() {
       setMeta(info);
       const result = await runQuery(db, `SELECT * FROM "${tableName}" LIMIT 100`);
       setPreview(result);
-      const csv = await exportToCSV(db, `SELECT * FROM "${tableName}"`);
+      const csv = await exportToCSV(db, `SELECT * FROM "${tableName}"`, { delimiter, header: includeHeader });
       setCsvOutput(csv);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load file");
     } finally {
       setLoading(false);
     }
+  }
+
+  async function regenerateCsv() {
+    if (!db || !file || !meta) return;
+    try {
+      const tableName = sanitizeTableName(file.name);
+      const csv = await exportToCSV(db, `SELECT * FROM "${tableName}"`, { delimiter, header: includeHeader });
+      setCsvOutput(csv);
+    } catch {}
   }
 
   function handlePaste(text: string) {
@@ -60,6 +80,13 @@ export default function JsonToCsvPage() {
 
   function handleDownload() {
     downloadBlob(csvOutput, `${file?.name.replace(/\.[^.]+$/, "")}.csv`, "text/csv");
+  }
+
+  async function handleCopy() {
+    await navigator.clipboard.writeText(csvOutput);
+    setCopied(true);
+    toast({ title: "Copied to clipboard" });
+    setTimeout(() => setCopied(false), 2000);
   }
 
   function handleSampleJson() {
@@ -114,8 +141,31 @@ export default function JsonToCsvPage() {
                 <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
                 <div className="flex gap-2">
                   <Button onClick={handleDownload} disabled={!csvOutput}>Download CSV</Button>
+                  <Button variant="outline" onClick={handleCopy} disabled={!csvOutput}>
+                    {copied ? <Check className="h-4 w-4 mr-1" /> : <Copy className="h-4 w-4 mr-1" />}
+                    {copied ? "Copied" : "Copy"}
+                  </Button>
                   <Button variant="outline" onClick={() => { setFile(null); setMeta(null); setPreview(null); setCsvOutput(""); setRawInput(null); }}>New file</Button>
                 </div>
+              </div>
+
+              {/* Options */}
+              <div className="border-2 border-border p-3 flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-muted-foreground font-bold">Delimiter:</label>
+                  <div className="flex gap-1">
+                    {DELIMITERS.map((d) => (
+                      <button key={d.value} onClick={() => { setDelimiter(d.value); setTimeout(regenerateCsv, 0); }}
+                        className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${delimiter === d.value ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
+                        {d.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                  <input type="checkbox" checked={includeHeader} onChange={(e) => { setIncludeHeader(e.target.checked); setTimeout(regenerateCsv, 0); }} className="rounded" />
+                  <span className="font-bold">Include header row</span>
+                </label>
               </div>
 
               {csvOutput && <ConversionStats rows={meta.rowCount} columns={meta.columns.length} inputFormat="JSON" outputFormat="CSV" />}
