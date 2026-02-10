@@ -231,16 +231,41 @@ export default function CsvInspectorPage() {
         }
       } catch {}
 
+      // Build expandable content for inconsistent rows
+      let inconsistentDetail = "";
+      if (inconsistentRows > 0) {
+        try {
+          const text = await f.slice(0, 500_000).text();
+          const lines = text.split(/\r?\n/).filter(l => l.trim());
+          if (lines.length > 1) {
+            const headerFields = lines[0].split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).length;
+            const badLines = lines.slice(1)
+              .map((l, i) => ({ line: i + 2, fields: l.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).length }))
+              .filter(r => r.fields !== headerFields)
+              .slice(0, 10);
+            inconsistentDetail = `Expected ${headerFields} fields per row.\n` +
+              badLines.map(r => `Line ${r.line}: ${r.fields} fields`).join("\n") +
+              (inconsistentRows > 10 ? `\n... and ${inconsistentRows - 10} more` : "");
+          }
+        } catch {}
+      }
+
+      // Build expandable content for null-heavy columns
+      const nullHeavyCols = colInfos.filter(c => info.rowCount > 0 && c.nulls / info.rowCount > 0.5);
+      const nullHeavyDetail = nullHeavyCols.length > 0
+        ? nullHeavyCols.map(c => `"${c.name}": ${c.nulls.toLocaleString()} nulls (${((c.nulls / info.rowCount) * 100).toFixed(1)}%)`).join("\n")
+        : "";
+
       const warns: Warning[] = [];
       if (id.bom) warns.push({ level: "info", message: "File has BOM marker", detail: `${id.bom}. Some tools may show extra characters at the start.` });
       if (id.lineEndings.includes("Mixed")) warns.push({ level: "warning", message: "Mixed line endings detected", detail: "File contains both CRLF and LF. Consider standardizing." });
       if (duplicateRows > 0) warns.push({ level: "info", message: `${duplicateRows.toLocaleString()} duplicate rows (${((duplicateRows / info.rowCount) * 100).toFixed(1)}%)` });
-      if (inconsistentRows > 0) warns.push({ level: "warning", message: `${inconsistentRows} rows have inconsistent field count`, detail: "Some rows have a different number of fields than the header." });
+      if (inconsistentRows > 0) warns.push({ level: "warning", message: `${inconsistentRows} rows have inconsistent field count`, detail: "Some rows have a different number of fields than the header.", expandable: true, expandedContent: inconsistentDetail });
       if (maxLineLen > 10000) warns.push({ level: "info", message: `Max line length: ${maxLineLen.toLocaleString()} characters`, detail: "Very long lines may cause issues in some tools." });
       for (const col of colInfos) {
         if (col.name !== col.name.trim()) warns.push({ level: "warning", message: `Column "${col.name}" has whitespace in header` });
-        if (info.rowCount > 0 && col.nulls / info.rowCount > 0.5) warns.push({ level: "warning", message: `"${col.name}" is >50% null (${col.nulls.toLocaleString()} nulls)` });
       }
+      if (nullHeavyCols.length > 0) warns.push({ level: "warning", message: `${nullHeavyCols.length} column(s) are >50% null`, detail: "Click to see affected columns.", expandable: true, expandedContent: nullHeavyDetail });
       setWarnings(warns);
     } catch (e) { setError(e instanceof Error ? e.message : "Analysis failed"); } finally { setLoading(false); }
   }
