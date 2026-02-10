@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
-import { Braces, ArrowRightLeft, FlaskConical, Download, Copy, Check } from "lucide-react";
+import { Braces, ArrowRightLeft, Download, Copy, Check } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
@@ -8,6 +8,7 @@ import { RawPreview } from "@/components/shared/RawPreview";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
 import { InspectLink } from "@/components/shared/InspectLink";
+import { DuckDBGate } from "@/components/shared/DuckDBGate";
 import { ToggleButton } from "@/components/shared/ToggleButton";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
@@ -114,6 +115,7 @@ export default function ParquetToJsonPage() {
 
   return (
     <ToolPage icon={Braces} title="Parquet to JSON" description="Export Parquet files to JSON or NDJSON format." pageTitle="Parquet to JSON — Free, Offline | Anatini.dev" metaDescription={getToolMetaDescription("parquet-to-json")} seoContent={getToolSeo("parquet-to-json")}>
+      <DuckDBGate>
       <div className="space-y-4">
         {!file && (
           <DropZone
@@ -216,6 +218,7 @@ export default function ParquetToJsonPage() {
         {loading && <LoadingState message="Processing..." />}
         {error && <div className="border-2 border-destructive bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
       </div>
+      </DuckDBGate>
     </ToolPage>
   );
 }

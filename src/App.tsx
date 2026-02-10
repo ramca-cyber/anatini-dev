@@ -23,7 +23,7 @@ import ParquetToJsonPage from "./pages/ParquetToJsonPage";
 import ParquetViewerPage from "./pages/ParquetViewerPage";
 import CsvViewerPage from "./pages/CsvViewerPage";
 import CsvToSqlPage from "./pages/CsvToSqlPage";
-import ExcelCsvPage from "./pages/ExcelCsvPage";
+
 import ExcelToCsvPage from "./pages/ExcelToCsvPage";
 import CsvToExcelPage from "./pages/CsvToExcelPage";
 import CsvInspectorPage from "./pages/CsvInspectorPage";
@@ -74,7 +74,8 @@ const App = () => (
                 <Route path="/csv-to-sql" element={<CsvToSqlPage />} />
 
                 {/* Legacy */}
-                <Route path="/diff" element={<DiffPage />} />
+                <Route path="/dataset-diff" element={<DiffPage />} />
+                <Route path="/diff" element={<Navigate to="/dataset-diff" replace />} />
 
                 {/* Redirects from old routes */}
                 <Route path="/convert" element={<Navigate to="/csv-to-parquet" replace />} />

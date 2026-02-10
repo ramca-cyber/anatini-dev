@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
-import { GitCompare, Download, FlaskConical } from "lucide-react";
+import { GitCompare, Download } from "lucide-react";
 import { useFileStore } from "@/contexts/FileStoreContext";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
@@ -8,6 +8,7 @@ import { DataTable } from "@/components/shared/DataTable";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
 import { InspectLink } from "@/components/shared/InspectLink";
+import { ToggleButton } from "@/components/shared/ToggleButton";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useDuckDB } from "@/contexts/DuckDBContext";
@@ -259,9 +260,13 @@ export default function DiffPage() {
 
         {neitherLoaded && (
           <div className="flex justify-center">
-            <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={loadSampleData}>
-              <FlaskConical className="h-4 w-4 mr-1" /> Try with sample data
-            </Button>
+            <button
+              type="button"
+              onClick={loadSampleData}
+              className="inline-flex items-center gap-1.5 border border-dashed border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-muted-foreground/50 transition-colors"
+            >
+              ⚗ Try with sample data
+            </button>
           </div>
         )}
 
@@ -335,19 +340,16 @@ export default function DiffPage() {
 
             {/* Row filter toggles */}
             <div className="flex items-center gap-2 flex-wrap">
-              {(["all", "added", "removed", "modified"] as const).map(f => (
-                <button
-                  key={f}
-                  onClick={() => applyFilter(f)}
-                  className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                    filter === f
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                  }`}
-                >
-                  {f === "all" ? "All" : f.charAt(0).toUpperCase() + f.slice(1)}
-                </button>
-              ))}
+              <ToggleButton
+                options={[
+                  { label: "All", value: "all" },
+                  { label: "Added", value: "added" },
+                  { label: "Removed", value: "removed" },
+                  { label: "Modified", value: "modified" },
+                ]}
+                value={filter}
+                onChange={applyFilter}
+              />
 
               <div className="ml-auto flex gap-2">
                 <Button variant="outline" size="sm" onClick={handleExportDiffCSV}>
@@ -367,8 +369,8 @@ export default function DiffPage() {
           </>
         )}
 
-        {beforeFile && <CrossToolLinks format={detectFormat(beforeFile.name)} fileId={beforeFileId ?? undefined} />}
-        {afterFile && afterFile.name !== beforeFile?.name && <CrossToolLinks format={detectFormat(afterFile.name)} fileId={afterFileId ?? undefined} />}
+        {beforeFile && <CrossToolLinks format={detectFormat(beforeFile.name)} fileId={beforeFileId ?? undefined} excludeRoute="/dataset-diff" />}
+        {afterFile && afterFile.name !== beforeFile?.name && <CrossToolLinks format={detectFormat(afterFile.name)} fileId={afterFileId ?? undefined} excludeRoute="/dataset-diff" />}
       </div>
     </ToolPage>
   );

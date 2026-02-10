@@ -35,7 +35,7 @@ const analysis = [
   { path: "/json-flattener", title: "JSON Flattener", description: "Flatten nested JSON to tabular.", icon: Braces },
   { path: "/schema-generator", title: "Schema Generator", description: "DDL for Postgres, MySQL, BigQuery.", icon: Database },
   { path: "/csv-to-sql", title: "CSV → SQL", description: "CREATE TABLE + INSERT statements.", icon: Database },
-  { path: "/diff", title: "Dataset Diff", description: "Compare two dataset versions.", icon: GitCompare },
+  { path: "/dataset-diff", title: "Dataset Diff", description: "Compare two dataset versions.", icon: GitCompare },
 ];
 
 const features = [

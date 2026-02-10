@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
-import { Eye, FlaskConical, Search, ChevronLeft, ChevronRight, Copy, Check } from "lucide-react";
+import { Eye, Search, ChevronLeft, ChevronRight, Copy, Check } from "lucide-react";
 import { DuckDBGate } from "@/components/shared/DuckDBGate";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
@@ -133,14 +133,12 @@ export default function ParquetViewerPage() {
       <DuckDBGate>
       <div className="space-y-4">
         {!file && (
-          <div className="space-y-3">
-            <DropZone accept={[".parquet"]} onFile={handleFile} label="Drop a Parquet file" />
-            <div className="flex justify-center">
-              <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={async () => { if (db) { const f = await generateSampleParquet(db); handleFile(f); } }}>
-                <FlaskConical className="h-4 w-4 mr-1" /> Try with sample data
-              </Button>
-            </div>
-          </div>
+          <DropZone
+            accept={[".parquet"]}
+            onFile={handleFile}
+            label="Drop a Parquet file"
+            sampleAction={{ label: "⚗ Try with sample data", onClick: async () => { if (db) { const f = await generateSampleParquet(db); handleFile(f); } } }}
+          />
         )}
 
         {file && meta && (
@@ -228,7 +226,7 @@ export default function ParquetViewerPage() {
               </div>
             )}
 
-            <CrossToolLinks format="parquet" fileId={storedFileId ?? undefined} />
+            <CrossToolLinks format="parquet" fileId={storedFileId ?? undefined} excludeRoute="/parquet-viewer" />
           </div>
         )}
 

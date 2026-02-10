@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
-import { Braces, Download, FlaskConical, Eye, Columns, Copy, Check, ArrowRight } from "lucide-react";
+import { Braces, Download, Eye, Columns, Copy, Check, ArrowRight } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
@@ -8,6 +8,7 @@ import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { PasteInput } from "@/components/shared/PasteInput";
 import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
 import { InspectLink } from "@/components/shared/InspectLink";
+import { ToggleButton } from "@/components/shared/ToggleButton";
 import { Button } from "@/components/ui/button";
 import { downloadBlob, formatBytes } from "@/lib/duckdb-helpers";
 import { useFileStore } from "@/contexts/FileStoreContext";
@@ -213,24 +214,19 @@ export default function FlattenPage() {
       <div className="space-y-6">
         {!file && (
           <div className="space-y-4">
-            <div className="flex gap-2">
-              {(["file", "paste"] as const).map((m) => (
-                <button key={m} onClick={() => setInputMode(m)}
-                  className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${inputMode === m ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                  {m === "file" ? "Upload File" : "Paste Data"}
-                </button>
-              ))}
-            </div>
+            <ToggleButton
+              options={[{ label: "Upload File", value: "file" }, { label: "Paste Data", value: "paste" }]}
+              value={inputMode}
+              onChange={setInputMode}
+            />
 
             {inputMode === "file" ? (
-              <div className="space-y-3">
-                <DropZone accept={[".json", ".jsonl"]} onFile={handleFile} label="Drop a JSON or JSONL file" />
-                <div className="flex justify-center">
-                  <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => handleFile(getSampleJSON())}>
-                    <FlaskConical className="h-4 w-4 mr-1" /> Try with sample data
-                  </Button>
-                </div>
-              </div>
+              <DropZone
+                accept={[".json", ".jsonl"]}
+                onFile={handleFile}
+                label="Drop a JSON or JSONL file"
+                sampleAction={{ label: "⚗ Try with sample data", onClick: () => handleFile(getSampleJSON()) }}
+              />
             ) : (
               <PasteInput
                 onSubmit={handlePaste}
@@ -275,18 +271,15 @@ export default function FlattenPage() {
               <div className="flex flex-wrap items-center gap-4">
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-muted-foreground font-bold">Naming:</span>
-                  <div className="flex gap-1">
-                    {(["underscore", "dot"] as const).map((n) => (
-                      <button key={n} onClick={() => setNaming(n)}
-                        className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${naming === n ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                        {n === "dot" ? "address.city" : "address_city"}
-                      </button>
-                    ))}
-                  </div>
+                  <ToggleButton
+                    options={[{ label: "address_city", value: "underscore" }, { label: "address.city", value: "dot" }]}
+                    value={naming}
+                    onChange={setNaming}
+                  />
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-muted-foreground font-bold">Max depth:</span>
-                  <select value={maxDepth === Infinity ? "" : maxDepth} onChange={(e) => setMaxDepth(e.target.value ? Number(e.target.value) : Infinity)} className="border-2 border-border bg-background px-2 py-1 text-xs">
+                  <select value={maxDepth === Infinity ? "" : maxDepth} onChange={(e) => setMaxDepth(e.target.value ? Number(e.target.value) : Infinity)} className="border border-border bg-background px-2 py-1 text-xs">
                     <option value="">Unlimited</option>
                     <option value={1}>1</option>
                     <option value={2}>2</option>
@@ -296,7 +289,7 @@ export default function FlattenPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-muted-foreground font-bold">Arrays:</span>
-                  <select value={arrayHandling} onChange={(e) => setArrayHandling(e.target.value as any)} className="border-2 border-border bg-background px-2 py-1 text-xs">
+                  <select value={arrayHandling} onChange={(e) => setArrayHandling(e.target.value as any)} className="border border-border bg-background px-2 py-1 text-xs">
                     <option value="index">Index notation (key_0)</option>
                     <option value="bracket">Bracket notation (key[0])</option>
                     <option value="stringify">Stringify</option>
@@ -343,7 +336,7 @@ export default function FlattenPage() {
 
             {/* Flattening stats */}
             {flatStats && (
-              <div className="border-2 border-border p-3 text-xs text-muted-foreground">
+              <div className="border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
                 <strong>Depth:</strong> {flatStats.depth} → 1 · <strong>Keys:</strong> {flatStats.keys} · <strong>Nested objects removed:</strong> {flatStats.nested}
               </div>
             )}
@@ -367,7 +360,7 @@ export default function FlattenPage() {
           </div>
         )}
 
-        {file && storedFileId && <CrossToolLinks format="json" fileId={storedFileId} />}
+        {file && storedFileId && <CrossToolLinks format="json" fileId={storedFileId} excludeRoute="/json-flattener" />}
 
         {loading && <LoadingState message="Processing JSON..." />}
         {error && <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
-import { Search, AlertTriangle, Info, XCircle, FlaskConical } from "lucide-react";
+import { Search, AlertTriangle, Info, XCircle } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
@@ -9,6 +9,7 @@ import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { PasteInput } from "@/components/shared/PasteInput";
 import { DuckDBGate } from "@/components/shared/DuckDBGate";
 import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
+import { ToggleButton } from "@/components/shared/ToggleButton";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { useFileStore } from "@/contexts/FileStoreContext";
@@ -295,22 +296,18 @@ export default function CsvInspectorPage() {
         <div className="space-y-6">
           {!file && !loading && (
             <div className="space-y-4">
-              <div className="flex gap-2">
-                {(["file", "paste"] as const).map((m) => (
-                  <button key={m} onClick={() => setInputMode(m)} className={`px-3 py-1 text-xs font-bold border border-border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${inputMode === m ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                    {m === "file" ? "Upload File" : "Paste Data"}
-                  </button>
-                ))}
-              </div>
+              <ToggleButton
+                options={[{ label: "Upload File", value: "file" }, { label: "Paste Data", value: "paste" }]}
+                value={inputMode}
+                onChange={setInputMode}
+              />
               {inputMode === "file" ? (
-                <div className="space-y-3">
-                  <DropZone accept={[".csv", ".tsv", ".txt"]} onFile={handleFile} label="Drop a CSV or TSV file" />
-                  <div className="flex justify-center">
-                    <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => handleFile(getSampleCSV())}>
-                      <FlaskConical className="h-4 w-4 mr-1" /> Try with sample data
-                    </Button>
-                  </div>
-                </div>
+                <DropZone
+                  accept={[".csv", ".tsv", ".txt"]}
+                  onFile={handleFile}
+                  label="Drop a CSV or TSV file"
+                  sampleAction={{ label: "⚗ Try with sample data", onClick: () => handleFile(getSampleCSV()) }}
+                />
               ) : (
                 <PasteInput onSubmit={handlePaste} placeholder="Paste CSV data here..." label="Paste CSV data" accept={[".csv", ".tsv"]} onFile={handleFile} />
               )}
@@ -349,7 +346,7 @@ export default function CsvInspectorPage() {
 
               {/* Column Overview */}
               <div className="border-2 border-border">
-                <div className="border-b-2 border-border bg-muted/50 px-4 py-2 flex items-center justify-between">
+                <div className="border-b-2 border-border border-l-4 border-l-foreground bg-muted/50 px-4 py-2 flex items-center justify-between">
                   <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Column Overview</span>
                   <div className="flex gap-3 text-[10px] text-muted-foreground">
                     {Object.entries(typeGroups).map(([t, n]) => <span key={t}><span className="font-bold">{n}</span> {t}</span>)}
@@ -420,7 +417,7 @@ export default function CsvInspectorPage() {
               )}
 
               {/* Actions */}
-              <CrossToolLinks format="csv" fileId={storedFileId ?? undefined} />
+              <CrossToolLinks format="csv" fileId={storedFileId ?? undefined} excludeRoute="/csv-inspector" />
             </div>
           )}
         </div>

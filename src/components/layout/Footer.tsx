@@ -28,7 +28,7 @@ const toolGrid = {
     { label: "JSON Flattener", path: "/json-flattener" },
     { label: "Schema Generator", path: "/schema-generator" },
     { label: "CSV → SQL", path: "/csv-to-sql" },
-    { label: "Dataset Diff", path: "/diff" },
+    { label: "Dataset Diff", path: "/dataset-diff" },
   ],
 };
 

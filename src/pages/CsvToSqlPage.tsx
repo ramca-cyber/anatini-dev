@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
-import { Database, FlaskConical, ArrowRightLeft, Download, Copy, Check } from "lucide-react";
+import { Database, ArrowRightLeft, Download, Copy, Check } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { RawPreview } from "@/components/shared/RawPreview";
@@ -10,6 +10,7 @@ import { PasteInput } from "@/components/shared/PasteInput";
 import { DuckDBGate } from "@/components/shared/DuckDBGate";
 import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
 import { InspectLink } from "@/components/shared/InspectLink";
+import { ToggleButton } from "@/components/shared/ToggleButton";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { useFileStore } from "@/contexts/FileStoreContext";
@@ -232,23 +233,18 @@ export default function CsvToSqlPage() {
         <div className="space-y-4">
           {!file && (
             <div className="space-y-4">
-              <div className="flex gap-2">
-                {(["file", "paste"] as const).map((m) => (
-                  <button key={m} onClick={() => setInputMode(m)}
-                    className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${inputMode === m ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                    {m === "file" ? "Upload File" : "Paste Data"}
-                  </button>
-                ))}
-              </div>
+              <ToggleButton
+                options={[{ label: "Upload File", value: "file" }, { label: "Paste Data", value: "paste" }]}
+                value={inputMode}
+                onChange={setInputMode}
+              />
               {inputMode === "file" ? (
-                <div className="space-y-3">
-                  <DropZone accept={[".csv", ".tsv"]} onFile={handleFile} label="Drop a CSV file" />
-                  <div className="flex justify-center">
-                    <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => handleFile(getSampleCSV())}>
-                      <FlaskConical className="h-4 w-4 mr-1" /> Try with sample data
-                    </Button>
-                  </div>
-                </div>
+                <DropZone
+                  accept={[".csv", ".tsv"]}
+                  onFile={handleFile}
+                  label="Drop a CSV file"
+                  sampleAction={{ label: "⚗ Try with sample data", onClick: () => handleFile(getSampleCSV()) }}
+                />
               ) : (
                 <PasteInput onSubmit={handlePaste} placeholder="Paste CSV data here..." label="Paste CSV data" accept={[".csv", ".tsv"]} onFile={handleFile} />
               )}
@@ -271,30 +267,27 @@ export default function CsvToSqlPage() {
               </div>
 
               {/* Options panel */}
-              <div className="border-2 border-border p-4 space-y-3">
+              <div className="border border-border p-4 space-y-3">
                 <div className="flex flex-wrap gap-4">
                   <div className="space-y-1">
                     <label className="text-xs text-muted-foreground font-bold">Dialect</label>
-                    <div className="flex gap-1 flex-wrap">
-                      {dialects.map((d) => (
-                        <button key={d.id} onClick={() => handleDialectChange(d.id)}
-                          className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${dialect === d.id ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                          {d.label}
-                        </button>
-                      ))}
-                    </div>
+                    <ToggleButton
+                      options={dialects.map(d => ({ label: d.label, value: d.id }))}
+                      value={dialect}
+                      onChange={handleDialectChange}
+                    />
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs text-muted-foreground font-bold">Table name</label>
-                    <input value={tableName} onChange={(e) => setTableName(e.target.value)} className="border-2 border-border bg-background px-2 py-1 text-xs w-32" />
+                    <input value={tableName} onChange={(e) => setTableName(e.target.value)} className="border border-border bg-background px-2 py-1 text-xs w-32" />
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs text-muted-foreground font-bold">Schema</label>
-                    <input value={schemaName} onChange={(e) => setSchemaName(e.target.value)} placeholder="(none)" className="border-2 border-border bg-background px-2 py-1 text-xs w-24" />
+                    <input value={schemaName} onChange={(e) => setSchemaName(e.target.value)} placeholder="(none)" className="border border-border bg-background px-2 py-1 text-xs w-24" />
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs text-muted-foreground font-bold">Batch size</label>
-                    <select value={batchSize} onChange={(e) => setBatchSize(Number(e.target.value))} className="border-2 border-border bg-background px-2 py-1 text-xs">
+                    <select value={batchSize} onChange={(e) => setBatchSize(Number(e.target.value))} className="border border-border bg-background px-2 py-1 text-xs">
                       <option value={50}>50</option><option value={100}>100</option><option value={500}>500</option><option value={1000}>1000</option>
                     </select>
                   </div>
@@ -312,8 +305,8 @@ export default function CsvToSqlPage() {
               </div>
 
               {/* Schema editor */}
-              <div className="border-2 border-border">
-                <div className="border-b-2 border-border bg-muted/50 px-3 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+              <div className="border border-border">
+                <div className="border-b border-border bg-muted/50 px-3 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
                   Schema Editor — click types to change
                 </div>
                 <div className="divide-y divide-border/50">
@@ -323,7 +316,7 @@ export default function CsvToSqlPage() {
                       <select
                         value={col.mappedType}
                         onChange={(e) => updateColumnType(i, e.target.value)}
-                        className="border-2 border-border bg-background px-2 py-1 text-xs font-mono flex-1 max-w-[200px]"
+                        className="border border-border bg-background px-2 py-1 text-xs font-mono flex-1 max-w-[200px]"
                       >
                         {ALL_SQL_TYPES[dialect].map(t => <option key={t} value={t}>{t}</option>)}
                         {!ALL_SQL_TYPES[dialect].includes(col.mappedType) && <option value={col.mappedType}>{col.mappedType}</option>}
@@ -341,14 +334,11 @@ export default function CsvToSqlPage() {
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Input</h3>
-                  <div className="flex gap-1">
-                    {([["table", "Table View"], ["raw-input", "Raw Input"]] as ["table" | "raw-input", string][]).map(([v, label]) => (
-                      <button key={v} onClick={() => setInputView(v)}
-                        className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${inputView === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                        {label}
-                      </button>
-                    ))}
-                  </div>
+                  <ToggleButton
+                    options={[{ label: "Table View", value: "table" }, { label: "Raw Input", value: "raw-input" }]}
+                    value={inputView}
+                    onChange={setInputView}
+                  />
                 </div>
 
                 {preview && inputView === "table" && (
@@ -375,17 +365,17 @@ export default function CsvToSqlPage() {
                     </div>
                   </div>
 
-                  <div className="border-2 border-foreground bg-card p-4 flex items-center gap-6 flex-wrap">
-                    <div><div className="text-xs text-muted-foreground">Time</div><div className="text-lg font-bold">{(conversionResult.durationMs / 1000).toFixed(1)}s</div></div>
-                    <div><div className="text-xs text-muted-foreground">Output size</div><div className="text-lg font-bold">{formatBytes(conversionResult.outputSize)}</div></div>
-                    <div><div className="text-xs text-muted-foreground">Size change</div><div className="text-lg font-bold">{file.size > 0 ? `${Math.round((conversionResult.outputSize / file.size - 1) * 100)}% ${conversionResult.outputSize > file.size ? "larger" : "smaller"}` : "—"}</div></div>
+                  <div className="border border-border bg-muted/30 px-4 py-2 flex items-center gap-6 flex-wrap">
+                    <span className="text-xs"><span className="text-muted-foreground">Time:</span> <span className="font-bold">{(conversionResult.durationMs / 1000).toFixed(1)}s</span></span>
+                    <span className="text-xs"><span className="text-muted-foreground">Output:</span> <span className="font-bold">{formatBytes(conversionResult.outputSize)}</span></span>
+                    <span className="text-xs"><span className="text-muted-foreground">Change:</span> <span className="font-bold">{file.size > 0 ? `${Math.round((conversionResult.outputSize / file.size - 1) * 100)}% ${conversionResult.outputSize > file.size ? "larger" : "smaller"}` : "—"}</span></span>
                   </div>
 
                   <RawPreview content={output} label="Raw Output" fileName={`${tableName}.sql`} onDownload={handleDownload} />
                 </div>
               )}
 
-              <CrossToolLinks format="csv" fileId={storedFileId ?? undefined} />
+              <CrossToolLinks format="csv" fileId={storedFileId ?? undefined} excludeRoute="/csv-to-sql" />
             </div>
           )}
 

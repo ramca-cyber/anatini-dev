@@ -3,6 +3,7 @@ import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { FileText, Upload, Download } from "lucide-react";
 import { useFileStore } from "@/contexts/FileStoreContext";
 import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
+import { getSampleCSV } from "@/lib/sample-data";
 import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
@@ -101,6 +102,7 @@ export default function CsvToExcelPage() {
             accept={[".csv", ".tsv"]}
             onFile={handleFile}
             label="Drop a CSV file"
+            sampleAction={{ label: "⚗ Try with sample data", onClick: () => handleFile(getSampleCSV()) }}
           />
         )}
 

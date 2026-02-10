@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
-import { Database, Copy, Download, FlaskConical } from "lucide-react";
+import { Database, Copy, Download } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
 import { InspectLink } from "@/components/shared/InspectLink";
+import { ToggleButton } from "@/components/shared/ToggleButton";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDuckDB } from "@/contexts/DuckDBContext";
@@ -173,14 +174,12 @@ export default function SchemaPage() {
       pageTitle="Schema Generator — Infer DDL Online | Anatini.dev" metaDescription={getToolMetaDescription("schema-generator")} seoContent={getToolSeo("schema-generator")}>
       <div className="space-y-6">
         {!file && (
-          <div className="space-y-3">
-            <DropZone accept={[".csv", ".parquet", ".json"]} onFile={handleFile} label="Drop a file to infer schema" />
-            <div className="flex justify-center">
-              <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => handleFile(getSampleSchemaCSV())}>
-                <FlaskConical className="h-4 w-4 mr-1" /> Try with sample data
-              </Button>
-            </div>
-          </div>
+          <DropZone
+            accept={[".csv", ".parquet", ".json"]}
+            onFile={handleFile}
+            label="Drop a file to infer schema"
+            sampleAction={{ label: "⚗ Try with sample data", onClick: () => handleFile(getSampleSchemaCSV()) }}
+          />
         )}
         {loading && <LoadingState message="Inferring schema..." />}
         {error && <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
@@ -196,14 +195,11 @@ export default function SchemaPage() {
             </div>
 
             {/* Dialect toggle */}
-            <div className="flex flex-wrap gap-2">
-              {dialects.map((d) => (
-                <button key={d.id} onClick={() => updateMappedTypes(d.id)}
-                  className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${dialect === d.id ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                  {d.label}
-                </button>
-              ))}
-            </div>
+            <ToggleButton
+              options={dialects.map(d => ({ label: d.label, value: d.id }))}
+              value={dialect}
+              onChange={updateMappedTypes}
+            />
 
             <Tabs defaultValue="schema">
               <TabsList>
@@ -300,7 +296,7 @@ export default function SchemaPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <label className="text-sm text-muted-foreground">VARCHAR sizing:</label>
-                    <select value={varcharSizing} onChange={(e) => updateVarcharSizing(e.target.value as VarcharSizing)} className="border-2 border-border bg-background px-2 py-1 text-xs">
+                    <select value={varcharSizing} onChange={(e) => updateVarcharSizing(e.target.value as VarcharSizing)} className="border border-border bg-background px-2 py-1 text-xs">
                       <option value="text">TEXT (no size)</option>
                       <option value="exact">Exact max</option>
                       <option value="plus20">Max + 20%</option>
@@ -320,7 +316,7 @@ export default function SchemaPage() {
               </TabsContent>
             </Tabs>
 
-            <CrossToolLinks format={file.name.endsWith('.json') ? 'json' : file.name.endsWith('.parquet') ? 'parquet' : 'csv'} fileId={storedFileId ?? undefined} />
+            <CrossToolLinks format={file.name.endsWith('.json') ? 'json' : file.name.endsWith('.parquet') ? 'parquet' : 'csv'} fileId={storedFileId ?? undefined} excludeRoute="/schema-generator" />
           </>
         )}
       </div>
