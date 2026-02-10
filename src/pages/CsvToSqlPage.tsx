@@ -268,7 +268,7 @@ export default function CsvToSqlPage() {
 
               {/* Options panel */}
               <div className="border border-border p-4 space-y-3">
-                <div className="flex flex-wrap gap-4">
+                <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:gap-4">
                   <div className="space-y-1">
                     <label className="text-xs text-muted-foreground font-bold">Dialect</label>
                     <ToggleButton

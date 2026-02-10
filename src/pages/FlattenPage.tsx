@@ -268,7 +268,7 @@ export default function FlattenPage() {
               </div>
 
               {/* Options */}
-              <div className="flex flex-wrap items-center gap-4">
+              <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center sm:gap-4">
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-muted-foreground font-bold">Naming:</span>
                   <ToggleButton
