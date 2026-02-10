@@ -25,12 +25,28 @@ const TYPE_MAP: Record<Dialect, Record<string, string>> = {
   duckdb: { VARCHAR: "VARCHAR", BIGINT: "BIGINT", INTEGER: "INTEGER", DOUBLE: "DOUBLE", BOOLEAN: "BOOLEAN", DATE: "DATE", TIMESTAMP: "TIMESTAMP" },
 };
 
+const ALL_SQL_TYPES: Record<Dialect, string[]> = {
+  postgresql: ["TEXT", "INTEGER", "BIGINT", "DOUBLE PRECISION", "BOOLEAN", "DATE", "TIMESTAMP", "NUMERIC", "SERIAL", "UUID", "JSONB", "VARCHAR(255)"],
+  mysql: ["VARCHAR(255)", "INT", "BIGINT", "DOUBLE", "TINYINT(1)", "DATE", "DATETIME", "TEXT", "DECIMAL(10,2)", "ENUM", "JSON"],
+  sqlite: ["TEXT", "INTEGER", "REAL", "BLOB", "NUMERIC"],
+  bigquery: ["STRING", "INT64", "FLOAT64", "BOOL", "DATE", "TIMESTAMP", "BYTES", "NUMERIC", "JSON"],
+  sqlserver: ["NVARCHAR(MAX)", "INT", "BIGINT", "FLOAT", "BIT", "DATE", "DATETIME2", "VARCHAR(255)", "DECIMAL(10,2)", "UNIQUEIDENTIFIER"],
+  duckdb: ["VARCHAR", "INTEGER", "BIGINT", "DOUBLE", "BOOLEAN", "DATE", "TIMESTAMP", "HUGEINT", "BLOB", "UUID"],
+};
+
 function mapType(duckType: string, dialect: Dialect): string {
   const upper = duckType.toUpperCase();
   for (const [key, val] of Object.entries(TYPE_MAP[dialect])) {
     if (upper.includes(key)) return val;
   }
   return TYPE_MAP[dialect].VARCHAR || "TEXT";
+}
+
+interface ColumnSchema {
+  name: string;
+  originalType: string;
+  mappedType: string;
+  nullable: boolean;
 }
 
 export default function CsvToSqlPage() {
@@ -47,6 +63,19 @@ export default function CsvToSqlPage() {
   const [batchSize, setBatchSize] = useState(100);
   const [includeDropTable, setIncludeDropTable] = useState(false);
   const [tableName, setTableName] = useState("my_table");
+  const [schemaName, setSchemaName] = useState("");
+  const [quotedIdentifiers, setQuotedIdentifiers] = useState(false);
+  const [columnSchema, setColumnSchema] = useState<ColumnSchema[]>([]);
+
+  function buildQualifiedName() {
+    const q = quotedIdentifiers ? '"' : '';
+    const tn = `${q}${tableName}${q}`;
+    return schemaName ? `${q}${schemaName}${q}.${tn}` : tn;
+  }
+
+  function quoteCol(col: string) {
+    return quotedIdentifiers ? `"${col}"` : col;
+  }
 
   async function handleFile(f: File) {
     if (!db) return;
@@ -63,7 +92,26 @@ export default function CsvToSqlPage() {
       setTableName(tName);
       const info = await registerFile(db, f, tName);
       setMeta(info);
-      await generateSQL(tName, info);
+
+      // Build initial column schema
+      const schema = info.columns.map((col, i) => ({
+        name: col,
+        originalType: info.types[i],
+        mappedType: mapType(info.types[i], dialect),
+        nullable: true,
+      }));
+
+      // Detect NOT NULL columns
+      for (let ci = 0; ci < info.columns.length; ci++) {
+        try {
+          const nullRes = await runQuery(db, `SELECT COUNT(*) - COUNT("${info.columns[ci]}") FROM "${tName}"`);
+          const nullCount = Number(nullRes.rows[0]?.[0] ?? 0);
+          if (nullCount === 0) schema[ci].nullable = false;
+        } catch {}
+      }
+
+      setColumnSchema(schema);
+      await generateSQL(tName, info, schema);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load file");
     } finally {
@@ -77,24 +125,34 @@ export default function CsvToSqlPage() {
     handleFile(f);
   }
 
-  async function generateSQL(tName?: string, info?: { columns: string[]; rowCount: number; types: string[] }) {
+  function updateColumnType(index: number, newType: string) {
+    setColumnSchema(prev => prev.map((c, i) => i === index ? { ...c, mappedType: newType } : c));
+  }
+
+  function updateColumnNullable(index: number, nullable: boolean) {
+    setColumnSchema(prev => prev.map((c, i) => i === index ? { ...c, nullable } : c));
+  }
+
+  async function generateSQL(tName?: string, info?: { columns: string[]; rowCount: number; types: string[] }, schema?: ColumnSchema[]) {
     if (!db || !file) return;
     const tn = tName ?? sanitizeTableName(file.name);
     const m = info ?? meta;
-    if (!m) return;
+    const cs = schema ?? columnSchema;
+    if (!m || cs.length === 0) return;
     setLoading(true);
     try {
       const result = await runQuery(db, `SELECT * FROM "${tn}"`);
       const lines: string[] = [];
-      if (includeDropTable) { lines.push(`DROP TABLE IF EXISTS ${tableName};`); lines.push(""); }
-      const colDefs = m.columns.map((col, i) => `  ${col} ${mapType(m.types[i], dialect)}`);
-      lines.push(`CREATE TABLE ${tableName} (`);
+      const fqn = buildQualifiedName();
+      if (includeDropTable) { lines.push(`DROP TABLE IF EXISTS ${fqn};`); lines.push(""); }
+      const colDefs = cs.map(c => `  ${quoteCol(c.name)} ${c.mappedType}${!c.nullable ? " NOT NULL" : ""}`);
+      lines.push(`CREATE TABLE ${fqn} (`);
       lines.push(colDefs.join(",\n"));
       lines.push(`);`);
       lines.push("");
       for (let i = 0; i < result.rows.length; i += batchSize) {
         const batch = result.rows.slice(i, i + batchSize);
-        lines.push(`INSERT INTO ${tableName} (${m.columns.join(", ")}) VALUES`);
+        lines.push(`INSERT INTO ${fqn} (${m.columns.map(c => quoteCol(c)).join(", ")}) VALUES`);
         const valueLines = batch.map((row) => {
           const vals = row.map((v) => {
             if (v === null || v === undefined) return "NULL";
@@ -114,6 +172,12 @@ export default function CsvToSqlPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleDialectChange(d: Dialect) {
+    setDialect(d);
+    // Remap types for new dialect
+    setColumnSchema(prev => prev.map(c => ({ ...c, mappedType: mapType(c.originalType, d) })));
   }
 
   function handleDownload() {
@@ -162,16 +226,18 @@ export default function CsvToSqlPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between gap-4 flex-wrap">
                 <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
-                <Button variant="outline" onClick={() => { setFile(null); setMeta(null); setOutput(""); setRawInput(null); }}>New file</Button>
+                <Button variant="outline" onClick={() => { setFile(null); setMeta(null); setOutput(""); setRawInput(null); setColumnSchema([]); }}>New file</Button>
               </div>
               {output && <ConversionStats rows={meta.rowCount} columns={meta.columns.length} inputFormat="CSV" outputFormat="SQL" />}
+
+              {/* Options panel */}
               <div className="border-2 border-border p-4 space-y-3">
                 <div className="flex flex-wrap gap-4">
                   <div className="space-y-1">
                     <label className="text-xs text-muted-foreground font-bold">Dialect</label>
                     <div className="flex gap-1 flex-wrap">
                       {dialects.map((d) => (
-                        <button key={d.id} onClick={() => setDialect(d.id)}
+                        <button key={d.id} onClick={() => handleDialectChange(d.id)}
                           className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${dialect === d.id ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
                           {d.label}
                         </button>
@@ -183,30 +249,55 @@ export default function CsvToSqlPage() {
                     <input value={tableName} onChange={(e) => setTableName(e.target.value)} className="border-2 border-border bg-background px-2 py-1 text-xs w-32" />
                   </div>
                   <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground font-bold">Schema</label>
+                    <input value={schemaName} onChange={(e) => setSchemaName(e.target.value)} placeholder="(none)" className="border-2 border-border bg-background px-2 py-1 text-xs w-24" />
+                  </div>
+                  <div className="space-y-1">
                     <label className="text-xs text-muted-foreground font-bold">Batch size</label>
                     <select value={batchSize} onChange={(e) => setBatchSize(Number(e.target.value))} className="border-2 border-border bg-background px-2 py-1 text-xs">
-                      <option value={50}>50</option>
-                      <option value={100}>100</option>
-                      <option value={500}>500</option>
-                      <option value={1000}>1000</option>
+                      <option value={50}>50</option><option value={100}>100</option><option value={500}>500</option><option value={1000}>1000</option>
                     </select>
                   </div>
                 </div>
-                <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <input type="checkbox" checked={includeDropTable} onChange={(e) => setIncludeDropTable(e.target.checked)} />
-                  Include DROP TABLE IF EXISTS
-                </label>
+                <div className="flex flex-wrap gap-4">
+                  <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <input type="checkbox" checked={includeDropTable} onChange={(e) => setIncludeDropTable(e.target.checked)} />
+                    Include DROP TABLE IF EXISTS
+                  </label>
+                  <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <input type="checkbox" checked={quotedIdentifiers} onChange={(e) => setQuotedIdentifiers(e.target.checked)} />
+                    Quoted identifiers
+                  </label>
+                </div>
                 <Button size="sm" onClick={() => generateSQL()}>Regenerate</Button>
               </div>
+
+              {/* Interactive schema editor */}
               <div className="border-2 border-border">
-                <div className="border-b-2 border-border bg-muted/50 px-3 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Schema Preview</div>
-                {meta.columns.map((col, i) => (
-                  <div key={col} className="flex items-center justify-between border-b border-border/50 px-3 py-1.5 text-xs">
-                    <span className="font-medium">{col}</span>
-                    <span className="font-mono text-muted-foreground">{mapType(meta.types[i], dialect)}</span>
-                  </div>
-                ))}
+                <div className="border-b-2 border-border bg-muted/50 px-3 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                  Schema Editor — click types to change
+                </div>
+                <div className="divide-y divide-border/50">
+                  {columnSchema.map((col, i) => (
+                    <div key={col.name} className="flex items-center gap-3 px-3 py-2 text-xs">
+                      <span className="font-medium w-40 truncate" title={col.name}>{col.name}</span>
+                      <select
+                        value={col.mappedType}
+                        onChange={(e) => updateColumnType(i, e.target.value)}
+                        className="border-2 border-border bg-background px-2 py-1 text-xs font-mono flex-1 max-w-[200px]"
+                      >
+                        {ALL_SQL_TYPES[dialect].map(t => <option key={t} value={t}>{t}</option>)}
+                        {!ALL_SQL_TYPES[dialect].includes(col.mappedType) && <option value={col.mappedType}>{col.mappedType}</option>}
+                      </select>
+                      <label className="flex items-center gap-1 text-muted-foreground whitespace-nowrap">
+                        <input type="checkbox" checked={!col.nullable} onChange={(e) => updateColumnNullable(i, !e.target.checked)} />
+                        NOT NULL
+                      </label>
+                    </div>
+                  ))}
+                </div>
               </div>
+
               <div className="flex gap-2">
                 {([["output", "SQL Output"], ["raw-input", "Raw Input"]] as const).map(([v, label]) => (
                   <button key={v} onClick={() => setView(v)}

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
-import { FileText, FlaskConical, Upload } from "lucide-react";
+import { FileText, FlaskConical, Upload, Download, Check } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
@@ -15,7 +15,8 @@ export default function ExcelCsvPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sheets, setSheets] = useState<string[]>([]);
-  const [selectedSheet, setSelectedSheet] = useState("");
+  const [selectedSheets, setSelectedSheets] = useState<Set<string>>(new Set());
+  const [activeSheet, setActiveSheet] = useState("");
   const [preview, setPreview] = useState<{ columns: string[]; rows: any[][] } | null>(null);
   const [mode, setMode] = useState<"excel-to-csv" | "csv-to-excel">("excel-to-csv");
   const [xlsxMod, setXlsxMod] = useState<any>(null);
@@ -53,7 +54,8 @@ export default function ExcelCsvPage() {
         const wb = XLSX.read(text, { type: "string" });
         setWorkbook(wb);
         setSheets(wb.SheetNames);
-        setSelectedSheet(wb.SheetNames[0]);
+        setActiveSheet(wb.SheetNames[0]);
+        setSelectedSheets(new Set(wb.SheetNames));
         setCsvFiles([f]);
         setCsvSheetNames([f.name.replace(/\.[^.]+$/, "")]);
         loadSheet(wb, wb.SheetNames[0], XLSX);
@@ -63,7 +65,8 @@ export default function ExcelCsvPage() {
         const wb = XLSX.read(buf);
         setWorkbook(wb);
         setSheets(wb.SheetNames);
-        setSelectedSheet(wb.SheetNames[0]);
+        setActiveSheet(wb.SheetNames[0]);
+        setSelectedSheets(new Set(wb.SheetNames));
         loadSheet(wb, wb.SheetNames[0], XLSX);
         const ws = wb.Sheets[wb.SheetNames[0]];
         setCsvOutput(XLSX.utils.sheet_to_csv(ws));
@@ -88,9 +91,17 @@ export default function ExcelCsvPage() {
     }
   }
 
-  function handleSheetChange(name: string) {
-    setSelectedSheet(name);
+  function handleSheetClick(name: string) {
+    setActiveSheet(name);
     if (workbook && xlsxMod) loadSheet(workbook, name, xlsxMod);
+  }
+
+  function toggleSheetSelection(name: string) {
+    setSelectedSheets(prev => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name); else next.add(name);
+      return next;
+    });
   }
 
   async function handleDownload() {
@@ -98,11 +109,20 @@ export default function ExcelCsvPage() {
     const XLSX = await loadXlsx();
     if (mode === "excel-to-csv") {
       if (!workbook) return;
-      const ws = workbook.Sheets[selectedSheet];
-      const csv = XLSX.utils.sheet_to_csv(ws);
-      downloadBlob(csv, `${file.name.replace(/\.[^.]+$/, "")}_${selectedSheet}.csv`, "text/csv");
+      const sheetsToExport = sheets.filter(s => selectedSheets.has(s));
+      if (sheetsToExport.length === 1) {
+        const ws = workbook.Sheets[sheetsToExport[0]];
+        const csv = XLSX.utils.sheet_to_csv(ws);
+        downloadBlob(csv, `${file.name.replace(/\.[^.]+$/, "")}_${sheetsToExport[0]}.csv`, "text/csv");
+      } else {
+        // Download all selected sheets as separate CSV files (combined in a single zip-like download)
+        for (const s of sheetsToExport) {
+          const ws = workbook.Sheets[s];
+          const csv = XLSX.utils.sheet_to_csv(ws);
+          downloadBlob(csv, `${file.name.replace(/\.[^.]+$/, "")}_${s}.csv`, "text/csv");
+        }
+      }
     } else {
-      // CSV to Excel: build a new workbook from csvFiles
       const wb = XLSX.utils.book_new();
       for (let i = 0; i < csvFiles.length; i++) {
         const text = await csvFiles[i].text();
@@ -117,7 +137,7 @@ export default function ExcelCsvPage() {
 
   function handleDownloadCsv() {
     if (!csvOutput || !file) return;
-    downloadBlob(csvOutput, `${file.name.replace(/\.[^.]+$/, "")}_${selectedSheet}.csv`, "text/csv");
+    downloadBlob(csvOutput, `${file.name.replace(/\.[^.]+$/, "")}_${activeSheet}.csv`, "text/csv");
   }
 
   async function handleAddCsvFile(f: File) {
@@ -127,6 +147,11 @@ export default function ExcelCsvPage() {
 
   function updateSheetName(index: number, name: string) {
     setCsvSheetNames((prev) => prev.map((n, i) => i === index ? name : n));
+  }
+
+  function removeCsvFile(index: number) {
+    setCsvFiles(prev => prev.filter((_, i) => i !== index));
+    setCsvSheetNames(prev => prev.filter((_, i) => i !== index));
   }
 
   return (
@@ -149,30 +174,42 @@ export default function ExcelCsvPage() {
               <FileInfo name={file.name} size={formatBytes(file.size)} />
               <div className="flex gap-2">
                 <Button onClick={handleDownload}>
-                  {mode === "excel-to-csv" ? "Download CSV" : "Download Excel"}
+                  <Download className="h-4 w-4 mr-1" />
+                  {mode === "excel-to-csv" ? (selectedSheets.size > 1 ? `Download ${selectedSheets.size} CSVs` : "Download CSV") : "Download Excel"}
                 </Button>
-                <Button variant="outline" onClick={() => { setFile(null); setPreview(null); setSheets([]); setWorkbook(null); setCsvOutput(null); setCsvFiles([]); setCsvSheetNames([]); }}>New file</Button>
+                <Button variant="outline" onClick={() => { setFile(null); setPreview(null); setSheets([]); setWorkbook(null); setCsvOutput(null); setCsvFiles([]); setCsvSheetNames([]); setSelectedSheets(new Set()); }}>New file</Button>
               </div>
             </div>
-
-            {/* Sheet selector */}
-            {sheets.length > 1 && mode === "excel-to-csv" && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-muted-foreground">Sheet:</span>
-                <div className="flex gap-1 flex-wrap">
-                  {sheets.map((s) => (
-                    <button key={s} onClick={() => handleSheetChange(s)}
-                      className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${selectedSheet === s ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                      {s}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
 
             <div className="border-2 border-border p-3 text-xs text-muted-foreground">
               <strong>Direction:</strong> {mode === "excel-to-csv" ? "Excel → CSV" : "CSV → Excel"} · <strong>Sheets:</strong> {mode === "csv-to-excel" ? csvFiles.length : sheets.length}
             </div>
+
+            {/* Sheet selector with checkboxes for excel-to-csv */}
+            {sheets.length > 0 && mode === "excel-to-csv" && (
+              <div className="space-y-2">
+                <div className="text-xs font-bold text-muted-foreground">Select sheets to export:</div>
+                <div className="flex flex-wrap gap-2">
+                  {sheets.map((s) => (
+                    <div key={s} className="flex items-center gap-1">
+                      <input
+                        type="checkbox"
+                        checked={selectedSheets.has(s)}
+                        onChange={() => toggleSheetSelection(s)}
+                        className="rounded"
+                      />
+                      <button
+                        onClick={() => handleSheetClick(s)}
+                        className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${activeSheet === s ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}
+                      >
+                        {s}
+                        {activeSheet === s && <Check className="h-3 w-3 inline ml-1" />}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* CSV to Excel: multi-file and sheet naming */}
             {mode === "csv-to-excel" && (
@@ -189,19 +226,23 @@ export default function ExcelCsvPage() {
                         className="border-2 border-border bg-background px-2 py-1 text-xs w-32"
                         placeholder="Sheet name"
                       />
+                      {csvFiles.length > 1 && (
+                        <button onClick={() => removeCsvFile(i)} className="text-destructive hover:text-destructive/80 text-xs">✕</button>
+                      )}
                     </div>
                   ))}
                   <Button variant="outline" size="sm" onClick={() => {
                     const input = document.createElement("input");
                     input.type = "file";
                     input.accept = ".csv,.tsv";
+                    input.multiple = true;
                     input.onchange = (e) => {
-                      const f = (e.target as HTMLInputElement).files?.[0];
-                      if (f) handleAddCsvFile(f);
+                      const files = (e.target as HTMLInputElement).files;
+                      if (files) Array.from(files).forEach(f => handleAddCsvFile(f));
                     };
                     input.click();
                   }}>
-                    <Upload className="h-3 w-3 mr-1" /> Add another CSV
+                    <Upload className="h-3 w-3 mr-1" /> Add more CSVs
                   </Button>
                 </div>
               </div>
@@ -218,7 +259,6 @@ export default function ExcelCsvPage() {
                     </button>
                   ))}
                 </div>
-                <span className="text-xs text-muted-foreground">· Input is binary Excel</span>
               </div>
             )}
           </div>
