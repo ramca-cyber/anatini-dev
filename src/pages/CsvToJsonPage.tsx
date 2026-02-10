@@ -8,14 +8,19 @@ import { DataTable } from "@/components/shared/DataTable";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { PasteInput } from "@/components/shared/PasteInput";
 import { DuckDBGate } from "@/components/shared/DuckDBGate";
+import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
+import { InspectLink } from "@/components/shared/InspectLink";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
+import { useFileStore } from "@/contexts/FileStoreContext";
+import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
 import { registerFile, runQuery, downloadBlob, formatBytes, sanitizeTableName } from "@/lib/duckdb-helpers";
 import { getSampleCSV } from "@/lib/sample-data";
 import { toast } from "@/hooks/use-toast";
 
 export default function CsvToJsonPage() {
   const { db } = useDuckDB();
+  const { addFile } = useFileStore();
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [meta, setMeta] = useState<{ columns: string[]; rowCount: number; types: string[] } | null>(null);
@@ -29,6 +34,7 @@ export default function CsvToJsonPage() {
   const [conversionResult, setConversionResult] = useState<{ durationMs: number; outputSize: number } | null>(null);
   const [outputView, setOutputView] = useState<"table" | "raw">("table");
   const [outputPreview, setOutputPreview] = useState<{ columns: string[]; rows: any[][]; types: string[] } | null>(null);
+  const [storedFileId, setStoredFileId] = useState<string | null>(null);
 
   const [outputFormat, setOutputFormat] = useState<"array" | "arrays" | "ndjson">("array");
   const [prettyPrint, setPrettyPrint] = useState(true);
@@ -38,6 +44,8 @@ export default function CsvToJsonPage() {
 
   async function handleFile(f: File) {
     if (!db) return;
+    const stored = addFile(f);
+    setStoredFileId(stored.id);
     setFile(f);
     setLoading(true);
     setError(null);
@@ -79,6 +87,8 @@ export default function CsvToJsonPage() {
       setLoading(false);
     }
   }
+
+  useAutoLoadFile(handleFile, !!db);
 
   function handlePaste(text: string) {
     const blob = new Blob([text], { type: "text/csv" });
@@ -142,6 +152,7 @@ export default function CsvToJsonPage() {
   function resetAll() {
     setFile(null); setMeta(null); setOutput("");
     setRawInput(null); setPreview(null); setConversionResult(null);
+    setStoredFileId(null);
   }
 
   return (
@@ -195,7 +206,10 @@ export default function CsvToJsonPage() {
             <div className="space-y-4">
               {/* File info + actions */}
               <div className="flex items-center justify-between gap-4 flex-wrap">
-                <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
+                <div className="flex items-center gap-2">
+                  <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
+                  {storedFileId && <InspectLink fileId={storedFileId} format="csv" />}
+                </div>
                 <div className="flex gap-2">
                   <Button onClick={handleConvert} disabled={loading}>
                     <ArrowRightLeft className="h-4 w-4 mr-1" /> {output ? "Re-convert" : "Convert to JSON"}
@@ -301,6 +315,8 @@ export default function CsvToJsonPage() {
                   )}
                 </div>
               )}
+
+              <CrossToolLinks format="csv" fileId={storedFileId ?? undefined} />
             </div>
           )}
 

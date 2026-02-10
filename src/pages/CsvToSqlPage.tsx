@@ -8,8 +8,12 @@ import { DataTable } from "@/components/shared/DataTable";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { PasteInput } from "@/components/shared/PasteInput";
 import { DuckDBGate } from "@/components/shared/DuckDBGate";
+import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
+import { InspectLink } from "@/components/shared/InspectLink";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
+import { useFileStore } from "@/contexts/FileStoreContext";
+import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
 import { registerFile, runQuery, downloadBlob, formatBytes, sanitizeTableName } from "@/lib/duckdb-helpers";
 import { getSampleCSV } from "@/lib/sample-data";
 import { toast } from "@/hooks/use-toast";
@@ -51,6 +55,7 @@ interface ColumnSchema {
 
 export default function CsvToSqlPage() {
   const { db } = useDuckDB();
+  const { addFile } = useFileStore();
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [meta, setMeta] = useState<{ columns: string[]; rowCount: number; types: string[] } | null>(null);
@@ -69,6 +74,7 @@ export default function CsvToSqlPage() {
   const [columnSchema, setColumnSchema] = useState<ColumnSchema[]>([]);
   const [copied, setCopied] = useState(false);
   const [conversionResult, setConversionResult] = useState<{ durationMs: number; outputSize: number } | null>(null);
+  const [storedFileId, setStoredFileId] = useState<string | null>(null);
 
   function buildQualifiedName() {
     const q = quotedIdentifiers ? '"' : '';
@@ -82,6 +88,8 @@ export default function CsvToSqlPage() {
 
   async function handleFile(f: File) {
     if (!db) return;
+    const stored = addFile(f);
+    setStoredFileId(stored.id);
     setFile(f);
     setLoading(true);
     setError(null);
@@ -101,7 +109,6 @@ export default function CsvToSqlPage() {
       const previewRes = await runQuery(db, `SELECT * FROM "${tName}" LIMIT 100`);
       setPreview(previewRes);
 
-      // Build initial column schema
       const schema = info.columns.map((col, i) => ({
         name: col,
         originalType: info.types[i],
@@ -109,7 +116,6 @@ export default function CsvToSqlPage() {
         nullable: true,
       }));
 
-      // Detect NOT NULL columns
       for (let ci = 0; ci < info.columns.length; ci++) {
         try {
           const nullRes = await runQuery(db, `SELECT COUNT(*) - COUNT("${info.columns[ci]}") FROM "${tName}"`);
@@ -125,6 +131,8 @@ export default function CsvToSqlPage() {
       setLoading(false);
     }
   }
+
+  useAutoLoadFile(handleFile, !!db);
 
   function handlePaste(text: string) {
     const blob = new Blob([text], { type: "text/csv" });
@@ -206,6 +214,7 @@ export default function CsvToSqlPage() {
   function resetAll() {
     setFile(null); setMeta(null); setOutput(""); setRawInput(null);
     setColumnSchema([]); setPreview(null); setConversionResult(null);
+    setStoredFileId(null);
   }
 
   const dialects: { id: Dialect; label: string }[] = [
@@ -248,9 +257,11 @@ export default function CsvToSqlPage() {
 
           {file && meta && (
             <div className="space-y-4">
-              {/* File info + actions */}
               <div className="flex items-center justify-between gap-4 flex-wrap">
-                <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
+                <div className="flex items-center gap-2">
+                  <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
+                  {storedFileId && <InspectLink fileId={storedFileId} format="csv" />}
+                </div>
                 <div className="flex gap-2">
                   <Button onClick={handleConvert} disabled={loading}>
                     <ArrowRightLeft className="h-4 w-4 mr-1" /> {output ? "Re-convert" : "Convert to SQL"}
@@ -364,7 +375,6 @@ export default function CsvToSqlPage() {
                     </div>
                   </div>
 
-                  {/* Conversion stats */}
                   <div className="border-2 border-foreground bg-card p-4 flex items-center gap-6 flex-wrap">
                     <div><div className="text-xs text-muted-foreground">Time</div><div className="text-lg font-bold">{(conversionResult.durationMs / 1000).toFixed(1)}s</div></div>
                     <div><div className="text-xs text-muted-foreground">Output size</div><div className="text-lg font-bold">{formatBytes(conversionResult.outputSize)}</div></div>
@@ -374,6 +384,8 @@ export default function CsvToSqlPage() {
                   <RawPreview content={output} label="Raw Output" fileName={`${tableName}.sql`} onDownload={handleDownload} />
                 </div>
               )}
+
+              <CrossToolLinks format="csv" fileId={storedFileId ?? undefined} />
             </div>
           )}
 

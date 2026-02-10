@@ -6,9 +6,13 @@ import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
+import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
+import { InspectLink } from "@/components/shared/InspectLink";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useDuckDB } from "@/contexts/DuckDBContext";
+import { useFileStore } from "@/contexts/FileStoreContext";
+import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
 import { registerFile, runQuery, exportToCSV, downloadBlob, formatBytes, sanitizeTableName } from "@/lib/duckdb-helpers";
 import { generateSampleParquet } from "@/lib/sample-data";
 import { toast } from "@/hooks/use-toast";
@@ -17,6 +21,7 @@ const PAGE_SIZE = 200;
 
 export default function ParquetViewerPage() {
   const { db } = useDuckDB();
+  const { addFile } = useFileStore();
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [meta, setMeta] = useState<{ columns: string[]; rowCount: number; types: string[] } | null>(null);
@@ -29,6 +34,7 @@ export default function ParquetViewerPage() {
   const [page, setPage] = useState(0);
   const [tableName, setTableName] = useState("");
   const [ddlCopied, setDdlCopied] = useState(false);
+  const [storedFileId, setStoredFileId] = useState<string | null>(null);
 
   async function loadPage(tName: string, pageNum: number) {
     if (!db) return;
@@ -40,6 +46,8 @@ export default function ParquetViewerPage() {
 
   async function handleFile(f: File) {
     if (!db) return;
+    const stored = addFile(f);
+    setStoredFileId(stored.id);
     setFile(f);
     setLoading(true);
     setError(null);
@@ -63,6 +71,8 @@ export default function ParquetViewerPage() {
       setLoading(false);
     }
   }
+
+  useAutoLoadFile(handleFile, !!db);
 
   async function handleExportCSV() {
     if (!db || !file) return;
@@ -136,11 +146,14 @@ export default function ParquetViewerPage() {
         {file && meta && (
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-4 flex-wrap">
-              <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
+              <div className="flex items-center gap-2">
+                <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
+                {storedFileId && <InspectLink fileId={storedFileId} format="parquet" />}
+              </div>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={handleExportCSV}>Export CSV</Button>
                 <Button variant="outline" size="sm" onClick={handleExportJSON}>Export JSON</Button>
-                <Button variant="outline" size="sm" onClick={() => { setFile(null); setMeta(null); setPreview(null); }}>New file</Button>
+                <Button variant="outline" size="sm" onClick={() => { setFile(null); setMeta(null); setPreview(null); setStoredFileId(null); }}>New file</Button>
               </div>
             </div>
 
@@ -214,6 +227,8 @@ export default function ParquetViewerPage() {
                 {!parquetMeta && <p className="text-xs text-muted-foreground">Detailed Parquet metadata not available for this file.</p>}
               </div>
             )}
+
+            <CrossToolLinks format="parquet" fileId={storedFileId ?? undefined} />
           </div>
         )}
 

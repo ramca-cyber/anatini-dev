@@ -7,8 +7,12 @@ import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
 import { RawPreview } from "@/components/shared/RawPreview";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
+import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
+import { InspectLink } from "@/components/shared/InspectLink";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
+import { useFileStore } from "@/contexts/FileStoreContext";
+import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
 import { registerFile, runQuery, exportToParquet, downloadBlob, formatBytes, sanitizeTableName } from "@/lib/duckdb-helpers";
 import { getSampleCSV } from "@/lib/sample-data";
 
@@ -20,6 +24,7 @@ interface ParquetMeta {
 
 export default function CsvToParquetPage() {
   const { db } = useDuckDB();
+  const { addFile } = useFileStore();
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [meta, setMeta] = useState<{ columns: string[]; rowCount: number; types: string[] } | null>(null);
@@ -36,9 +41,12 @@ export default function CsvToParquetPage() {
   const [outputPreview, setOutputPreview] = useState<{ columns: string[]; rows: any[][]; types: string[] } | null>(null);
   const [parquetMeta, setParquetMeta] = useState<ParquetMeta | null>(null);
   const [outputBuf, setOutputBuf] = useState<Uint8Array | null>(null);
+  const [storedFileId, setStoredFileId] = useState<string | null>(null);
 
   async function handleFile(f: File) {
     if (!db) return;
+    const stored = addFile(f);
+    setStoredFileId(stored.id);
     setFile(f);
     setLoading(true);
     setError(null);
@@ -72,6 +80,8 @@ export default function CsvToParquetPage() {
       setLoading(false);
     }
   }
+
+  useAutoLoadFile(handleFile, !!db);
 
   async function handleConvert() {
     if (!db || !file) return;
@@ -123,7 +133,7 @@ export default function CsvToParquetPage() {
   function resetAll() {
     setFile(null); setMeta(null); setPreview(null); setRawInput(null);
     setConversionResult(null); setNullableInfo([]); setOutputPreview(null);
-    setParquetMeta(null); setOutputBuf(null);
+    setParquetMeta(null); setOutputBuf(null); setStoredFileId(null);
   }
 
   const inputTabs: ["table" | "schema" | "raw-input", string][] = [
@@ -151,7 +161,10 @@ export default function CsvToParquetPage() {
           <div className="space-y-4">
             {/* File info + actions */}
             <div className="flex items-center justify-between gap-4 flex-wrap">
-              <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
+              <div className="flex items-center gap-2">
+                <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
+                {storedFileId && <InspectLink fileId={storedFileId} format="csv" />}
+              </div>
               <div className="flex items-center gap-2">
                 <Button onClick={handleConvert} disabled={loading}>
                   <ArrowRightLeft className="h-4 w-4 mr-1" /> {conversionResult ? "Re-convert" : "Convert to Parquet"}
@@ -271,6 +284,8 @@ export default function CsvToParquetPage() {
                 )}
               </div>
             )}
+
+            <CrossToolLinks format="csv" fileId={storedFileId ?? undefined} />
           </div>
         )}
 
