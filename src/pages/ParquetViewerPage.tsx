@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { Eye, FlaskConical, Search } from "lucide-react";
+import { DuckDBGate } from "@/components/shared/DuckDBGate";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
@@ -75,6 +76,7 @@ export default function ParquetViewerPage() {
 
   return (
     <ToolPage icon={Eye} title="Parquet Viewer" description="Explore Parquet files — data, schema, and metadata." metaDescription={getToolMetaDescription("parquet-viewer")} seoContent={getToolSeo("parquet-viewer")}>
+      <DuckDBGate>
       <div className="space-y-4">
         {!file && (
           <div className="space-y-3">
@@ -156,6 +158,7 @@ export default function ParquetViewerPage() {
         {loading && <LoadingState message="Loading Parquet file..." />}
         {error && <div className="border-2 border-destructive bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
       </div>
+      </DuckDBGate>
     </ToolPage>
   );
 }

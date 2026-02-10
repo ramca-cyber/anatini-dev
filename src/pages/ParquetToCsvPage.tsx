@@ -2,6 +2,7 @@ import { useState } from "react";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { FileSpreadsheet, ArrowRightLeft, FlaskConical } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
+import { DuckDBGate } from "@/components/shared/DuckDBGate";
 import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
 import { RawPreview } from "@/components/shared/RawPreview";
@@ -72,6 +73,7 @@ export default function ParquetToCsvPage() {
 
   return (
     <ToolPage icon={FileSpreadsheet} title="Parquet to CSV" description="Export Parquet files to CSV format." pageTitle="Parquet to CSV — Free, Offline | Anatini.dev" metaDescription={getToolMetaDescription("parquet-to-csv")} seoContent={getToolSeo("parquet-to-csv")}>
+      <DuckDBGate>
       <div className="space-y-4">
         {!file && (
           <div className="space-y-3">
@@ -135,6 +137,7 @@ export default function ParquetToCsvPage() {
           <RawPreview content={csvOutput} label="Raw CSV Output" fileName="output.csv" onDownload={handleDownloadCsv} />
         )}
       </div>
+      </DuckDBGate>
     </ToolPage>
   );
 }

@@ -5,6 +5,7 @@ import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
+import { PasteInput } from "@/components/shared/PasteInput";
 import { Button } from "@/components/ui/button";
 import { downloadBlob, formatBytes } from "@/lib/duckdb-helpers";
 import { getSampleJSON } from "@/lib/sample-data";
@@ -46,7 +47,6 @@ function analyzeJSON(parsed: any): StructureInfo {
   return { rootType: isArray ? `Array of ${objectCount} objects` : "Single object", objectCount, depth: maxDepth, paths };
 }
 
-/** Pure JS flatten — no DuckDB dependency */
 function flattenObject(obj: any, sep: string, prefix = ""): Record<string, any> {
   const result: Record<string, any> = {};
   for (const [key, val] of Object.entries(obj)) {
@@ -54,11 +54,9 @@ function flattenObject(obj: any, sep: string, prefix = ""): Record<string, any> 
     if (val === null || val === undefined) {
       result[newKey] = val;
     } else if (Array.isArray(val)) {
-      // Arrays of primitives → join as string; arrays of objects → expand later
       if (val.length === 0 || typeof val[0] !== "object") {
         result[newKey] = val.join(", ");
       } else {
-        // Skip here — handled by row expansion
         result[newKey] = val;
       }
     } else if (typeof val === "object") {
@@ -71,21 +69,16 @@ function flattenObject(obj: any, sep: string, prefix = ""): Record<string, any> 
 }
 
 function flattenData(data: any[], sep: string): { columns: string[]; rows: any[][] } {
-  // Expand array-of-objects into multiple rows (one level), then flatten
   function expandAndFlatten(item: any): Record<string, any>[] {
     const flat = flattenObject(item, sep);
-    // Find arrays of objects
     const arrayKeys = Object.keys(flat).filter(k => Array.isArray(flat[k]));
     if (arrayKeys.length === 0) return [flat];
-
-    // Expand first array key (iterative approach handles one level)
     const key = arrayKeys[0];
     const arr = flat[key] as any[];
     delete flat[key];
     return arr.flatMap((el) => {
       const expanded = typeof el === "object" && el !== null ? flattenObject(el, sep, key) : { [key]: el };
       const merged = { ...flat, ...expanded };
-      // Recurse in case there are more arrays
       const remaining = Object.keys(merged).filter(k => Array.isArray(merged[k]));
       if (remaining.length > 0) {
         return expandAndFlatten(merged);
@@ -112,6 +105,7 @@ export default function FlattenPage() {
   const [naming, setNaming] = useState<"dot" | "underscore">("underscore");
   const [flattened, setFlattened] = useState<{ columns: string[]; rows: any[][] } | null>(null);
   const [showSideBySide, setShowSideBySide] = useState(true);
+  const [inputMode, setInputMode] = useState<"file" | "paste">("file");
 
   async function handleFile(f: File) {
     setFile(f);
@@ -130,6 +124,12 @@ export default function FlattenPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function handlePaste(text: string) {
+    const blob = new Blob([text], { type: "application/json" });
+    const f = new File([blob], "pasted_data.json", { type: "application/json" });
+    handleFile(f);
   }
 
   function handleFlatten() {
@@ -170,13 +170,34 @@ export default function FlattenPage() {
       pageTitle="Flatten JSON Online — Free, Offline | Anatini.dev" metaDescription={getToolMetaDescription("json-flattener")} seoContent={getToolSeo("json-flattener")}>
       <div className="space-y-6">
         {!file && (
-          <div className="space-y-3">
-            <DropZone accept={[".json", ".jsonl"]} onFile={handleFile} label="Drop a JSON or JSONL file" />
-            <div className="flex justify-center">
-              <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => handleFile(getSampleJSON())}>
-                <FlaskConical className="h-4 w-4 mr-1" /> Try with sample data
-              </Button>
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              {(["file", "paste"] as const).map((m) => (
+                <button key={m} onClick={() => setInputMode(m)}
+                  className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${inputMode === m ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
+                  {m === "file" ? "Upload File" : "Paste Data"}
+                </button>
+              ))}
             </div>
+
+            {inputMode === "file" ? (
+              <div className="space-y-3">
+                <DropZone accept={[".json", ".jsonl"]} onFile={handleFile} label="Drop a JSON or JSONL file" />
+                <div className="flex justify-center">
+                  <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => handleFile(getSampleJSON())}>
+                    <FlaskConical className="h-4 w-4 mr-1" /> Try with sample data
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <PasteInput
+                onSubmit={handlePaste}
+                placeholder='Paste JSON here... e.g. {"name": "Alice", "address": {"city": "Portland"}}'
+                label="Paste JSON data"
+                accept={[".json", ".jsonl"]}
+                onFile={handleFile}
+              />
+            )}
           </div>
         )}
 
@@ -225,7 +246,7 @@ export default function FlattenPage() {
           </div>
         )}
 
-        {/* Results — side-by-side or table-only */}
+        {/* Results */}
         {file && flattened && (
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -241,14 +262,12 @@ export default function FlattenPage() {
 
             {showSideBySide ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {/* Original JSON */}
                 <div className="space-y-2">
                   <h3 className="text-sm font-medium text-muted-foreground">Original JSON</h3>
                   <pre className="rounded-lg border border-border bg-card p-4 font-mono text-xs text-foreground overflow-auto max-h-[500px] whitespace-pre-wrap">
                     {truncatedJson}
                   </pre>
                 </div>
-                {/* Flattened table */}
                 <div className="space-y-2">
                   <h3 className="text-sm font-medium text-muted-foreground">Flattened ({flattened.rows.length} rows × {flattened.columns.length} cols)</h3>
                   <DataTable columns={flattened.columns} rows={flattened.rows} types={flattened.columns.map(() => "VARCHAR")} className="max-h-[500px]" />

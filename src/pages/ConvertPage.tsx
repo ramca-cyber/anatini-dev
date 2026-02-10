@@ -2,6 +2,7 @@ import { useState } from "react";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { FileSpreadsheet, Download, ArrowRightLeft, FlaskConical, Settings2, ChevronDown, ChevronUp } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
+import { DuckDBGate } from "@/components/shared/DuckDBGate";
 import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
@@ -92,6 +93,7 @@ export default function ConvertPage() {
       metaDescription={getToolMetaDescription("csv-to-parquet")}
       seoContent={getToolSeo("csv-to-parquet")}
     >
+      <DuckDBGate>
       <div className="space-y-6">
         {!file && (
           <div className="space-y-3">
@@ -215,6 +217,7 @@ export default function ConvertPage() {
           </div>
         )}
       </div>
+      </DuckDBGate>
     </ToolPage>
   );
 }
