@@ -3,7 +3,7 @@ import { PageMeta } from "@/components/shared/PageMeta";
 import {
   ArrowRight, FileSpreadsheet, Braces, Terminal, BarChart3, Database,
   FileJson, Table, Eye, Code, FileText, Zap, Lock, Globe, Shield,
-  GitCompare,
+  GitCompare, Search,
 } from "lucide-react";
 
 const converters = [
@@ -20,6 +20,12 @@ const viewers = [
   { path: "/csv-viewer", title: "CSV Viewer", description: "Search, filter, sort with column stats.", icon: Eye },
   { path: "/parquet-viewer", title: "Parquet Viewer", description: "Data, schema, and metadata tabs.", icon: Eye },
   { path: "/json-formatter", title: "JSON Formatter", description: "Format, minify, validate with tree view.", icon: Code },
+];
+
+const inspectors = [
+  { path: "/csv-inspector", title: "CSV Inspector", description: "Analyze encoding, structure & quality.", icon: Search },
+  { path: "/json-inspector", title: "JSON Inspector", description: "Analyze schema, types & consistency.", icon: Search },
+  { path: "/parquet-inspector", title: "Parquet Inspector", description: "View metadata, row groups & stats.", icon: Search },
 ];
 
 const analysis = [
@@ -88,7 +94,7 @@ export default function Index() {
         <div className="container py-20 md:py-28">
           <div className="mx-auto max-w-3xl">
             <div className="inline-block border-2 border-border bg-secondary px-3 py-1 text-xs font-bold uppercase tracking-widest mb-6">
-              15+ Tools · 100% Offline · Zero Tracking
+             18 Tools · 100% Offline · Zero Tracking
             </div>
             <h1 className="text-4xl font-bold leading-[1.1] tracking-tight md:text-5xl lg:text-6xl">
               Data tools that run
@@ -135,6 +141,15 @@ export default function Index() {
             <div className="mb-4 h-0.5 w-12 bg-foreground" />
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {viewers.map((t) => <ToolCard key={t.path} {...t} />)}
+            </div>
+          </div>
+
+          {/* Inspectors */}
+          <div className="mb-12">
+            <h2 className="mb-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">Inspectors</h2>
+            <div className="mb-4 h-0.5 w-12 bg-foreground" />
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {inspectors.map((t) => <ToolCard key={t.path} {...t} />)}
             </div>
           </div>
 

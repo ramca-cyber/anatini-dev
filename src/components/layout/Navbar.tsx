@@ -33,6 +33,14 @@ const toolGroups = [
     ],
   },
   {
+    label: "Inspectors",
+    tools: [
+      { path: "/csv-inspector", label: "CSV Inspector" },
+      { path: "/json-inspector", label: "JSON Inspector" },
+      { path: "/parquet-inspector", label: "Parquet Inspector" },
+    ],
+  },
+  {
     label: "Analysis & SQL",
     tools: [
       { path: "/sql-playground", label: "SQL Playground" },

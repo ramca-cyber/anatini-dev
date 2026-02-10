@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { DuckDBProvider } from "@/contexts/DuckDBContext";
+import { FileStoreProvider } from "@/contexts/FileStoreContext";
 import { Layout } from "@/components/layout/Layout";
 import Index from "./pages/Index";
 import About from "./pages/About";
@@ -23,6 +24,9 @@ import ParquetViewerPage from "./pages/ParquetViewerPage";
 import CsvViewerPage from "./pages/CsvViewerPage";
 import CsvToSqlPage from "./pages/CsvToSqlPage";
 import ExcelCsvPage from "./pages/ExcelCsvPage";
+import CsvInspectorPage from "./pages/CsvInspectorPage";
+import JsonInspectorPage from "./pages/JsonInspectorPage";
+import ParquetInspectorPage from "./pages/ParquetInspectorPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,51 +35,58 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <DuckDBProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route element={<Layout />}>
-              <Route path="/" element={<Index />} />
+        <FileStoreProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route element={<Layout />}>
+                <Route path="/" element={<Index />} />
 
-              {/* Converters */}
-              <Route path="/csv-to-parquet" element={<CsvToParquetPage />} />
-              <Route path="/parquet-to-csv" element={<ParquetToCsvPage />} />
-              <Route path="/csv-to-json" element={<CsvToJsonPage />} />
-              <Route path="/json-to-csv" element={<JsonToCsvPage />} />
-              <Route path="/json-to-parquet" element={<JsonToParquetPage />} />
-              <Route path="/parquet-to-json" element={<ParquetToJsonPage />} />
-              <Route path="/excel-csv-converter" element={<ExcelCsvPage />} />
+                {/* Converters */}
+                <Route path="/csv-to-parquet" element={<CsvToParquetPage />} />
+                <Route path="/parquet-to-csv" element={<ParquetToCsvPage />} />
+                <Route path="/csv-to-json" element={<CsvToJsonPage />} />
+                <Route path="/json-to-csv" element={<JsonToCsvPage />} />
+                <Route path="/json-to-parquet" element={<JsonToParquetPage />} />
+                <Route path="/parquet-to-json" element={<ParquetToJsonPage />} />
+                <Route path="/excel-csv-converter" element={<ExcelCsvPage />} />
 
-              {/* Viewers & Formatters */}
-              <Route path="/csv-viewer" element={<CsvViewerPage />} />
-              <Route path="/parquet-viewer" element={<ParquetViewerPage />} />
-              <Route path="/json-formatter" element={<JsonFormatterPage />} />
+                {/* Viewers & Formatters */}
+                <Route path="/csv-viewer" element={<CsvViewerPage />} />
+                <Route path="/parquet-viewer" element={<ParquetViewerPage />} />
+                <Route path="/json-formatter" element={<JsonFormatterPage />} />
 
-              {/* Analysis & SQL */}
-              <Route path="/sql-playground" element={<SqlPage />} />
-              <Route path="/data-profiler" element={<ProfilerPage />} />
-              <Route path="/json-flattener" element={<FlattenPage />} />
-              <Route path="/schema-generator" element={<SchemaPage />} />
-              <Route path="/csv-to-sql" element={<CsvToSqlPage />} />
+                {/* Inspectors */}
+                <Route path="/csv-inspector" element={<CsvInspectorPage />} />
+                <Route path="/json-inspector" element={<JsonInspectorPage />} />
+                <Route path="/parquet-inspector" element={<ParquetInspectorPage />} />
 
-              {/* Legacy */}
-              <Route path="/diff" element={<DiffPage />} />
+                {/* Analysis & SQL */}
+                <Route path="/sql-playground" element={<SqlPage />} />
+                <Route path="/data-profiler" element={<ProfilerPage />} />
+                <Route path="/json-flattener" element={<FlattenPage />} />
+                <Route path="/schema-generator" element={<SchemaPage />} />
+                <Route path="/csv-to-sql" element={<CsvToSqlPage />} />
 
-              {/* Redirects from old routes */}
-              <Route path="/convert" element={<Navigate to="/csv-to-parquet" replace />} />
-              <Route path="/flatten" element={<Navigate to="/json-flattener" replace />} />
-              <Route path="/sql" element={<Navigate to="/sql-playground" replace />} />
-              <Route path="/profiler" element={<Navigate to="/data-profiler" replace />} />
-              <Route path="/schema" element={<Navigate to="/schema-generator" replace />} />
+                {/* Legacy */}
+                <Route path="/diff" element={<DiffPage />} />
 
-              <Route path="/about" element={<About />} />
-            </Route>
-            <Route element={<Layout />}>
-              <Route path="*" element={<NotFound />} />
-            </Route>
-          </Routes>
-        </BrowserRouter>
+                {/* Redirects from old routes */}
+                <Route path="/convert" element={<Navigate to="/csv-to-parquet" replace />} />
+                <Route path="/flatten" element={<Navigate to="/json-flattener" replace />} />
+                <Route path="/sql" element={<Navigate to="/sql-playground" replace />} />
+                <Route path="/profiler" element={<Navigate to="/data-profiler" replace />} />
+                <Route path="/schema" element={<Navigate to="/schema-generator" replace />} />
+
+                <Route path="/about" element={<About />} />
+              </Route>
+              <Route element={<Layout />}>
+                <Route path="*" element={<NotFound />} />
+              </Route>
+            </Routes>
+          </BrowserRouter>
+        </FileStoreProvider>
       </DuckDBProvider>
     </TooltipProvider>
   </QueryClientProvider>
