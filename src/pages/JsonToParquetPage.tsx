@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
-import { Braces, FlaskConical } from "lucide-react";
+import { Braces, FlaskConical, Download } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
@@ -13,6 +13,12 @@ import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { registerFile, runQuery, exportToParquet, downloadBlob, formatBytes, sanitizeTableName } from "@/lib/duckdb-helpers";
 
+interface ParquetMeta {
+  rowGroups: number;
+  totalCompressed: number;
+  totalUncompressed: number;
+}
+
 export default function JsonToParquetPage() {
   const { db } = useDuckDB();
   const [file, setFile] = useState<File | null>(null);
@@ -22,11 +28,14 @@ export default function JsonToParquetPage() {
   const [rawInput, setRawInput] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ durationMs: number; outputSize: number } | null>(null);
-  const [view, setView] = useState<"data" | "schema" | "raw-input">("data");
+  const [view, setView] = useState<"data" | "schema" | "raw-input" | "output">("data");
   const [compression, setCompression] = useState<"snappy" | "zstd" | "gzip" | "none">("snappy");
   const [rowGroupSize, setRowGroupSize] = useState<number | null>(null);
   const [inputMode, setInputMode] = useState<"file" | "paste">("file");
   const [nullableInfo, setNullableInfo] = useState<boolean[]>([]);
+  const [outputPreview, setOutputPreview] = useState<{ columns: string[]; rows: any[][]; types: string[] } | null>(null);
+  const [parquetMeta, setParquetMeta] = useState<ParquetMeta | null>(null);
+  const [outputBuf, setOutputBuf] = useState<Uint8Array | null>(null);
 
   async function handleFile(f: File) {
     if (!db) return;
@@ -38,6 +47,9 @@ export default function JsonToParquetPage() {
     setPreview(null);
     setView("data");
     setNullableInfo([]);
+    setOutputPreview(null);
+    setParquetMeta(null);
+    setOutputBuf(null);
     try {
       const text = await f.text();
       setRawInput(text.slice(0, 50_000));
@@ -46,7 +58,6 @@ export default function JsonToParquetPage() {
       setMeta(info);
       const dataPreview = await runQuery(db, `SELECT * FROM "${tableName}" LIMIT 50`);
       setPreview(dataPreview);
-      // Check nullable
       const checks: boolean[] = [];
       for (const col of info.columns) {
         try {
@@ -72,14 +83,43 @@ export default function JsonToParquetPage() {
     if (!db || !file) return;
     setLoading(true);
     setResult(null);
+    setOutputPreview(null);
+    setParquetMeta(null);
+    setOutputBuf(null);
     const start = performance.now();
     try {
       const tableName = sanitizeTableName(file.name);
       const buf = await exportToParquet(db, tableName, { compression, rowGroupSize });
       const durationMs = Math.round(performance.now() - start);
       setResult({ durationMs, outputSize: buf.byteLength });
+      setOutputBuf(buf);
       const baseName = file.name.replace(/\.[^.]+$/, "");
       downloadBlob(buf, `${baseName}.parquet`, "application/octet-stream");
+
+      // Read back the exported parquet for output preview
+      const outName = `${tableName}_export.parquet`;
+      try {
+        const outData = await runQuery(db, `SELECT * FROM read_parquet('${outName}') LIMIT 100`);
+        setOutputPreview(outData);
+
+        const metaResult = await runQuery(db, `SELECT * FROM parquet_metadata('${outName}')`);
+        const rowGroups = metaResult.rowCount;
+        let totalCompressed = 0;
+        let totalUncompressed = 0;
+        const compressedIdx = metaResult.columns.indexOf("total_compressed_size");
+        const uncompressedIdx = metaResult.columns.indexOf("total_uncompressed_size");
+        if (compressedIdx >= 0 && uncompressedIdx >= 0) {
+          for (const row of metaResult.rows) {
+            totalCompressed += Number(row[compressedIdx] ?? 0);
+            totalUncompressed += Number(row[uncompressedIdx] ?? 0);
+          }
+        }
+        setParquetMeta({ rowGroups, totalCompressed, totalUncompressed });
+      } catch {
+        // Non-critical
+      }
+
+      setView("output");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Conversion failed");
     } finally {
@@ -96,6 +136,19 @@ export default function JsonToParquetPage() {
     const blob = new Blob([sample], { type: "application/json" });
     handleFile(new File([blob], "sample.json", { type: "application/json" }));
   }
+
+  function handleReDownload() {
+    if (!outputBuf || !file) return;
+    const baseName = file.name.replace(/\.[^.]+$/, "");
+    downloadBlob(outputBuf, `${baseName}.parquet`, "application/octet-stream");
+  }
+
+  const viewTabs: [typeof view, string][] = [
+    ["data", "Data Preview"],
+    ["schema", "Schema"],
+    ["raw-input", "Raw Input"],
+    ...(outputPreview ? [["output", "Output Preview"] as [typeof view, string]] : []),
+  ];
 
   return (
     <ToolPage icon={Braces} title="JSON to Parquet" description="Convert JSON files to Parquet with compression options." metaDescription={getToolMetaDescription("json-to-parquet")} seoContent={getToolSeo("json-to-parquet")}>
@@ -139,7 +192,7 @@ export default function JsonToParquetPage() {
                 <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
                 <div className="flex gap-2">
                   <Button onClick={handleConvert} disabled={loading}>Convert to Parquet</Button>
-                  <Button variant="outline" onClick={() => { setFile(null); setMeta(null); setResult(null); setRawInput(null); setPreview(null); setNullableInfo([]); }}>New file</Button>
+                  <Button variant="outline" onClick={() => { setFile(null); setMeta(null); setResult(null); setRawInput(null); setPreview(null); setNullableInfo([]); setOutputPreview(null); setParquetMeta(null); setOutputBuf(null); }}>New file</Button>
                 </div>
               </div>
 
@@ -170,7 +223,7 @@ export default function JsonToParquetPage() {
 
               <div className="flex items-center gap-3">
                 <div className="flex gap-2">
-                  {([["data", "Data Preview"], ["schema", "Schema"], ["raw-input", "Raw Input"]] as const).map(([v, label]) => (
+                  {viewTabs.map(([v, label]) => (
                     <button key={v} onClick={() => setView(v)}
                       className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${view === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
                       {label}
@@ -219,6 +272,27 @@ export default function JsonToParquetPage() {
 
           {view === "raw-input" && (
             <RawPreview content={rawInput} label="Raw Input" fileName={file?.name} />
+          )}
+
+          {/* Output preview */}
+          {view === "output" && outputPreview && (
+            <div className="space-y-4">
+              {parquetMeta && (
+                <div className="border-2 border-border bg-card p-4 flex items-center gap-6 flex-wrap">
+                  <div><div className="text-xs text-muted-foreground">Row Groups</div><div className="text-lg font-bold">{parquetMeta.rowGroups}</div></div>
+                  <div><div className="text-xs text-muted-foreground">Compressed Size</div><div className="text-lg font-bold">{formatBytes(parquetMeta.totalCompressed)}</div></div>
+                  <div><div className="text-xs text-muted-foreground">Uncompressed Size</div><div className="text-lg font-bold">{formatBytes(parquetMeta.totalUncompressed)}</div></div>
+                  <div><div className="text-xs text-muted-foreground">Codec</div><div className="text-lg font-bold">{compression === "none" ? "None" : compression.toUpperCase()}</div></div>
+                </div>
+              )}
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-medium text-muted-foreground">Output Preview (first 100 rows from Parquet)</h3>
+                <Button variant="outline" size="sm" onClick={handleReDownload}>
+                  <Download className="h-4 w-4 mr-1" /> Download again
+                </Button>
+              </div>
+              <DataTable columns={outputPreview.columns} rows={outputPreview.rows} types={outputPreview.types} className="max-h-[500px]" />
+            </div>
           )}
         </div>
       </DuckDBGate>
