@@ -1,130 +1,65 @@
 
 
-# Audit: Cross-Tool File Persistence & Inspector Tools vs. Spec
+# Fix CrossToolLinks Visual & Logic Issues
 
-## Summary
+## Problem
 
-The core infrastructure is implemented and working. All 21 pages have been audited against the spec. Below are the gaps found.
+After conversion, converter pages show **two stacked "Work with this file" boxes** with identical headings (visible in the screenshot). This is confusing because:
 
----
+- Both say "Work with this file" but refer to different files (input vs output)
+- The input links include a **self-link** to the current page (e.g., "Convert to CSV" on the Parquet-to-CSV page)
+- The output links have **no file ID**, so they can't carry the converted data forward
 
-## What's Working Well
+## Solution
 
-- **FileStoreContext** -- implemented correctly with `addFile`, `getFile`, `getLatestByFormat`, `removeFile`, `clearAll`
-- **useAutoLoadFile hook** -- wired into 12 DuckDB-based pages
-- **CrossToolLinks** -- present on all 18 tool pages (including excel format)
-- **InspectLink** -- present on all converter/viewer pages that handle a single input file
-- **Three inspector pages** -- CSV, JSON, Parquet all implemented with correct sections
-- **Routes and navigation** -- all 3 inspectors in App.tsx routes, Navbar dropdown, and homepage grid
+### 1. Filter out self-links from CrossToolLinks
 
----
+Add a `currentRoute` prop to `CrossToolLinks` so it automatically hides the link pointing to the current page. Each page passes its own route (e.g., `/parquet-to-csv`) and that link gets filtered out.
 
-## Gaps Found
+### 2. Merge into a single unified box
 
-### 1. Missing features in specific pages
+Instead of two separate boxes, combine input and output links into **one "Work with this file" section** with labeled sub-groups when both are present. After conversion, the single box shows:
 
-| Page | Issue |
-|------|-------|
-| **JsonFormatterPage** | No `useAutoLoadFile` -- files from other tools won't auto-load |
-| **ExcelCsvPage** | No `useAutoLoadFile` -- files from other tools won't auto-load |
-| **SqlPage** | No `useAutoLoadFile` -- files from other tools won't auto-load |
-| **DiffPage** | No `useAutoLoadFile` (two-file tool, so less critical), no `CrossToolLinks`, no `InspectLink` |
-| **FlattenPage** | No `useAutoLoadFile` -- files from other tools won't auto-load |
-| **ExcelCsvPage** | `CrossToolLinks format` is always `"csv"` even for Excel input -- should be `"excel"` for Excel files |
+- **Source (Parquet):** Convert to JSON, View Data, SQL Playground, Profile Data
+- **Output (CSV):** Convert to JSON, Convert to Parquet, Generate SQL, View Data, ...
 
-### 2. Missing spec features in CSV Inspector
+This keeps the UI clean with one box instead of two identical-looking ones.
 
-| Feature | Status |
-|---------|--------|
-| Section 4: Data Patterns (date formats, null representations, numeric formats, header whitespace, numeric strings) | Not implemented |
-| Section 5: Expandable warnings (click to show affected rows) | Not implemented -- warnings are flat list |
-| Null pattern detection (`NULL`, `null`, `NA`, `N/A`, `None`, empty string counts per column) | Not implemented |
-| Max line length detection | Not implemented |
-| Consistent column count check (rows with wrong field count) | Not implemented |
+### 3. Pass fileId to output links where possible
 
-### 3. Missing spec features in JSON Inspector
+The output CrossToolLinks currently never receives a `fileId`. While the converted output isn't stored in FileStore (it's generated in-memory), we can at minimum label the section clearly so users understand these links open fresh (without file carry-over).
 
-| Feature | Status |
-|---------|--------|
-| Section 7: Tree Preview (collapsible JSON tree for first 50 records) | Not implemented |
-| Empty arrays/objects count in Value Types section | Not implemented |
-| Minified detection in Structure Analysis | Field exists but always set to `false` |
+## Files to Change
 
-### 4. Missing spec features in Parquet Inspector
-
-| Feature | Status |
-|---------|--------|
-| Parquet version display | Not shown |
-| Column-level min/max/encoding/null counts in Column Details table | Using raw `parquet_schema()` output instead of enriched table from spec |
-| Dictionary encoding percentage summary | Not implemented |
-| Warnings section | Not implemented |
-| Per-column compressed size | Not shown in column table |
-
-### 5. CrossToolLinks format mismatches (minor)
-
-Some converter pages show CrossToolLinks for the **input** format instead of showing links for **both** input and output formats. Per the spec, after conversion the output section should also show relevant links for the output format.
-
-For example:
-- `CsvToJsonPage` shows `CrossToolLinks format="csv"` but after conversion, should also show links for JSON output (e.g., "Inspect JSON", "Convert to Parquet")
-- `ParquetToCsvPage` shows `CrossToolLinks format="parquet"` but after conversion, should also show CSV output links
-- Same pattern across most converters
-
----
-
-## Implementation Plan
-
-### Step 1: Add `useAutoLoadFile` to missing pages
-- **JsonFormatterPage**: Add auto-load support for JSON files
-- **FlattenPage**: Add auto-load support for JSON files
-- **ExcelCsvPage**: Add auto-load support for Excel files
-- **SqlPage**: Add auto-load support (load file into first table slot)
-
-### Step 2: Fix ExcelCsvPage CrossToolLinks format
-- Use `"excel"` format when input is Excel, `"csv"` when input is CSV
-
-### Step 3: Add DiffPage cross-tool links
-- Add `CrossToolLinks` and `InspectLink` for both before/after files
-
-### Step 4: Enhance CSV Inspector
-- Add Data Patterns section with null representation detection, date format detection, and header whitespace checks
-- Add consistent column count check
-- Make warnings expandable
-
-### Step 5: Enhance JSON Inspector  
-- Add collapsible tree preview (reuse TreeNode from JsonFormatterPage)
-- Fix minified detection
-- Add empty arrays/objects/strings counts to Value Types section
-
-### Step 6: Enhance Parquet Inspector
-- Enrich column details table with per-column encoding, nulls, min/max, compressed size from `parquet_metadata()`
-- Add dictionary encoding percentage summary
-- Add warnings section (e.g., many row groups, high null columns)
-
-### Step 7: Add output-format CrossToolLinks to converters
-- After conversion completes, show a second `CrossToolLinks` for the output format below the output section (e.g., JSON links after CSV-to-JSON conversion)
-
----
+| File | Change |
+|------|--------|
+| `CrossToolLinks.tsx` | Add `excludeRoute` prop to filter self-links; add optional `heading` prop for sub-labels |
+| `ParquetToCsvPage.tsx` | Pass `excludeRoute="/parquet-to-csv"`, use single combined section |
+| `ParquetToJsonPage.tsx` | Same pattern |
+| `CsvToJsonPage.tsx` | Same pattern |
+| `CsvToParquetPage.tsx` | Same pattern |
+| `JsonToCsvPage.tsx` | Same pattern |
+| `JsonToParquetPage.tsx` | Same pattern |
 
 ## Technical Details
 
-### useAutoLoadFile additions
-For `JsonFormatterPage`, `FlattenPage`, and `ExcelCsvPage`, the hook needs to call the existing `handleFile` function. Since these pages don't use DuckDB directly, the `ready` parameter can be `true`.
+**CrossToolLinks component changes:**
+- New optional `excludeRoute?: string` prop -- filters out links whose `route` matches
+- New optional `heading?: string` prop -- overrides the default "Work with this file" heading
+- When two CrossToolLinks are used on a converter page, wrap them in a single container div with sub-headings like "Source file" and "Converted output"
 
-For `SqlPage`, auto-loading should register the file as a table (matching existing `handleFileUpload` logic).
-
-### CSV Inspector Data Patterns
-Run additional DuckDB queries per string column:
-```sql
-SELECT
-  COUNT(CASE WHEN CAST(col AS VARCHAR) = 'NULL' THEN 1 END) as null_string,
-  COUNT(CASE WHEN CAST(col AS VARCHAR) = '' THEN 1 END) as empty_string,
-  COUNT(CASE WHEN CAST(col AS VARCHAR) = 'NA' THEN 1 END) as na_string
-FROM table_name;
+**Converter pages pattern** (applied to all 6 affected converters):
+```
+{/* Single combined cross-tool section */}
+<div className="border-2 border-border p-4 space-y-4">
+  <CrossToolLinks format="parquet" fileId={storedFileId} 
+    excludeRoute="/parquet-to-csv" heading="Source file" inline />
+  {conversionResult && (
+    <CrossToolLinks format="csv" 
+      excludeRoute="/parquet-to-csv" heading="Converted output" inline />
+  )}
+</div>
 ```
 
-### Parquet Inspector Column Enrichment
-Use `parquet_metadata()` grouped by column name to extract per-column encoding, compression, null count, min/max values, and compressed size -- then merge with schema data for a single enriched table.
-
-### Output CrossToolLinks
-Add a conditional second `CrossToolLinks` component in each converter's output section, using the output format (e.g., `format="json"` in CsvToJsonPage output area).
+The `inline` prop renders just the heading + link chips without the outer border, so the parent div provides the single container.
 
