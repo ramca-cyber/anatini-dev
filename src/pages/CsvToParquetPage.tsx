@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
-import { FileSpreadsheet, ArrowRightLeft, FlaskConical, Settings2, ChevronDown, ChevronUp } from "lucide-react";
+import { FileSpreadsheet, ArrowRightLeft, FlaskConical, Settings2, ChevronDown, ChevronUp, Download } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DuckDBGate } from "@/components/shared/DuckDBGate";
 import { DropZone } from "@/components/shared/DropZone";
@@ -11,6 +11,12 @@ import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { registerFile, runQuery, exportToParquet, downloadBlob, formatBytes, sanitizeTableName } from "@/lib/duckdb-helpers";
 import { getSampleCSV } from "@/lib/sample-data";
+
+interface ParquetMeta {
+  rowGroups: number;
+  totalCompressed: number;
+  totalUncompressed: number;
+}
 
 export default function CsvToParquetPage() {
   const { db } = useDuckDB();
@@ -24,8 +30,11 @@ export default function CsvToParquetPage() {
   const [compression, setCompression] = useState<"snappy" | "zstd" | "gzip" | "none">("snappy");
   const [rowGroupSize, setRowGroupSize] = useState<number | null>(null);
   const [conversionResult, setConversionResult] = useState<{ durationMs: number; outputSize: number } | null>(null);
-  const [view, setView] = useState<"table" | "schema" | "raw-input">("table");
+  const [view, setView] = useState<"table" | "schema" | "raw-input" | "output">("table");
   const [nullableInfo, setNullableInfo] = useState<boolean[]>([]);
+  const [outputPreview, setOutputPreview] = useState<{ columns: string[]; rows: any[][]; types: string[] } | null>(null);
+  const [parquetMeta, setParquetMeta] = useState<ParquetMeta | null>(null);
+  const [outputBuf, setOutputBuf] = useState<Uint8Array | null>(null);
 
   async function handleFile(f: File) {
     if (!db) return;
@@ -37,6 +46,9 @@ export default function CsvToParquetPage() {
     setConversionResult(null);
     setView("table");
     setNullableInfo([]);
+    setOutputPreview(null);
+    setParquetMeta(null);
+    setOutputBuf(null);
     try {
       const text = await f.text();
       setRawInput(text.slice(0, 50_000));
@@ -45,7 +57,6 @@ export default function CsvToParquetPage() {
       setMeta(info);
       const result = await runQuery(db, `SELECT * FROM "${tableName}" LIMIT 100`);
       setPreview(result);
-      // Check nullable per column
       const nullChecks: boolean[] = [];
       for (const col of info.columns) {
         try {
@@ -65,6 +76,9 @@ export default function CsvToParquetPage() {
     if (!db || !file) return;
     setLoading(true);
     setConversionResult(null);
+    setOutputPreview(null);
+    setParquetMeta(null);
+    setOutputBuf(null);
     const start = performance.now();
     try {
       const tableName = sanitizeTableName(file.name);
@@ -72,13 +86,53 @@ export default function CsvToParquetPage() {
       const buf = await exportToParquet(db, tableName, { compression, rowGroupSize });
       const durationMs = Math.round(performance.now() - start);
       setConversionResult({ durationMs, outputSize: buf.byteLength });
+      setOutputBuf(buf);
       downloadBlob(buf, `${baseName}.parquet`, "application/octet-stream");
+
+      // Read back the exported parquet for output preview
+      const outName = `${tableName}_export.parquet`;
+      try {
+        const outData = await runQuery(db, `SELECT * FROM read_parquet('${outName}') LIMIT 100`);
+        setOutputPreview(outData);
+
+        // Get parquet metadata
+        const metaResult = await runQuery(db, `SELECT * FROM parquet_metadata('${outName}')`);
+        const rowGroups = metaResult.rowCount;
+        let totalCompressed = 0;
+        let totalUncompressed = 0;
+        const compressedIdx = metaResult.columns.indexOf("total_compressed_size");
+        const uncompressedIdx = metaResult.columns.indexOf("total_uncompressed_size");
+        if (compressedIdx >= 0 && uncompressedIdx >= 0) {
+          for (const row of metaResult.rows) {
+            totalCompressed += Number(row[compressedIdx] ?? 0);
+            totalUncompressed += Number(row[uncompressedIdx] ?? 0);
+          }
+        }
+        setParquetMeta({ rowGroups, totalCompressed, totalUncompressed });
+      } catch {
+        // Non-critical: output preview failed but conversion succeeded
+      }
+
+      setView("output");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Conversion failed");
     } finally {
       setLoading(false);
     }
   }
+
+  function handleReDownload() {
+    if (!outputBuf || !file) return;
+    const baseName = file.name.replace(/\.[^.]+$/, "");
+    downloadBlob(outputBuf, `${baseName}.parquet`, "application/octet-stream");
+  }
+
+  const viewTabs: [typeof view, string][] = [
+    ["table", "Table View"],
+    ["schema", "Schema Preview"],
+    ["raw-input", "Raw Input"],
+    ...(outputPreview ? [["output", "Output Preview"] as [typeof view, string]] : []),
+  ];
 
   return (
     <ToolPage icon={FileSpreadsheet} title="CSV to Parquet" description="Convert CSV files to columnar Parquet format with compression." pageTitle="CSV to Parquet — Free, Offline | Anatini.dev" metaDescription={getToolMetaDescription("csv-to-parquet")} seoContent={getToolSeo("csv-to-parquet")}>
@@ -103,7 +157,7 @@ export default function CsvToParquetPage() {
                 <Button onClick={handleConvert} disabled={loading}>
                   <ArrowRightLeft className="h-4 w-4 mr-1" /> Convert to Parquet
                 </Button>
-                <Button variant="outline" onClick={() => { setFile(null); setMeta(null); setPreview(null); setRawInput(null); setConversionResult(null); setNullableInfo([]); }}>New file</Button>
+                <Button variant="outline" onClick={() => { setFile(null); setMeta(null); setPreview(null); setRawInput(null); setConversionResult(null); setNullableInfo([]); setOutputPreview(null); setParquetMeta(null); setOutputBuf(null); }}>New file</Button>
               </div>
             </div>
 
@@ -140,7 +194,7 @@ export default function CsvToParquetPage() {
             {/* View toggle */}
             <div className="flex items-center gap-3">
               <div className="flex gap-2">
-                {([["table", "Table View"], ["schema", "Schema Preview"], ["raw-input", "Raw Input"]] as const).map(([v, label]) => (
+                {viewTabs.map(([v, label]) => (
                   <button key={v} onClick={() => setView(v)}
                     className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${view === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
                     {label}
@@ -190,6 +244,27 @@ export default function CsvToParquetPage() {
 
         {view === "raw-input" && (
           <RawPreview content={rawInput} label="Raw Input" fileName={file?.name} />
+        )}
+
+        {/* Output preview */}
+        {view === "output" && outputPreview && (
+          <div className="space-y-4">
+            {parquetMeta && (
+              <div className="border-2 border-border bg-card p-4 flex items-center gap-6 flex-wrap">
+                <div><div className="text-xs text-muted-foreground">Row Groups</div><div className="text-lg font-bold">{parquetMeta.rowGroups}</div></div>
+                <div><div className="text-xs text-muted-foreground">Compressed Size</div><div className="text-lg font-bold">{formatBytes(parquetMeta.totalCompressed)}</div></div>
+                <div><div className="text-xs text-muted-foreground">Uncompressed Size</div><div className="text-lg font-bold">{formatBytes(parquetMeta.totalUncompressed)}</div></div>
+                <div><div className="text-xs text-muted-foreground">Codec</div><div className="text-lg font-bold">{compression === "none" ? "None" : compression.toUpperCase()}</div></div>
+              </div>
+            )}
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-medium text-muted-foreground">Output Preview (first 100 rows from Parquet)</h3>
+              <Button variant="outline" size="sm" onClick={handleReDownload}>
+                <Download className="h-4 w-4 mr-1" /> Download again
+              </Button>
+            </div>
+            <DataTable columns={outputPreview.columns} rows={outputPreview.rows} types={outputPreview.types} className="max-h-[500px]" />
+          </div>
         )}
       </div>
       </DuckDBGate>
