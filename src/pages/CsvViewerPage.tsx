@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
-import { Eye, FlaskConical, Search, ArrowUpDown, ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { Eye, Search, ArrowUpDown, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
+import { DuckDBGate } from "@/components/shared/DuckDBGate";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
 import { InspectLink } from "@/components/shared/InspectLink";
@@ -130,16 +131,15 @@ export default function CsvViewerPage() {
 
   return (
     <ToolPage icon={Eye} title="CSV Viewer" description="View, search, filter, and sort CSV data with column statistics." metaDescription={getToolMetaDescription("csv-viewer")} seoContent={getToolSeo("csv-viewer")}>
+      <DuckDBGate>
       <div className="space-y-4">
         {!file && (
-          <div className="space-y-3">
-            <DropZone accept={[".csv", ".tsv"]} onFile={handleFile} label="Drop a CSV file" />
-            <div className="flex justify-center">
-              <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => handleFile(getSampleCSV())}>
-                <FlaskConical className="h-4 w-4 mr-1" /> Try with sample data
-              </Button>
-            </div>
-          </div>
+          <DropZone
+            accept={[".csv", ".tsv"]}
+            onFile={handleFile}
+            label="Drop a CSV file"
+            sampleAction={{ label: "⚗ Try with sample data", onClick: () => handleFile(getSampleCSV()) }}
+          />
         )}
 
         {file && meta && (
@@ -159,9 +159,9 @@ export default function CsvViewerPage() {
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search rows..." className="pl-9 border-2" />
+                <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search rows..." className="pl-9" />
               </div>
-              <select value={searchCol} onChange={(e) => setSearchCol(e.target.value)} className="border-2 border-border bg-background px-2 py-1 text-xs rounded-md">
+              <select value={searchCol} onChange={(e) => setSearchCol(e.target.value)} className="border border-border bg-background px-2 py-1 text-xs">
                 <option value="__all__">All columns</option>
                 {meta.columns.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
@@ -173,7 +173,7 @@ export default function CsvViewerPage() {
             </div>
 
             {colStats && (
-              <div className="border-2 border-foreground bg-card p-3 space-y-1">
+              <div className="border border-border bg-muted/30 p-3 space-y-1">
                 <div className="text-xs font-bold">Column: {colStats.col}</div>
                 <div className="flex flex-wrap gap-4">
                   {Object.entries(colStats.stats).map(([k, v]) => (
@@ -183,7 +183,7 @@ export default function CsvViewerPage() {
               </div>
             )}
 
-            <CrossToolLinks format="csv" fileId={storedFileId ?? undefined} />
+            <CrossToolLinks format="csv" fileId={storedFileId ?? undefined} excludeRoute="/csv-viewer" />
           </div>
         )}
 
@@ -238,6 +238,7 @@ export default function CsvViewerPage() {
           </>
         )}
       </div>
+      </DuckDBGate>
     </ToolPage>
   );
 }

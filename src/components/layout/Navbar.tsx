@@ -49,6 +49,7 @@ const toolGroups = [
       { path: "/json-flattener", label: "JSON Flattener" },
       { path: "/schema-generator", label: "Schema Generator" },
       { path: "/csv-to-sql", label: "CSV → SQL" },
+      { path: "/dataset-diff", label: "Dataset Diff" },
     ],
   },
 ];
@@ -102,10 +103,6 @@ export function Navbar() {
                   ))}
                 </div>
               ))}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link to="/diff">Dataset Diff</Link>
-              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -166,13 +163,6 @@ export function Navbar() {
                 ))}
               </div>
             ))}
-            <Link
-              to="/diff"
-              onClick={() => setMobileOpen(false)}
-              className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground"
-            >
-              Dataset Diff
-            </Link>
             <Link
               to="/about"
               onClick={() => setMobileOpen(false)}

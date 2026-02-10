@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
-import { Terminal, Play, Download, Plus, Copy, Table2, FlaskConical, History, X, ChevronDown } from "lucide-react";
+import { Terminal, Play, Download, Plus, Copy, Table2, History, X, ChevronDown } from "lucide-react";
 import { useFileStore } from "@/contexts/FileStoreContext";
 import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
 import { ToolPage } from "@/components/shared/ToolPage";
@@ -171,16 +171,12 @@ export default function SqlPage() {
           </div>
 
           {showDropZone && (
-            <div className="space-y-3">
-              <DropZone accept={[".csv", ".parquet", ".json"]} onFile={handleFile} label="Add a file" />
-              {tables.length === 0 && (
-                <div className="flex justify-center">
-                  <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => handleFile(getSampleCSV())}>
-                    <FlaskConical className="h-4 w-4 mr-1" /> Try with sample data
-                  </Button>
-                </div>
-              )}
-            </div>
+            <DropZone
+              accept={[".csv", ".parquet", ".json"]}
+              onFile={handleFile}
+              label="Add a file"
+              sampleAction={tables.length === 0 ? { label: "⚗ Try with sample data", onClick: () => handleFile(getSampleCSV()) } : undefined}
+            />
           )}
 
           {tables.map((t) => (
