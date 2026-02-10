@@ -368,6 +368,7 @@ export default function DiffPage() {
         )}
 
         {beforeFile && <CrossToolLinks format={detectFormat(beforeFile.name)} fileId={beforeFileId ?? undefined} />}
+        {afterFile && afterFile.name !== beforeFile?.name && <CrossToolLinks format={detectFormat(afterFile.name)} fileId={afterFileId ?? undefined} />}
       </div>
     </ToolPage>
   );
