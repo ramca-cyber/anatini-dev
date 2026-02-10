@@ -24,6 +24,8 @@ import ParquetViewerPage from "./pages/ParquetViewerPage";
 import CsvViewerPage from "./pages/CsvViewerPage";
 import CsvToSqlPage from "./pages/CsvToSqlPage";
 import ExcelCsvPage from "./pages/ExcelCsvPage";
+import ExcelToCsvPage from "./pages/ExcelToCsvPage";
+import CsvToExcelPage from "./pages/CsvToExcelPage";
 import CsvInspectorPage from "./pages/CsvInspectorPage";
 import JsonInspectorPage from "./pages/JsonInspectorPage";
 import ParquetInspectorPage from "./pages/ParquetInspectorPage";
@@ -50,7 +52,9 @@ const App = () => (
                 <Route path="/json-to-csv" element={<JsonToCsvPage />} />
                 <Route path="/json-to-parquet" element={<JsonToParquetPage />} />
                 <Route path="/parquet-to-json" element={<ParquetToJsonPage />} />
-                <Route path="/excel-csv-converter" element={<ExcelCsvPage />} />
+                <Route path="/excel-to-csv" element={<ExcelToCsvPage />} />
+                <Route path="/csv-to-excel" element={<CsvToExcelPage />} />
+                <Route path="/excel-csv-converter" element={<Navigate to="/excel-to-csv" replace />} />
 
                 {/* Viewers & Formatters */}
                 <Route path="/csv-viewer" element={<CsvViewerPage />} />
