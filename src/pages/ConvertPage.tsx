@@ -27,6 +27,7 @@ export default function ConvertPage() {
 
   // Conversion result
   const [conversionResult, setConversionResult] = useState<{ durationMs: number; outputSize: number } | null>(null);
+  const [outputBlob, setOutputBlob] = useState<{ data: Uint8Array | string; name: string; mime: string } | null>(null);
 
   const inputExt = file?.name.split(".").pop()?.toLowerCase();
   const outputFormat = inputExt === "parquet" ? "CSV" : "Parquet";
@@ -38,6 +39,7 @@ export default function ConvertPage() {
     setError(null);
     setPreview(null);
     setConversionResult(null);
+    setOutputBlob(null);
     try {
       const tableName = sanitizeTableName(f.name);
       const info = await registerFile(db, f, tableName);
@@ -55,6 +57,7 @@ export default function ConvertPage() {
     if (!db || !file) return;
     setLoading(true);
     setConversionResult(null);
+    setOutputBlob(null);
     const start = performance.now();
     try {
       const tableName = sanitizeTableName(file.name);
@@ -63,11 +66,11 @@ export default function ConvertPage() {
       if (outputFormat === "CSV") {
         const csv = await exportToCSV(db, `SELECT * FROM "${tableName}"`);
         outputSize = new Blob([csv]).size;
-        downloadBlob(csv, `${baseName}.csv`, "text/csv");
+        setOutputBlob({ data: csv, name: `${baseName}.csv`, mime: "text/csv" });
       } else {
         const buf = await exportToParquet(db, tableName);
         outputSize = buf.byteLength;
-        downloadBlob(buf, `${baseName}.parquet`, "application/octet-stream");
+        setOutputBlob({ data: buf, name: `${baseName}.parquet`, mime: "application/octet-stream" });
       }
       const durationMs = Math.round(performance.now() - start);
       setConversionResult({ durationMs, outputSize });
@@ -76,6 +79,11 @@ export default function ConvertPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleDownload() {
+    if (!outputBlob) return;
+    downloadBlob(outputBlob.data, outputBlob.name, outputBlob.mime);
   }
 
   const compressionOptions = [
@@ -97,11 +105,7 @@ export default function ConvertPage() {
       <div className="space-y-6">
         {!file && (
           <div className="space-y-3">
-            <DropZone
-              accept={[".csv", ".parquet"]}
-              onFile={handleFile}
-              label="Drop a CSV or Parquet file"
-            />
+            <DropZone accept={[".csv", ".parquet"]} onFile={handleFile} label="Drop a CSV or Parquet file" />
             <div className="flex justify-center">
               <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => handleFile(getSampleCSV())}>
                 <FlaskConical className="h-4 w-4 mr-1" /> Try with sample data
@@ -117,21 +121,17 @@ export default function ConvertPage() {
               <div className="flex items-center gap-2">
                 <Button onClick={handleConvert} disabled={loading}>
                   <ArrowRightLeft className="h-4 w-4 mr-1" />
-                  Convert to {outputFormat}
+                  {conversionResult ? "Re-convert" : `Convert to ${outputFormat}`}
                 </Button>
-                <Button variant="outline" onClick={() => { setFile(null); setMeta(null); setPreview(null); setConversionResult(null); }}>
+                <Button variant="outline" onClick={() => { setFile(null); setMeta(null); setPreview(null); setConversionResult(null); setOutputBlob(null); }}>
                   New file
                 </Button>
               </div>
             </div>
 
             {/* Options panel */}
-            <button
-              onClick={() => setShowOptions(!showOptions)}
-              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Settings2 className="h-4 w-4" />
-              Conversion Options
+            <button onClick={() => setShowOptions(!showOptions)} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <Settings2 className="h-4 w-4" /> Conversion Options
               {showOptions ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
             </button>
             {showOptions && (
@@ -140,11 +140,7 @@ export default function ConvertPage() {
                   <div className="flex items-center gap-4 flex-wrap">
                     <div className="space-y-1">
                       <label className="text-xs text-muted-foreground">Delimiter</label>
-                      <select
-                        value={delimiter}
-                        onChange={(e) => setDelimiter(e.target.value)}
-                        className="block rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                      >
+                      <select value={delimiter} onChange={(e) => setDelimiter(e.target.value)} className="block rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
                         <option value=",">Comma (,)</option>
                         <option value="\t">Tab</option>
                         <option value=";">Semicolon (;)</option>
@@ -165,15 +161,8 @@ export default function ConvertPage() {
                     <label className="text-xs text-muted-foreground">Parquet Compression</label>
                     <div className="flex gap-2">
                       {compressionOptions.map((c) => (
-                        <button
-                          key={c.id}
-                          onClick={() => setCompression(c.id)}
-                          className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                            compression === c.id
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                          }`}
-                        >
+                        <button key={c.id} onClick={() => setCompression(c.id)}
+                          className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${compression === c.id ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-secondary/80"}`}>
                           {c.label}
                         </button>
                       ))}
@@ -183,23 +172,40 @@ export default function ConvertPage() {
               </div>
             )}
 
-            {/* Conversion result */}
+            {/* INPUT SECTION */}
+            <div className="space-y-3">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Input</h3>
+              {preview && (
+                <DataTable columns={preview.columns} rows={preview.rows} types={preview.types} className="max-h-[500px]" />
+              )}
+            </div>
+
+            {/* OUTPUT SECTION */}
             {conversionResult && (
-              <div className="rounded-lg border border-success/30 bg-success/10 p-4 flex items-center gap-6 flex-wrap">
-                <div>
-                  <div className="text-xs text-muted-foreground">Converted in</div>
-                  <div className="text-lg font-bold text-success">{(conversionResult.durationMs / 1000).toFixed(1)}s</div>
+              <div className="space-y-3 border-t-2 border-border pt-4">
+                <div className="flex items-center justify-between gap-4 flex-wrap">
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Output</h3>
+                  <Button size="sm" onClick={handleDownload}>
+                    <Download className="h-4 w-4 mr-1" /> Download {outputFormat}
+                  </Button>
                 </div>
-                <div>
-                  <div className="text-xs text-muted-foreground">Output size</div>
-                  <div className="text-lg font-bold">{formatBytes(conversionResult.outputSize)}</div>
-                </div>
-                <div>
-                  <div className="text-xs text-muted-foreground">Size change</div>
-                  <div className="text-lg font-bold text-primary">
-                    {file.size > 0
-                      ? `${Math.round((1 - conversionResult.outputSize / file.size) * 100)}% ${conversionResult.outputSize < file.size ? "smaller" : "larger"}`
-                      : "—"}
+
+                <div className="rounded-lg border border-border bg-card p-4 flex items-center gap-6 flex-wrap">
+                  <div>
+                    <div className="text-xs text-muted-foreground">Converted in</div>
+                    <div className="text-lg font-bold">{(conversionResult.durationMs / 1000).toFixed(1)}s</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground">Output size</div>
+                    <div className="text-lg font-bold">{formatBytes(conversionResult.outputSize)}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground">Size change</div>
+                    <div className="text-lg font-bold">
+                      {file.size > 0
+                        ? `${Math.round((1 - conversionResult.outputSize / file.size) * 100)}% ${conversionResult.outputSize < file.size ? "smaller" : "larger"}`
+                        : "—"}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -209,13 +215,6 @@ export default function ConvertPage() {
 
         {loading && <LoadingState message="Processing file..." />}
         {error && <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
-
-        {preview && (
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium text-muted-foreground">Preview (first 100 rows)</h3>
-            <DataTable columns={preview.columns} rows={preview.rows} types={preview.types} className="max-h-[500px]" />
-          </div>
-        )}
       </div>
       </DuckDBGate>
     </ToolPage>

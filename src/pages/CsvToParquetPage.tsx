@@ -30,7 +30,8 @@ export default function CsvToParquetPage() {
   const [compression, setCompression] = useState<"snappy" | "zstd" | "gzip" | "none">("snappy");
   const [rowGroupSize, setRowGroupSize] = useState<number | null>(null);
   const [conversionResult, setConversionResult] = useState<{ durationMs: number; outputSize: number } | null>(null);
-  const [view, setView] = useState<"table" | "schema" | "raw-input" | "output">("table");
+  const [inputView, setInputView] = useState<"table" | "schema" | "raw-input">("table");
+  const [outputView, setOutputView] = useState<"preview">("preview");
   const [nullableInfo, setNullableInfo] = useState<boolean[]>([]);
   const [outputPreview, setOutputPreview] = useState<{ columns: string[]; rows: any[][]; types: string[] } | null>(null);
   const [parquetMeta, setParquetMeta] = useState<ParquetMeta | null>(null);
@@ -44,7 +45,7 @@ export default function CsvToParquetPage() {
     setPreview(null);
     setRawInput(null);
     setConversionResult(null);
-    setView("table");
+    setInputView("table");
     setNullableInfo([]);
     setOutputPreview(null);
     setParquetMeta(null);
@@ -82,12 +83,10 @@ export default function CsvToParquetPage() {
     const start = performance.now();
     try {
       const tableName = sanitizeTableName(file.name);
-      const baseName = file.name.replace(/\.[^.]+$/, "");
       const buf = await exportToParquet(db, tableName, { compression, rowGroupSize });
       const durationMs = Math.round(performance.now() - start);
       setConversionResult({ durationMs, outputSize: buf.byteLength });
       setOutputBuf(buf);
-      downloadBlob(buf, `${baseName}.parquet`, "application/octet-stream");
 
       // Read back the exported parquet for output preview
       const outName = `${tableName}_export.parquet`;
@@ -95,7 +94,6 @@ export default function CsvToParquetPage() {
         const outData = await runQuery(db, `SELECT * FROM read_parquet('${outName}') LIMIT 100`);
         setOutputPreview(outData);
 
-        // Get parquet metadata
         const metaResult = await runQuery(db, `SELECT * FROM parquet_metadata('${outName}')`);
         const rowGroups = metaResult.rowCount;
         let totalCompressed = 0;
@@ -112,8 +110,6 @@ export default function CsvToParquetPage() {
       } catch {
         // Non-critical: output preview failed but conversion succeeded
       }
-
-      setView("output");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Conversion failed");
     } finally {
@@ -121,17 +117,22 @@ export default function CsvToParquetPage() {
     }
   }
 
-  function handleReDownload() {
+  function handleDownload() {
     if (!outputBuf || !file) return;
     const baseName = file.name.replace(/\.[^.]+$/, "");
     downloadBlob(outputBuf, `${baseName}.parquet`, "application/octet-stream");
   }
 
-  const viewTabs: [typeof view, string][] = [
+  function resetAll() {
+    setFile(null); setMeta(null); setPreview(null); setRawInput(null);
+    setConversionResult(null); setNullableInfo([]); setOutputPreview(null);
+    setParquetMeta(null); setOutputBuf(null);
+  }
+
+  const inputTabs: ["table" | "schema" | "raw-input", string][] = [
     ["table", "Table View"],
-    ["schema", "Schema Preview"],
+    ["schema", "Schema"],
     ["raw-input", "Raw Input"],
-    ...(outputPreview ? [["output", "Output Preview"] as [typeof view, string]] : []),
   ];
 
   return (
@@ -151,13 +152,14 @@ export default function CsvToParquetPage() {
 
         {file && meta && (
           <div className="space-y-4">
+            {/* File info + actions */}
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
               <div className="flex items-center gap-2">
                 <Button onClick={handleConvert} disabled={loading}>
-                  <ArrowRightLeft className="h-4 w-4 mr-1" /> Convert to Parquet
+                  <ArrowRightLeft className="h-4 w-4 mr-1" /> {conversionResult ? "Re-convert" : "Convert to Parquet"}
                 </Button>
-                <Button variant="outline" onClick={() => { setFile(null); setMeta(null); setPreview(null); setRawInput(null); setConversionResult(null); setNullableInfo([]); setOutputPreview(null); setParquetMeta(null); setOutputBuf(null); }}>New file</Button>
+                <Button variant="outline" onClick={resetAll}>New file</Button>
               </div>
             </div>
 
@@ -191,25 +193,74 @@ export default function CsvToParquetPage() {
               </div>
             )}
 
-            {/* View toggle */}
-            <div className="flex items-center gap-3">
-              <div className="flex gap-2">
-                {viewTabs.map(([v, label]) => (
-                  <button key={v} onClick={() => setView(v)}
-                    className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${view === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                    {label}
-                  </button>
-                ))}
+            {/* INPUT SECTION */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Input</h3>
+                <div className="flex gap-1">
+                  {inputTabs.map(([v, label]) => (
+                    <button key={v} onClick={() => setInputView(v)}
+                      className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${inputView === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <span className="text-xs text-muted-foreground">· Output is binary Parquet</span>
+
+              {preview && inputView === "table" && (
+                <DataTable columns={preview.columns} rows={preview.rows} types={preview.types} className="max-h-[500px]" />
+              )}
+              {meta && inputView === "schema" && (
+                <div className="border-2 border-border">
+                  <div className="grid grid-cols-3 border-b-2 border-border bg-muted/50 px-3 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                    <span>Column</span><span>Detected Type</span><span>Nullable</span>
+                  </div>
+                  {meta.columns.map((col, i) => (
+                    <div key={col} className="grid grid-cols-3 border-b border-border/50 px-3 py-2 text-xs">
+                      <span className="font-medium">{col}</span>
+                      <span className="font-mono text-muted-foreground">{meta.types[i]}</span>
+                      <span className={nullableInfo[i] ? "text-amber-500" : "text-muted-foreground"}>{nullableInfo[i] ? "YES" : "NO"}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {inputView === "raw-input" && (
+                <RawPreview content={rawInput} label="Raw Input" fileName={file?.name} />
+              )}
             </div>
 
-            {/* Conversion result */}
+            {/* OUTPUT SECTION */}
             {conversionResult && (
-              <div className="border-2 border-foreground bg-card p-4 flex items-center gap-6 flex-wrap">
-                <div><div className="text-xs text-muted-foreground">Time</div><div className="text-lg font-bold">{(conversionResult.durationMs / 1000).toFixed(1)}s</div></div>
-                <div><div className="text-xs text-muted-foreground">Output size</div><div className="text-lg font-bold">{formatBytes(conversionResult.outputSize)}</div></div>
-                <div><div className="text-xs text-muted-foreground">Compression</div><div className="text-lg font-bold">{file.size > 0 ? `${Math.round((1 - conversionResult.outputSize / file.size) * 100)}% smaller` : "—"}</div></div>
+              <div className="space-y-3 border-t-2 border-border pt-4">
+                <div className="flex items-center justify-between gap-4 flex-wrap">
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Output</h3>
+                  <Button size="sm" onClick={handleDownload}>
+                    <Download className="h-4 w-4 mr-1" /> Download Parquet
+                  </Button>
+                </div>
+
+                {/* Conversion stats */}
+                <div className="border-2 border-foreground bg-card p-4 flex items-center gap-6 flex-wrap">
+                  <div><div className="text-xs text-muted-foreground">Time</div><div className="text-lg font-bold">{(conversionResult.durationMs / 1000).toFixed(1)}s</div></div>
+                  <div><div className="text-xs text-muted-foreground">Output size</div><div className="text-lg font-bold">{formatBytes(conversionResult.outputSize)}</div></div>
+                  <div><div className="text-xs text-muted-foreground">Compression</div><div className="text-lg font-bold">{file.size > 0 ? `${Math.round((1 - conversionResult.outputSize / file.size) * 100)}% smaller` : "—"}</div></div>
+                </div>
+
+                {/* Output preview */}
+                {outputPreview && (
+                  <div className="space-y-3">
+                    {parquetMeta && (
+                      <div className="border-2 border-border bg-card p-4 flex items-center gap-6 flex-wrap">
+                        <div><div className="text-xs text-muted-foreground">Row Groups</div><div className="text-lg font-bold">{parquetMeta.rowGroups}</div></div>
+                        <div><div className="text-xs text-muted-foreground">Compressed Size</div><div className="text-lg font-bold">{formatBytes(parquetMeta.totalCompressed)}</div></div>
+                        <div><div className="text-xs text-muted-foreground">Uncompressed Size</div><div className="text-lg font-bold">{formatBytes(parquetMeta.totalUncompressed)}</div></div>
+                        <div><div className="text-xs text-muted-foreground">Codec</div><div className="text-lg font-bold">{compression === "none" ? "None" : compression.toUpperCase()}</div></div>
+                      </div>
+                    )}
+                    <h4 className="text-sm font-medium text-muted-foreground">Output Preview (first 100 rows from Parquet)</h4>
+                    <DataTable columns={outputPreview.columns} rows={outputPreview.rows} types={outputPreview.types} className="max-h-[500px]" />
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -217,55 +268,6 @@ export default function CsvToParquetPage() {
 
         {loading && <LoadingState message="Processing..." />}
         {error && <div className="border-2 border-destructive bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
-
-        {/* Table preview */}
-        {preview && view === "table" && (
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium text-muted-foreground">Preview (first 100 rows)</h3>
-            <DataTable columns={preview.columns} rows={preview.rows} types={preview.types} className="max-h-[500px]" />
-          </div>
-        )}
-
-        {/* Schema preview */}
-        {meta && view === "schema" && (
-          <div className="border-2 border-border">
-            <div className="grid grid-cols-3 border-b-2 border-border bg-muted/50 px-3 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-              <span>Column</span><span>Detected Type</span><span>Nullable</span>
-            </div>
-            {meta.columns.map((col, i) => (
-              <div key={col} className="grid grid-cols-3 border-b border-border/50 px-3 py-2 text-xs">
-                <span className="font-medium">{col}</span>
-                <span className="font-mono text-muted-foreground">{meta.types[i]}</span>
-                <span className={nullableInfo[i] ? "text-amber-500" : "text-muted-foreground"}>{nullableInfo[i] ? "YES" : "NO"}</span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {view === "raw-input" && (
-          <RawPreview content={rawInput} label="Raw Input" fileName={file?.name} />
-        )}
-
-        {/* Output preview */}
-        {view === "output" && outputPreview && (
-          <div className="space-y-4">
-            {parquetMeta && (
-              <div className="border-2 border-border bg-card p-4 flex items-center gap-6 flex-wrap">
-                <div><div className="text-xs text-muted-foreground">Row Groups</div><div className="text-lg font-bold">{parquetMeta.rowGroups}</div></div>
-                <div><div className="text-xs text-muted-foreground">Compressed Size</div><div className="text-lg font-bold">{formatBytes(parquetMeta.totalCompressed)}</div></div>
-                <div><div className="text-xs text-muted-foreground">Uncompressed Size</div><div className="text-lg font-bold">{formatBytes(parquetMeta.totalUncompressed)}</div></div>
-                <div><div className="text-xs text-muted-foreground">Codec</div><div className="text-lg font-bold">{compression === "none" ? "None" : compression.toUpperCase()}</div></div>
-              </div>
-            )}
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-medium text-muted-foreground">Output Preview (first 100 rows from Parquet)</h3>
-              <Button variant="outline" size="sm" onClick={handleReDownload}>
-                <Download className="h-4 w-4 mr-1" /> Download again
-              </Button>
-            </div>
-            <DataTable columns={outputPreview.columns} rows={outputPreview.rows} types={outputPreview.types} className="max-h-[500px]" />
-          </div>
-        )}
       </div>
       </DuckDBGate>
     </ToolPage>

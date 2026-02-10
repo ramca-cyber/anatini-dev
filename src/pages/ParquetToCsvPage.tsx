@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
-import { FileSpreadsheet, ArrowRightLeft, FlaskConical, Copy, Check } from "lucide-react";
+import { FileSpreadsheet, ArrowRightLeft, FlaskConical, Copy, Check, Download } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DuckDBGate } from "@/components/shared/DuckDBGate";
 import { DropZone } from "@/components/shared/DropZone";
@@ -37,7 +37,6 @@ export default function ParquetToCsvPage() {
   const [csvOutput, setCsvOutput] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [conversionResult, setConversionResult] = useState<{ durationMs: number; outputSize: number } | null>(null);
-  const [view, setView] = useState<"table" | "raw-output">("table");
   const [delimiter, setDelimiter] = useState(",");
   const [includeHeader, setIncludeHeader] = useState(true);
   const [nullRepr, setNullRepr] = useState("");
@@ -53,14 +52,12 @@ export default function ParquetToCsvPage() {
     setCsvOutput(null);
     setConversionResult(null);
     setParquetInfo(null);
-    setView("table");
     try {
       const tableName = sanitizeTableName(f.name);
       const info = await registerFile(db, f, tableName);
       setMeta(info);
       const result = await runQuery(db, `SELECT * FROM "${tableName}" LIMIT 100`);
       setPreview(result);
-      // Parquet metadata
       try {
         const metaRes = await runQuery(db, `SELECT COUNT(DISTINCT row_group_id) as rg, MAX(compression)::VARCHAR as comp FROM parquet_metadata('${f.name}')`);
         if (metaRes.rows[0]) {
@@ -81,13 +78,11 @@ export default function ParquetToCsvPage() {
     const start = performance.now();
     try {
       const tableName = sanitizeTableName(file.name);
-      const baseName = file.name.replace(/\.[^.]+$/, "");
       const csv = await exportToCSV(db, `SELECT * FROM "${tableName}"`, { delimiter, header: includeHeader, nullValue: nullRepr });
       setCsvOutput(csv);
       const outputSize = new Blob([csv]).size;
       const durationMs = Math.round(performance.now() - start);
       setConversionResult({ durationMs, outputSize });
-      downloadBlob(csv, `${baseName}.csv`, "text/csv");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Conversion failed");
     } finally {
@@ -108,6 +103,11 @@ export default function ParquetToCsvPage() {
     setTimeout(() => setCopied(false), 2000);
   }
 
+  function resetAll() {
+    setFile(null); setMeta(null); setPreview(null); setCsvOutput(null);
+    setConversionResult(null); setParquetInfo(null);
+  }
+
   return (
     <ToolPage icon={FileSpreadsheet} title="Parquet to CSV" description="Export Parquet files to CSV format." pageTitle="Parquet to CSV — Free, Offline | Anatini.dev" metaDescription={getToolMetaDescription("parquet-to-csv")} seoContent={getToolSeo("parquet-to-csv")}>
       <DuckDBGate>
@@ -125,19 +125,14 @@ export default function ParquetToCsvPage() {
 
         {file && meta && (
           <div className="space-y-4">
+            {/* File info + actions */}
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
               <div className="flex items-center gap-2">
                 <Button onClick={handleConvert} disabled={loading}>
-                  <ArrowRightLeft className="h-4 w-4 mr-1" /> Convert to CSV
+                  <ArrowRightLeft className="h-4 w-4 mr-1" /> {conversionResult ? "Re-convert" : "Convert to CSV"}
                 </Button>
-                {csvOutput && (
-                  <Button variant="outline" onClick={handleCopy}>
-                    {copied ? <Check className="h-4 w-4 mr-1" /> : <Copy className="h-4 w-4 mr-1" />}
-                    {copied ? "Copied" : "Copy"}
-                  </Button>
-                )}
-                <Button variant="outline" onClick={() => { setFile(null); setMeta(null); setPreview(null); setCsvOutput(null); setConversionResult(null); setParquetInfo(null); }}>New file</Button>
+                <Button variant="outline" onClick={resetAll}>New file</Button>
               </div>
             </div>
 
@@ -174,25 +169,38 @@ export default function ParquetToCsvPage() {
               </div>
             </div>
 
-            {/* View toggle */}
-            <div className="flex items-center gap-3">
-              <div className="flex gap-2">
-                {([["table", "Table View"], ...(csvOutput ? [["raw-output", "Raw CSV Output"]] : [])] as [string, string][]).map(([v, label]) => (
-                  <button key={v} onClick={() => setView(v as any)}
-                    className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${view === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                    {label}
-                  </button>
-                ))}
-              </div>
-              <span className="text-xs text-muted-foreground">· Input is binary Parquet</span>
+            {/* INPUT SECTION */}
+            <div className="space-y-3">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Input</h3>
+              {preview && (
+                <DataTable columns={preview.columns} rows={preview.rows} types={preview.types} className="max-h-[500px]" />
+              )}
+              <p className="text-xs text-muted-foreground">· Input is binary Parquet — showing first 100 rows</p>
             </div>
 
-            {/* Conversion result */}
-            {conversionResult && (
-              <div className="border-2 border-foreground bg-card p-4 flex items-center gap-6 flex-wrap">
-                <div><div className="text-xs text-muted-foreground">Time</div><div className="text-lg font-bold">{(conversionResult.durationMs / 1000).toFixed(1)}s</div></div>
-                <div><div className="text-xs text-muted-foreground">Output size</div><div className="text-lg font-bold">{formatBytes(conversionResult.outputSize)}</div></div>
-                <div><div className="text-xs text-muted-foreground">Size change</div><div className="text-lg font-bold">{file.size > 0 ? `${Math.round((conversionResult.outputSize / file.size - 1) * 100)}% ${conversionResult.outputSize > file.size ? "larger" : "smaller"}` : "—"}</div></div>
+            {/* OUTPUT SECTION */}
+            {conversionResult && csvOutput && (
+              <div className="space-y-3 border-t-2 border-border pt-4">
+                <div className="flex items-center justify-between gap-4 flex-wrap">
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Output</h3>
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={handleDownloadCsv}>
+                      <Download className="h-4 w-4 mr-1" /> Download CSV
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={handleCopy}>
+                      {copied ? <Check className="h-4 w-4 mr-1" /> : <Copy className="h-4 w-4 mr-1" />}
+                      {copied ? "Copied" : "Copy"}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="border-2 border-foreground bg-card p-4 flex items-center gap-6 flex-wrap">
+                  <div><div className="text-xs text-muted-foreground">Time</div><div className="text-lg font-bold">{(conversionResult.durationMs / 1000).toFixed(1)}s</div></div>
+                  <div><div className="text-xs text-muted-foreground">Output size</div><div className="text-lg font-bold">{formatBytes(conversionResult.outputSize)}</div></div>
+                  <div><div className="text-xs text-muted-foreground">Size change</div><div className="text-lg font-bold">{file.size > 0 ? `${Math.round((conversionResult.outputSize / file.size - 1) * 100)}% ${conversionResult.outputSize > file.size ? "larger" : "smaller"}` : "—"}</div></div>
+                </div>
+
+                <RawPreview content={csvOutput} label="Raw CSV Output" fileName="output.csv" />
               </div>
             )}
           </div>
@@ -200,16 +208,6 @@ export default function ParquetToCsvPage() {
 
         {loading && <LoadingState message="Processing..." />}
         {error && <div className="border-2 border-destructive bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
-
-        {preview && view === "table" && (
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium text-muted-foreground">Preview (first 100 rows)</h3>
-            <DataTable columns={preview.columns} rows={preview.rows} types={preview.types} className="max-h-[500px]" />
-          </div>
-        )}
-        {csvOutput && view === "raw-output" && (
-          <RawPreview content={csvOutput} label="Raw CSV Output" fileName="output.csv" onDownload={handleDownloadCsv} />
-        )}
       </div>
       </DuckDBGate>
     </ToolPage>

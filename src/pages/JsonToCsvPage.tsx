@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
-import { Table, FlaskConical, Copy, Check } from "lucide-react";
+import { Table, FlaskConical, Copy, Check, ArrowRightLeft, Download } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
@@ -8,7 +8,6 @@ import { CodeBlock } from "@/components/shared/CodeBlock";
 import { RawPreview } from "@/components/shared/RawPreview";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { PasteInput } from "@/components/shared/PasteInput";
-import { ConversionStats } from "@/components/shared/ConversionStats";
 import { DuckDBGate } from "@/components/shared/DuckDBGate";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
@@ -31,7 +30,7 @@ export default function JsonToCsvPage() {
   const [csvOutput, setCsvOutput] = useState("");
   const [rawInput, setRawInput] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<"table" | "raw-output" | "raw-input">("table");
+  const [inputView, setInputView] = useState<"table" | "raw-input">("table");
   const [inputMode, setInputMode] = useState<"file" | "paste">("file");
   const [delimiter, setDelimiter] = useState(",");
   const [includeHeader, setIncludeHeader] = useState(true);
@@ -45,7 +44,7 @@ export default function JsonToCsvPage() {
     setPreview(null);
     setCsvOutput("");
     setRawInput(null);
-    setView("table");
+    setInputView("table");
     try {
       const text = await f.text();
       setRawInput(text.slice(0, 50_000));
@@ -54,8 +53,6 @@ export default function JsonToCsvPage() {
       setMeta(info);
       const result = await runQuery(db, `SELECT * FROM "${tableName}" LIMIT 100`);
       setPreview(result);
-      const csv = await exportToCSV(db, `SELECT * FROM "${tableName}"`, { delimiter, header: includeHeader });
-      setCsvOutput(csv);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load file");
     } finally {
@@ -63,13 +60,18 @@ export default function JsonToCsvPage() {
     }
   }
 
-  async function regenerateCsv() {
+  async function handleConvert() {
     if (!db || !file || !meta) return;
+    setLoading(true);
     try {
       const tableName = sanitizeTableName(file.name);
       const csv = await exportToCSV(db, `SELECT * FROM "${tableName}"`, { delimiter, header: includeHeader });
       setCsvOutput(csv);
-    } catch {}
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Conversion failed");
+    } finally {
+      setLoading(false);
+    }
   }
 
   function handlePaste(text: string) {
@@ -97,6 +99,11 @@ export default function JsonToCsvPage() {
     ]);
     const blob = new Blob([sample], { type: "application/json" });
     handleFile(new File([blob], "sample.json", { type: "application/json" }));
+  }
+
+  function resetAll() {
+    setFile(null); setMeta(null); setPreview(null);
+    setCsvOutput(""); setRawInput(null);
   }
 
   return (
@@ -137,15 +144,14 @@ export default function JsonToCsvPage() {
 
           {file && meta && (
             <div className="space-y-4">
+              {/* File info + actions */}
               <div className="flex items-center justify-between gap-4 flex-wrap">
                 <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
                 <div className="flex gap-2">
-                  <Button onClick={handleDownload} disabled={!csvOutput}>Download CSV</Button>
-                  <Button variant="outline" onClick={handleCopy} disabled={!csvOutput}>
-                    {copied ? <Check className="h-4 w-4 mr-1" /> : <Copy className="h-4 w-4 mr-1" />}
-                    {copied ? "Copied" : "Copy"}
+                  <Button onClick={handleConvert} disabled={loading}>
+                    <ArrowRightLeft className="h-4 w-4 mr-1" /> {csvOutput ? "Re-convert" : "Convert to CSV"}
                   </Button>
-                  <Button variant="outline" onClick={() => { setFile(null); setMeta(null); setPreview(null); setCsvOutput(""); setRawInput(null); }}>New file</Button>
+                  <Button variant="outline" onClick={resetAll}>New file</Button>
                 </div>
               </div>
 
@@ -155,7 +161,7 @@ export default function JsonToCsvPage() {
                   <label className="text-xs text-muted-foreground font-bold">Delimiter:</label>
                   <div className="flex gap-1">
                     {DELIMITERS.map((d) => (
-                      <button key={d.value} onClick={() => { setDelimiter(d.value); setTimeout(regenerateCsv, 0); }}
+                      <button key={d.value} onClick={() => setDelimiter(d.value)}
                         className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${delimiter === d.value ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
                         {d.label}
                       </button>
@@ -163,36 +169,57 @@ export default function JsonToCsvPage() {
                   </div>
                 </div>
                 <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
-                  <input type="checkbox" checked={includeHeader} onChange={(e) => { setIncludeHeader(e.target.checked); setTimeout(regenerateCsv, 0); }} className="rounded" />
+                  <input type="checkbox" checked={includeHeader} onChange={(e) => setIncludeHeader(e.target.checked)} className="rounded" />
                   <span className="font-bold">Include header row</span>
                 </label>
               </div>
 
-              {csvOutput && <ConversionStats rows={meta.rowCount} columns={meta.columns.length} inputFormat="JSON" outputFormat="CSV" />}
+              {/* INPUT SECTION */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Input</h3>
+                  <div className="flex gap-1">
+                    {([["table", "Table View"], ["raw-input", "Raw Input"]] as ["table" | "raw-input", string][]).map(([v, label]) => (
+                      <button key={v} onClick={() => setInputView(v)}
+                        className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${inputView === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-              <div className="flex gap-2">
-                {([["table", "Table View"], ["raw-output", "Raw CSV"], ["raw-input", "Raw Input"]] as const).map(([v, label]) => (
-                  <button key={v} onClick={() => setView(v)}
-                    className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${view === v ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                    {label}
-                  </button>
-                ))}
+                {preview && inputView === "table" && (
+                  <DataTable columns={preview.columns} rows={preview.rows} types={preview.types} className="max-h-[500px]" />
+                )}
+                {inputView === "raw-input" && (
+                  <RawPreview content={rawInput} label="Raw Input" fileName={file?.name} />
+                )}
               </div>
+
+              {/* OUTPUT SECTION */}
+              {csvOutput && (
+                <div className="space-y-3 border-t-2 border-border pt-4">
+                  <div className="flex items-center justify-between gap-4 flex-wrap">
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Output</h3>
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={handleDownload}>
+                        <Download className="h-4 w-4 mr-1" /> Download CSV
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={handleCopy}>
+                        {copied ? <Check className="h-4 w-4 mr-1" /> : <Copy className="h-4 w-4 mr-1" />}
+                        {copied ? "Copied" : "Copy"}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <CodeBlock code={csvOutput} fileName="output.csv" />
+                </div>
+              )}
             </div>
           )}
 
           {loading && <LoadingState message="Converting..." />}
           {error && <div className="border-2 border-destructive bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
-
-          {preview && view === "table" && (
-            <DataTable columns={preview.columns} rows={preview.rows} types={preview.types} className="max-h-[500px]" />
-          )}
-          {csvOutput && view === "raw-output" && (
-            <CodeBlock code={csvOutput} fileName="output.csv" onDownload={handleDownload} />
-          )}
-          {view === "raw-input" && (
-            <RawPreview content={rawInput} label="Raw Input" fileName={file?.name} />
-          )}
         </div>
       </DuckDBGate>
     </ToolPage>
