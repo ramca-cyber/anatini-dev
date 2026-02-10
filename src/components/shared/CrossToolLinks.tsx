@@ -24,6 +24,10 @@ const linksByFormat: Record<string, { label: string; route: string }[]> = {
     { label: "SQL Playground", route: "/sql-playground" },
     { label: "Profile Data", route: "/data-profiler" },
   ],
+  excel: [
+    { label: "Convert to CSV", route: "/excel-csv-converter" },
+    { label: "SQL Playground", route: "/sql-playground" },
+  ],
 };
 
 export function CrossToolLinks({ format, fileId }: { format: string; fileId?: string }) {
