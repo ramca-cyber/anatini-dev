@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
-import { BarChart3, AlertTriangle, AlertCircle, Info, FlaskConical, Download, FileText, FileJson, FileSpreadsheet, ClipboardCopy } from "lucide-react";
+import { BarChart3, AlertTriangle, AlertCircle, Info, FlaskConical, Download, FileText, FileJson, FileSpreadsheet, ClipboardCopy, ExternalLink } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
@@ -10,6 +10,8 @@ import { useDuckDB } from "@/contexts/DuckDBContext";
 import { registerFile, runQuery, formatBytes, sanitizeTableName, downloadBlob } from "@/lib/duckdb-helpers";
 import { getSampleProfilerCSV } from "@/lib/sample-data";
 import { toast } from "@/hooks/use-toast";
+import { Link } from "react-router-dom";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 interface ColumnProfile {
   name: string;
@@ -23,6 +25,7 @@ interface ColumnProfile {
   median?: string;
   stddev?: string;
   topValues: { value: string; count: number }[];
+  histogram?: { bucket: string; count: number }[];
 }
 
 interface Finding {
@@ -40,7 +43,6 @@ function ColumnCard({ col, totalRows }: { col: ColumnProfile; totalRows: number 
 
   return (
     <div className="rounded-xl border border-border bg-card p-4 space-y-3 hover:border-primary/30 transition-colors">
-      {/* Header */}
       <div className="flex items-start justify-between gap-2">
         <div>
           <h4 className="font-mono text-sm font-semibold truncate" title={col.name}>{col.name}</h4>
@@ -50,7 +52,6 @@ function ColumnCard({ col, totalRows }: { col: ColumnProfile; totalRows: number 
         {col.nullPct > 10 && col.nullPct <= 50 && <AlertTriangle className="h-4 w-4 text-warning shrink-0" />}
       </div>
 
-      {/* Completeness + Uniqueness bars */}
       <div className="space-y-2">
         <div>
           <div className="flex justify-between text-[11px] mb-0.5">
@@ -58,10 +59,7 @@ function ColumnCard({ col, totalRows }: { col: ColumnProfile; totalRows: number 
             <span className="font-mono">{(100 - col.nullPct).toFixed(1)}%</span>
           </div>
           <div className="h-1.5 w-full rounded-full bg-muted/40 overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all ${col.nullPct > 50 ? "bg-destructive" : col.nullPct > 10 ? "bg-warning" : "bg-primary"}`}
-              style={{ width: `${100 - nullBarPct}%` }}
-            />
+            <div className={`h-full rounded-full transition-all ${col.nullPct > 50 ? "bg-destructive" : col.nullPct > 10 ? "bg-warning" : "bg-primary"}`} style={{ width: `${100 - nullBarPct}%` }} />
           </div>
         </div>
         <div>
@@ -75,7 +73,6 @@ function ColumnCard({ col, totalRows }: { col: ColumnProfile; totalRows: number 
         </div>
       </div>
 
-      {/* Numeric stats */}
       {isNumeric && (
         <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
           <div><span className="text-muted-foreground">Mean:</span> <span className="font-mono">{col.mean}</span></div>
@@ -85,7 +82,28 @@ function ColumnCard({ col, totalRows }: { col: ColumnProfile; totalRows: number 
         </div>
       )}
 
-      {/* Top values mini bar chart */}
+      {/* Histogram for numeric columns */}
+      {col.histogram && col.histogram.length > 0 && (
+        <div className="space-y-1">
+          <div className="text-[11px] text-muted-foreground">Distribution</div>
+          <div className="h-20">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={col.histogram} margin={{ top: 2, right: 2, bottom: 0, left: 2 }}>
+                <Bar dataKey="count" radius={[2, 2, 0, 0]}>
+                  {col.histogram.map((_, i) => (
+                    <Cell key={i} fill="hsl(var(--primary))" fillOpacity={0.6} />
+                  ))}
+                </Bar>
+                <Tooltip
+                  contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "6px", fontSize: "11px" }}
+                  labelStyle={{ color: "hsl(var(--foreground))" }}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
       {col.topValues.length > 0 && (
         <div className="space-y-1">
           <div className="text-[11px] text-muted-foreground">Top values</div>
@@ -93,10 +111,7 @@ function ColumnCard({ col, totalRows }: { col: ColumnProfile; totalRows: number 
             <div key={i} className="flex items-center gap-2">
               <span className="w-20 truncate text-[11px] font-mono" title={tv.value}>{tv.value}</span>
               <div className="flex-1 h-3 bg-muted/30 rounded overflow-hidden">
-                <div
-                  className="h-full bg-primary/50 rounded transition-all"
-                  style={{ width: `${(tv.count / maxCount) * 100}%` }}
-                />
+                <div className="h-full bg-primary/50 rounded transition-all" style={{ width: `${(tv.count / maxCount) * 100}%` }} />
               </div>
               <span className="text-[10px] font-mono text-muted-foreground w-6 text-right">{tv.count}</span>
             </div>
@@ -104,7 +119,6 @@ function ColumnCard({ col, totalRows }: { col: ColumnProfile; totalRows: number 
         </div>
       )}
 
-      {/* Non-numeric min/max */}
       {!isNumeric && col.min && (
         <div className="text-[11px] space-y-0.5">
           <div><span className="text-muted-foreground">Min:</span> <span className="font-mono">{col.min}</span></div>
@@ -115,12 +129,24 @@ function ColumnCard({ col, totalRows }: { col: ColumnProfile; totalRows: number 
   );
 }
 
+function QualityScoreBadge({ score }: { score: number }) {
+  const color = score >= 80 ? "text-green-500" : score >= 50 ? "text-warning" : "text-destructive";
+  const bg = score >= 80 ? "bg-green-500/10 border-green-500/30" : score >= 50 ? "bg-warning/10 border-warning/30" : "bg-destructive/10 border-destructive/30";
+  return (
+    <div className={`rounded-lg border ${bg} p-4 text-center`}>
+      <div className="text-xs text-muted-foreground">Data Quality Score</div>
+      <div className={`mt-1 text-3xl font-bold ${color}`}>{score}</div>
+      <div className="text-[11px] text-muted-foreground">out of 100</div>
+    </div>
+  );
+}
+
 export default function ProfilerPage() {
   const { db } = useDuckDB();
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [overview, setOverview] = useState<{ rowCount: number; colCount: number; nullRate: number } | null>(null);
+  const [overview, setOverview] = useState<{ rowCount: number; colCount: number; nullRate: number; duplicateRows: number; emptyRows: number; qualityScore: number; memoryEstimate: string } | null>(null);
   const [columns, setColumns] = useState<ColumnProfile[]>([]);
   const [findings, setFindings] = useState<Finding[]>([]);
   const [findingFilter, setFindingFilter] = useState<"all" | "critical" | "warning" | "info">("all");
@@ -133,6 +159,19 @@ export default function ProfilerPage() {
     try {
       const tableName = sanitizeTableName(f.name);
       const info = await registerFile(db, f, tableName);
+
+      // Duplicate & empty row detection
+      let duplicateRows = 0;
+      let emptyRows = 0;
+      try {
+        const dupRes = await runQuery(db, `SELECT COUNT(*) - COUNT(DISTINCT *) FROM "${tableName}"`);
+        duplicateRows = Number(dupRes.rows[0]?.[0] ?? 0);
+      } catch {}
+      try {
+        const allColsNull = info.columns.map(c => `"${c}" IS NULL`).join(" AND ");
+        const emptyRes = await runQuery(db, `SELECT COUNT(*) FROM "${tableName}" WHERE ${allColsNull}`);
+        emptyRows = Number(emptyRes.rows[0]?.[0] ?? 0);
+      } catch {}
 
       const profiles: ColumnProfile[] = [];
       let totalNulls = 0;
@@ -155,6 +194,7 @@ export default function ProfilerPage() {
         totalNulls += nullCount;
 
         let mean: string | undefined, median: string | undefined, stddev: string | undefined;
+        let histogram: { bucket: string; count: number }[] | undefined;
         if (isNumeric) {
           try {
             const numRes = await runQuery(db, `
@@ -167,6 +207,24 @@ export default function ProfilerPage() {
             mean = numRes.rows[0]?.[0] ? String(numRes.rows[0][0]) : undefined;
             median = numRes.rows[0]?.[1] ? String(numRes.rows[0][1]) : undefined;
             stddev = numRes.rows[0]?.[2] ? String(numRes.rows[0][2]) : undefined;
+          } catch {}
+
+          // Histogram
+          try {
+            const histRes = await runQuery(db, `
+              WITH bounds AS (
+                SELECT MIN("${col}")::DOUBLE as mn, MAX("${col}")::DOUBLE as mx FROM "${tableName}" WHERE "${col}" IS NOT NULL
+              ),
+              bucketed AS (
+                SELECT CASE 
+                  WHEN (SELECT mx - mn FROM bounds) = 0 THEN 0
+                  ELSE LEAST(FLOOR(("${col}"::DOUBLE - (SELECT mn FROM bounds)) / NULLIF(((SELECT mx FROM bounds) - (SELECT mn FROM bounds)) / 10.0, 0))::INT, 9)
+                END as bucket
+                FROM "${tableName}" WHERE "${col}" IS NOT NULL
+              )
+              SELECT bucket, COUNT(*) as cnt FROM bucketed GROUP BY bucket ORDER BY bucket
+            `);
+            histogram = histRes.rows.map(r => ({ bucket: String(r[0]), count: Number(r[1]) }));
           } catch {}
         }
 
@@ -186,18 +244,32 @@ export default function ProfilerPage() {
           distinctCount, mean, median, stddev,
           min: statsRes.rows[0][2] ? String(statsRes.rows[0][2]) : undefined,
           max: statsRes.rows[0][3] ? String(statsRes.rows[0][3]) : undefined,
-          topValues,
+          topValues, histogram,
         });
       }
 
       setColumns(profiles);
       const nullRate = totalCells > 0 ? (totalNulls / totalCells) * 100 : 0;
-      setOverview({ rowCount: info.rowCount, colCount: info.columns.length, nullRate });
+
+      // Data Quality Score (0-100)
+      const completenessScore = Math.max(0, 100 - nullRate); // 0-100
+      const duplicateRate = info.rowCount > 0 ? (duplicateRows / info.rowCount) * 100 : 0;
+      const duplicateScore = Math.max(0, 100 - duplicateRate * 5); // penalize duplicates
+      const emptyRate = info.rowCount > 0 ? (emptyRows / info.rowCount) * 100 : 0;
+      const emptyScore = Math.max(0, 100 - emptyRate * 10);
+      const qualityScore = Math.round((completenessScore * 0.5 + duplicateScore * 0.3 + emptyScore * 0.2));
+
+      // Memory estimate
+      const memoryEstimate = formatBytes(f.size * 2.5); // rough estimate
+
+      setOverview({ rowCount: info.rowCount, colCount: info.columns.length, nullRate, duplicateRows, emptyRows, qualityScore, memoryEstimate });
 
       const fList: Finding[] = [];
+      if (duplicateRows > 0) fList.push({ level: duplicateRows > info.rowCount * 0.1 ? "critical" : "warning", title: `${duplicateRows.toLocaleString()} duplicate rows`, description: `${((duplicateRows / info.rowCount) * 100).toFixed(1)}% of rows are duplicates.`, suggestedFix: "Use SELECT DISTINCT or deduplicate by key columns." });
+      if (emptyRows > 0) fList.push({ level: "warning", title: `${emptyRows.toLocaleString()} empty rows`, description: "Rows where all columns are NULL.", suggestedFix: "Filter out rows where every column is null." });
       for (const p of profiles) {
         if (p.nullPct > 50) fList.push({ level: "critical", title: `High null rate in "${p.name}"`, description: `${p.nullPct.toFixed(1)}% of values are null.`, suggestedFix: `Consider imputing missing values or removing this column if not needed.` });
-        else if (p.nullPct > 10) fList.push({ level: "warning", title: `Moderate null rate in "${p.name}"`, description: `${p.nullPct.toFixed(1)}% null values detected.`, suggestedFix: `Review data source for missing "${p.name}" values. Consider a default value.` });
+        else if (p.nullPct > 10) fList.push({ level: "warning", title: `Moderate null rate in "${p.name}"`, description: `${p.nullPct.toFixed(1)}% null values detected.`, suggestedFix: `Review data source for missing "${p.name}" values.` });
         if (p.distinctCount === 1 && info.rowCount > 1) fList.push({ level: "warning", title: `Constant column "${p.name}"`, description: "Contains only one unique value — may be redundant.", suggestedFix: "Drop this column if it adds no analytical value." });
         if (p.distinctCount === info.rowCount && info.rowCount > 1) fList.push({ level: "info", title: `Unique column "${p.name}"`, description: "Every value is unique — potential identifier/key.", suggestedFix: "Consider using this as a primary key or join key." });
       }
@@ -259,8 +331,10 @@ export default function ProfilerPage() {
 <div class="cards">
   <div class="card"><div class="label">Rows</div><div class="value">${overview?.rowCount.toLocaleString()}</div></div>
   <div class="card"><div class="label">Columns</div><div class="value">${overview?.colCount}</div></div>
+  <div class="card"><div class="label">Quality Score</div><div class="value">${overview?.qualityScore}/100</div></div>
   <div class="card"><div class="label">Null Rate</div><div class="value">${overview?.nullRate.toFixed(1)}%</div></div>
-  <div class="card"><div class="label">Findings</div><div class="value">${findings.length}</div></div>
+  <div class="card"><div class="label">Duplicates</div><div class="value">${overview?.duplicateRows.toLocaleString()}</div></div>
+  <div class="card"><div class="label">Empty Rows</div><div class="value">${overview?.emptyRows.toLocaleString()}</div></div>
 </div>
 <h2>Columns</h2>
 <table><thead><tr><th>Column</th><th>Type</th><th>Nulls</th><th>Null %</th><th>Distinct</th><th>Min</th><th>Max</th></tr></thead>
@@ -277,7 +351,9 @@ ${findings.length === 0 ? "<p>No findings — data looks clean!</p>" : findings.
     if (!overview) return;
     const lines = [
       `Profile Report: ${file?.name}`,
+      `Quality Score: ${overview.qualityScore}/100`,
       `Rows: ${overview.rowCount} | Columns: ${overview.colCount} | Null Rate: ${overview.nullRate.toFixed(1)}%`,
+      `Duplicates: ${overview.duplicateRows} | Empty rows: ${overview.emptyRows}`,
       "", "Columns:",
       ...columns.map(c => `  ${c.name} (${c.type}) — ${c.nullPct.toFixed(1)}% null, ${c.distinctCount} distinct`),
       "", `Findings (${findings.length}):`,
@@ -312,10 +388,15 @@ ${findings.length === 0 ? "<p>No findings — data looks clean!</p>" : findings.
           <>
             <div className="flex items-center justify-between flex-wrap gap-4">
               <FileInfo name={file.name} size={formatBytes(file.size)} rows={overview.rowCount} columns={overview.colCount} />
-              <Button variant="outline" onClick={() => { setFile(null); setOverview(null); setColumns([]); setFindings([]); }}>New file</Button>
+              <div className="flex gap-2">
+                <Link to="/sql-playground">
+                  <Button variant="outline" size="sm"><ExternalLink className="h-3.5 w-3.5 mr-1" /> Open in SQL Playground</Button>
+                </Link>
+                <Button variant="outline" onClick={() => { setFile(null); setOverview(null); setColumns([]); setFindings([]); }}>New file</Button>
+              </div>
             </div>
 
-            <Tabs defaultValue="columns">
+            <Tabs defaultValue="overview">
               <TabsList>
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="columns">Columns</TabsTrigger>
@@ -324,12 +405,14 @@ ${findings.length === 0 ? "<p>No findings — data looks clean!</p>" : findings.
               </TabsList>
 
               <TabsContent value="overview" className="space-y-4 pt-4">
-                <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+                  <QualityScoreBadge score={overview.qualityScore} />
                   {[
                     { label: "Rows", value: overview.rowCount.toLocaleString() },
                     { label: "Columns", value: overview.colCount },
                     { label: "Null Rate", value: overview.nullRate.toFixed(1) + "%" },
-                    { label: "Findings", value: findings.length },
+                    { label: "Duplicates", value: overview.duplicateRows.toLocaleString() },
+                    { label: "Empty Rows", value: overview.emptyRows.toLocaleString() },
                   ].map((s) => (
                     <div key={s.label} className="rounded-lg border border-border bg-card p-4">
                       <div className="text-xs text-muted-foreground">{s.label}</div>
@@ -338,18 +421,29 @@ ${findings.length === 0 ? "<p>No findings — data looks clean!</p>" : findings.
                   ))}
                 </div>
 
-                <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-                  <h4 className="text-sm font-medium text-muted-foreground">Column Type Distribution</h4>
-                  <div className="space-y-2">
-                    {Object.entries(typeDistribution).sort((a, b) => b[1] - a[1]).map(([type, count]) => (
-                      <div key={type} className="flex items-center gap-3">
-                        <span className="w-20 text-xs font-mono text-muted-foreground truncate">{type}</span>
-                        <div className="flex-1 h-5 bg-muted/30 rounded overflow-hidden">
-                          <div className="h-full bg-primary/60 rounded transition-all" style={{ width: `${(count / maxTypeCount) * 100}%` }} />
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+                    <h4 className="text-sm font-medium text-muted-foreground">Column Type Distribution</h4>
+                    <div className="space-y-2">
+                      {Object.entries(typeDistribution).sort((a, b) => b[1] - a[1]).map(([type, count]) => (
+                        <div key={type} className="flex items-center gap-3">
+                          <span className="w-20 text-xs font-mono text-muted-foreground truncate">{type}</span>
+                          <div className="flex-1 h-5 bg-muted/30 rounded overflow-hidden">
+                            <div className="h-full bg-primary/60 rounded transition-all" style={{ width: `${(count / maxTypeCount) * 100}%` }} />
+                          </div>
+                          <span className="text-xs font-medium w-6 text-right">{count}</span>
                         </div>
-                        <span className="text-xs font-medium w-6 text-right">{count}</span>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+                    <h4 className="text-sm font-medium text-muted-foreground">Dataset Info</h4>
+                    <div className="space-y-2 text-xs">
+                      <div className="flex justify-between"><span className="text-muted-foreground">Memory estimate</span><span className="font-mono">{overview.memoryEstimate}</span></div>
+                      <div className="flex justify-between"><span className="text-muted-foreground">File size</span><span className="font-mono">{formatBytes(file.size)}</span></div>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Findings</span><span className="font-mono">{findings.length}</span></div>
+                    </div>
                   </div>
                 </div>
 
@@ -380,15 +474,8 @@ ${findings.length === 0 ? "<p>No findings — data looks clean!</p>" : findings.
               <TabsContent value="findings" className="space-y-3 pt-4">
                 <div className="flex gap-2">
                   {(["all", "critical", "warning", "info"] as const).map((level) => (
-                    <button
-                      key={level}
-                      onClick={() => setFindingFilter(level)}
-                      className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                        findingFilter === level
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                      }`}
-                    >
+                    <button key={level} onClick={() => setFindingFilter(level)}
+                      className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${findingFilter === level ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-secondary/80"}`}>
                       {level === "all" ? `All (${findings.length})` : `${level.charAt(0).toUpperCase() + level.slice(1)} (${findings.filter(f => f.level === level).length})`}
                     </button>
                   ))}
