@@ -21,7 +21,8 @@ export default function CsvToParquetPage() {
   const [rawInput, setRawInput] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showOptions, setShowOptions] = useState(false);
-  const [compression, setCompression] = useState<"snappy" | "zstd" | "none">("snappy");
+  const [compression, setCompression] = useState<"snappy" | "zstd" | "gzip" | "none">("snappy");
+  const [rowGroupSize, setRowGroupSize] = useState<number | null>(null);
   const [conversionResult, setConversionResult] = useState<{ durationMs: number; outputSize: number } | null>(null);
   const [view, setView] = useState<"table" | "raw-input">("table");
 
@@ -102,15 +103,26 @@ export default function CsvToParquetPage() {
               {showOptions ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
             </button>
             {showOptions && (
-              <div className="border-2 border-border p-4 space-y-2">
-                <label className="text-xs text-muted-foreground font-bold">Parquet Compression</label>
-                <div className="flex gap-1">
-                  {(["snappy", "zstd", "none"] as const).map((c) => (
-                    <button key={c} onClick={() => setCompression(c)}
-                      className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${compression === c ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                      {c.charAt(0).toUpperCase() + c.slice(1)}
-                    </button>
-                  ))}
+              <div className="border-2 border-border p-4 space-y-3">
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground font-bold">Parquet Compression</label>
+                  <div className="flex gap-1">
+                    {(["snappy", "zstd", "gzip", "none"] as const).map((c) => (
+                      <button key={c} onClick={() => setCompression(c)}
+                        className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${compression === c ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
+                        {c === "gzip" ? "GZIP" : c.charAt(0).toUpperCase() + c.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground font-bold">Row Group Size</label>
+                  <select value={rowGroupSize ?? ""} onChange={(e) => setRowGroupSize(e.target.value ? Number(e.target.value) : null)} className="border-2 border-border bg-background px-2 py-1 text-xs">
+                    <option value="">Default</option>
+                    <option value={10000}>10,000</option>
+                    <option value={100000}>100,000</option>
+                    <option value={1000000}>1,000,000</option>
+                  </select>
                 </div>
               </div>
             )}

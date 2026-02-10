@@ -25,8 +25,11 @@ export default function CsvToJsonPage() {
   const [view, setView] = useState<"output" | "raw-input">("output");
   const [inputMode, setInputMode] = useState<"file" | "paste">("file");
 
-  const [outputFormat, setOutputFormat] = useState<"array" | "ndjson">("array");
+  const [outputFormat, setOutputFormat] = useState<"array" | "arrays" | "ndjson">("array");
   const [prettyPrint, setPrettyPrint] = useState(true);
+  const [indent, setIndent] = useState<2 | 4 | "tab">(2);
+  const [delimiter, setDelimiter] = useState<"," | "\t" | ";" | "|">(",");
+  const [hasHeader, setHasHeader] = useState(true);
 
   async function handleFile(f: File) {
     if (!db) return;
@@ -40,9 +43,29 @@ export default function CsvToJsonPage() {
       const text = await f.text();
       setRawInput(text.slice(0, 50_000));
       const tableName = sanitizeTableName(f.name);
-      const info = await registerFile(db, f, tableName);
-      setMeta(info);
-      await convert(tableName);
+      const delimOpt = delimiter === "," ? "" : `, delim='${delimiter}'`;
+      const headerOpt = hasHeader ? "" : ", header=false";
+      const conn = await db.connect();
+      try {
+        await db.registerFileHandle(f.name, f, 2 /* BROWSER_FILEREADER */, true);
+        await conn.query(`CREATE OR REPLACE TABLE "${tableName}" AS SELECT * FROM read_csv_auto('${f.name}'${delimOpt}${headerOpt})`);
+        const countRes = await conn.query(`SELECT COUNT(*) as cnt FROM "${tableName}"`);
+        const rowCount = Number(countRes.getChildAt(0)?.get(0) ?? 0);
+        const schemaRes = await conn.query(`DESCRIBE "${tableName}"`);
+        const columns: string[] = [];
+        const types: string[] = [];
+        const nameCol = schemaRes.getChildAt(0);
+        const typeCol = schemaRes.getChildAt(1);
+        for (let i = 0; i < schemaRes.numRows; i++) {
+          columns.push(String(nameCol?.get(i)));
+          types.push(String(typeCol?.get(i)));
+        }
+        const info = { columns, rowCount, types };
+        setMeta(info);
+        await convert(tableName);
+      } finally {
+        await conn.close();
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load file");
     } finally {
@@ -56,24 +79,32 @@ export default function CsvToJsonPage() {
     handleFile(f);
   }
 
-  async function convert(tableName?: string, fmt?: "array" | "ndjson", pretty?: boolean) {
+  async function convert(tableName?: string, fmt?: typeof outputFormat, pretty?: boolean, ind?: typeof indent) {
     if (!db || !file) return;
     const tName = tableName ?? sanitizeTableName(file.name);
     const useFormat = fmt ?? outputFormat;
     const usePretty = pretty ?? prettyPrint;
+    const useIndent = ind ?? indent;
     setLoading(true);
     try {
       const result = await runQuery(db, `SELECT * FROM "${tName}"`);
-      const records = result.rows.map((row) => {
-        const obj: Record<string, unknown> = {};
-        result.columns.forEach((col, i) => { obj[col] = row[i]; });
-        return obj;
-      });
       let json: string;
-      if (useFormat === "ndjson") {
-        json = records.map((r) => JSON.stringify(r)).join("\n");
+      if (useFormat === "arrays") {
+        const arr = [result.columns, ...result.rows];
+        json = usePretty ? JSON.stringify(arr, null, useIndent === "tab" ? "\t" : useIndent) : JSON.stringify(arr);
+      } else if (useFormat === "ndjson") {
+        json = result.rows.map((row) => {
+          const obj: Record<string, unknown> = {};
+          result.columns.forEach((col, i) => { obj[col] = row[i]; });
+          return JSON.stringify(obj);
+        }).join("\n");
       } else {
-        json = usePretty ? JSON.stringify(records, null, 2) : JSON.stringify(records);
+        const records = result.rows.map((row) => {
+          const obj: Record<string, unknown> = {};
+          result.columns.forEach((col, i) => { obj[col] = row[i]; });
+          return obj;
+        });
+        json = usePretty ? JSON.stringify(records, null, useIndent === "tab" ? "\t" : useIndent) : JSON.stringify(records);
       }
       setOutput(json);
       setError(null);
@@ -97,7 +128,6 @@ export default function CsvToJsonPage() {
         <div className="space-y-4">
           {!file && (
             <div className="space-y-4">
-              {/* Input mode toggle */}
               <div className="flex gap-2">
                 {(["file", "paste"] as const).map((m) => (
                   <button key={m} onClick={() => setInputMode(m)}
@@ -105,6 +135,23 @@ export default function CsvToJsonPage() {
                     {m === "file" ? "Upload File" : "Paste Data"}
                   </button>
                 ))}
+              </div>
+
+              {/* Pre-load options */}
+              <div className="flex flex-wrap items-center gap-4 border-2 border-border p-3">
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground font-bold">Delimiter</label>
+                  <select value={delimiter} onChange={(e) => setDelimiter(e.target.value as any)} className="border-2 border-border bg-background px-2 py-1 text-xs">
+                    <option value=",">Comma (,)</option>
+                    <option value={"\t"}>Tab</option>
+                    <option value=";">Semicolon (;)</option>
+                    <option value="|">Pipe (|)</option>
+                  </select>
+                </div>
+                <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <input type="checkbox" checked={hasHeader} onChange={(e) => setHasHeader(e.target.checked)} />
+                  First row is header
+                </label>
               </div>
 
               {inputMode === "file" ? (
@@ -117,13 +164,7 @@ export default function CsvToJsonPage() {
                   </div>
                 </div>
               ) : (
-                <PasteInput
-                  onSubmit={handlePaste}
-                  placeholder="Paste CSV data here..."
-                  label="Paste CSV data"
-                  accept={[".csv", ".tsv"]}
-                  onFile={handleFile}
-                />
+                <PasteInput onSubmit={handlePaste} placeholder="Paste CSV data here..." label="Paste CSV data" accept={[".csv", ".tsv"]} onFile={handleFile} />
               )}
             </div>
           )}
@@ -141,19 +182,31 @@ export default function CsvToJsonPage() {
                 <div className="space-y-1">
                   <label className="text-xs text-muted-foreground font-bold">Output Format</label>
                   <div className="flex gap-1">
-                    {(["array", "ndjson"] as const).map((f) => (
+                    {([["array", "JSON Array"], ["arrays", "Array of Arrays"], ["ndjson", "NDJSON"]] as const).map(([f, label]) => (
                       <button key={f} onClick={() => { setOutputFormat(f); setTimeout(() => convert(undefined, f), 0); }}
                         className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${outputFormat === f ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                        {f === "array" ? "JSON Array" : "NDJSON"}
+                        {label}
                       </button>
                     ))}
                   </div>
                 </div>
-                {outputFormat === "array" && (
-                  <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <input type="checkbox" checked={prettyPrint} onChange={(e) => setPrettyPrint(e.target.checked)} />
-                    Pretty print
-                  </label>
+                {outputFormat !== "ndjson" && (
+                  <>
+                    <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <input type="checkbox" checked={prettyPrint} onChange={(e) => { setPrettyPrint(e.target.checked); setTimeout(() => convert(undefined, undefined, e.target.checked), 0); }} />
+                      Pretty print
+                    </label>
+                    {prettyPrint && (
+                      <div className="space-y-1">
+                        <label className="text-xs text-muted-foreground font-bold">Indent</label>
+                        <select value={indent} onChange={(e) => { const v = e.target.value === "tab" ? "tab" as const : Number(e.target.value) as 2 | 4; setIndent(v); setTimeout(() => convert(undefined, undefined, undefined, v), 0); }} className="border-2 border-border bg-background px-2 py-1 text-xs">
+                          <option value={2}>2 spaces</option>
+                          <option value={4}>4 spaces</option>
+                          <option value="tab">Tab</option>
+                        </select>
+                      </div>
+                    )}
+                  </>
                 )}
                 <Button size="sm" onClick={() => convert()}>Re-convert</Button>
               </div>

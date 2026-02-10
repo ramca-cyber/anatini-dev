@@ -11,7 +11,7 @@ import { registerFile, runQuery, formatBytes, sanitizeTableName, downloadBlob } 
 import { getSampleSchemaCSV } from "@/lib/sample-data";
 import { toast } from "@/hooks/use-toast";
 
-type Dialect = "postgresql" | "mysql" | "bigquery" | "snowflake" | "duckdb";
+type Dialect = "postgresql" | "mysql" | "sqlite" | "sqlserver" | "bigquery" | "snowflake" | "duckdb";
 
 interface ColSchema {
   name: string;
@@ -24,6 +24,8 @@ interface ColSchema {
 const TYPE_MAP: Record<Dialect, Record<string, string>> = {
   postgresql: { VARCHAR: "TEXT", BIGINT: "BIGINT", INTEGER: "INTEGER", DOUBLE: "DOUBLE PRECISION", BOOLEAN: "BOOLEAN", DATE: "DATE", TIMESTAMP: "TIMESTAMP", FLOAT: "REAL" },
   mysql: { VARCHAR: "TEXT", BIGINT: "BIGINT", INTEGER: "INT", DOUBLE: "DOUBLE", BOOLEAN: "TINYINT(1)", DATE: "DATE", TIMESTAMP: "DATETIME", FLOAT: "FLOAT" },
+  sqlite: { VARCHAR: "TEXT", BIGINT: "INTEGER", INTEGER: "INTEGER", DOUBLE: "REAL", BOOLEAN: "INTEGER", DATE: "TEXT", TIMESTAMP: "TEXT", FLOAT: "REAL" },
+  sqlserver: { VARCHAR: "NVARCHAR(MAX)", BIGINT: "BIGINT", INTEGER: "INT", DOUBLE: "FLOAT", BOOLEAN: "BIT", DATE: "DATE", TIMESTAMP: "DATETIME2", FLOAT: "FLOAT" },
   bigquery: { VARCHAR: "STRING", BIGINT: "INT64", INTEGER: "INT64", DOUBLE: "FLOAT64", BOOLEAN: "BOOL", DATE: "DATE", TIMESTAMP: "TIMESTAMP", FLOAT: "FLOAT64" },
   snowflake: { VARCHAR: "VARCHAR", BIGINT: "NUMBER", INTEGER: "NUMBER", DOUBLE: "FLOAT", BOOLEAN: "BOOLEAN", DATE: "DATE", TIMESTAMP: "TIMESTAMP_NTZ", FLOAT: "FLOAT" },
   duckdb: { VARCHAR: "VARCHAR", BIGINT: "BIGINT", INTEGER: "INTEGER", DOUBLE: "DOUBLE", BOOLEAN: "BOOLEAN", DATE: "DATE", TIMESTAMP: "TIMESTAMP", FLOAT: "FLOAT" },
@@ -115,6 +117,8 @@ export default function SchemaPage() {
   const dialects: { id: Dialect; label: string }[] = [
     { id: "postgresql", label: "Postgres" },
     { id: "mysql", label: "MySQL" },
+    { id: "sqlite", label: "SQLite" },
+    { id: "sqlserver", label: "SQL Server" },
     { id: "bigquery", label: "BigQuery" },
     { id: "snowflake", label: "Snowflake" },
     { id: "duckdb", label: "DuckDB" },

@@ -14,13 +14,15 @@ import { useDuckDB } from "@/contexts/DuckDBContext";
 import { registerFile, runQuery, downloadBlob, formatBytes, sanitizeTableName } from "@/lib/duckdb-helpers";
 import { getSampleCSV } from "@/lib/sample-data";
 
-type Dialect = "postgresql" | "mysql" | "sqlite" | "bigquery";
+type Dialect = "postgresql" | "mysql" | "sqlite" | "bigquery" | "sqlserver" | "duckdb";
 
 const TYPE_MAP: Record<Dialect, Record<string, string>> = {
   postgresql: { VARCHAR: "TEXT", BIGINT: "BIGINT", INTEGER: "INTEGER", DOUBLE: "DOUBLE PRECISION", BOOLEAN: "BOOLEAN", DATE: "DATE", TIMESTAMP: "TIMESTAMP" },
   mysql: { VARCHAR: "VARCHAR(255)", BIGINT: "BIGINT", INTEGER: "INT", DOUBLE: "DOUBLE", BOOLEAN: "TINYINT(1)", DATE: "DATE", TIMESTAMP: "DATETIME" },
   sqlite: { VARCHAR: "TEXT", BIGINT: "INTEGER", INTEGER: "INTEGER", DOUBLE: "REAL", BOOLEAN: "INTEGER", DATE: "TEXT", TIMESTAMP: "TEXT" },
   bigquery: { VARCHAR: "STRING", BIGINT: "INT64", INTEGER: "INT64", DOUBLE: "FLOAT64", BOOLEAN: "BOOL", DATE: "DATE", TIMESTAMP: "TIMESTAMP" },
+  sqlserver: { VARCHAR: "NVARCHAR(MAX)", BIGINT: "BIGINT", INTEGER: "INT", DOUBLE: "FLOAT", BOOLEAN: "BIT", DATE: "DATE", TIMESTAMP: "DATETIME2" },
+  duckdb: { VARCHAR: "VARCHAR", BIGINT: "BIGINT", INTEGER: "INTEGER", DOUBLE: "DOUBLE", BOOLEAN: "BOOLEAN", DATE: "DATE", TIMESTAMP: "TIMESTAMP" },
 };
 
 function mapType(duckType: string, dialect: Dialect): string {
@@ -123,6 +125,8 @@ export default function CsvToSqlPage() {
     { id: "mysql", label: "MySQL" },
     { id: "sqlite", label: "SQLite" },
     { id: "bigquery", label: "BigQuery" },
+    { id: "sqlserver", label: "SQL Server" },
+    { id: "duckdb", label: "DuckDB" },
   ];
 
   return (
@@ -165,7 +169,7 @@ export default function CsvToSqlPage() {
                 <div className="flex flex-wrap gap-4">
                   <div className="space-y-1">
                     <label className="text-xs text-muted-foreground font-bold">Dialect</label>
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 flex-wrap">
                       {dialects.map((d) => (
                         <button key={d.id} onClick={() => setDialect(d.id)}
                           className={`px-3 py-1 text-xs font-bold border-2 border-border transition-colors ${dialect === d.id ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
