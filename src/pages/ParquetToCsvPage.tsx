@@ -237,6 +237,7 @@ export default function ParquetToCsvPage() {
             )}
 
             <CrossToolLinks format="parquet" fileId={storedFileId ?? undefined} />
+            {conversionResult && <CrossToolLinks format="csv" />}
           </div>
         )}
 

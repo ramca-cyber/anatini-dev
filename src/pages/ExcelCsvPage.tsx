@@ -2,6 +2,7 @@ import { useState } from "react";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { FileText, FlaskConical, Upload, Download, Check } from "lucide-react";
 import { useFileStore } from "@/contexts/FileStoreContext";
+import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
 import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
@@ -38,6 +39,8 @@ export default function ExcelCsvPage() {
     setXlsxMod(mod);
     return mod;
   }
+
+  useAutoLoadFile(handleFile);
 
   async function handleFile(f: File) {
     const stored = addFile(f);
@@ -311,7 +314,7 @@ export default function ExcelCsvPage() {
           <RawPreview content={csvOutput} label="Raw CSV Output" fileName="output.csv" onDownload={handleDownloadCsv} />
         )}
 
-        {file && <CrossToolLinks format={mode === "excel-to-csv" ? "csv" : "csv"} fileId={storedFileId ?? undefined} />}
+        {file && <CrossToolLinks format={mode === "excel-to-csv" ? "excel" : "csv"} fileId={storedFileId ?? undefined} />}
       </div>
     </ToolPage>
   );

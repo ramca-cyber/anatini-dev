@@ -314,6 +314,7 @@ export default function JsonToParquetPage() {
               )}
 
               <CrossToolLinks format="json" fileId={storedFileId ?? undefined} />
+              {result && <CrossToolLinks format="parquet" />}
             </div>
           )}
 

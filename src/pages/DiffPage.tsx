@@ -6,6 +6,8 @@ import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
+import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
+import { InspectLink } from "@/components/shared/InspectLink";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useDuckDB } from "@/contexts/DuckDBContext";
@@ -20,6 +22,8 @@ export default function DiffPage() {
   const { addFile } = useFileStore();
   const [beforeFile, setBeforeFile] = useState<File | null>(null);
   const [afterFile, setAfterFile] = useState<File | null>(null);
+  const [beforeFileId, setBeforeFileId] = useState<string | null>(null);
+  const [afterFileId, setAfterFileId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [beforeMeta, setBeforeMeta] = useState<{ rowCount: number; columns: string[]; types: string[] } | null>(null);
@@ -41,7 +45,8 @@ export default function DiffPage() {
 
   async function handleBefore(f: File) {
     if (!db) return;
-    addFile(f);
+    const stored = addFile(f);
+    setBeforeFileId(stored.id);
     setBeforeFile(f);
     setLoading(true);
     setError(null);
@@ -57,7 +62,8 @@ export default function DiffPage() {
 
   async function handleAfter(f: File) {
     if (!db) return;
-    addFile(f);
+    const stored = addFile(f);
+    setAfterFileId(stored.id);
     setAfterFile(f);
     setLoading(true);
     setError(null);
@@ -214,8 +220,13 @@ export default function DiffPage() {
   function reset() {
     setBeforeFile(null); setAfterFile(null); setBeforeMeta(null); setAfterMeta(null);
     setSummary(null); setDiffRows(null); setAllDiffRows(null); setJoinKey(""); setAvailableKeys([]);
-    setColumnChanges(null); setFilter("all");
+    setColumnChanges(null); setFilter("all"); setBeforeFileId(null); setAfterFileId(null);
   }
+
+  const detectFormat = (name: string) => {
+    if (/\.parquet$/i.test(name)) return "parquet" as const;
+    return "csv" as const;
+  };
 
   return (
     <ToolPage icon={GitCompare} title="Dataset Diff" description="Compare two dataset versions to see added, removed and modified rows."
@@ -224,18 +235,24 @@ export default function DiffPage() {
         <div className="grid gap-4 md:grid-cols-2">
           <div>
             <p className="mb-2 text-sm font-medium text-muted-foreground">Before</p>
-            {!beforeFile ? (
+          {!beforeFile ? (
               <DropZone accept={[".csv", ".parquet"]} onFile={handleBefore} label="Drop the 'before' file" />
             ) : (
-              <FileInfo name={beforeFile.name} size={formatBytes(beforeFile.size)} rows={beforeMeta?.rowCount} columns={beforeMeta?.columns.length} />
+              <div className="flex items-center gap-2 flex-wrap">
+                <FileInfo name={beforeFile.name} size={formatBytes(beforeFile.size)} rows={beforeMeta?.rowCount} columns={beforeMeta?.columns.length} />
+                {beforeFileId && <InspectLink fileId={beforeFileId} format={detectFormat(beforeFile.name)} />}
+              </div>
             )}
           </div>
           <div>
             <p className="mb-2 text-sm font-medium text-muted-foreground">After</p>
-            {!afterFile ? (
+          {!afterFile ? (
               <DropZone accept={[".csv", ".parquet"]} onFile={handleAfter} label="Drop the 'after' file" />
             ) : (
-              <FileInfo name={afterFile.name} size={formatBytes(afterFile.size)} rows={afterMeta?.rowCount} columns={afterMeta?.columns.length} />
+              <div className="flex items-center gap-2 flex-wrap">
+                <FileInfo name={afterFile.name} size={formatBytes(afterFile.size)} rows={afterMeta?.rowCount} columns={afterMeta?.columns.length} />
+                {afterFileId && <InspectLink fileId={afterFileId} format={detectFormat(afterFile.name)} />}
+              </div>
             )}
           </div>
         </div>
@@ -349,6 +366,8 @@ export default function DiffPage() {
             <Button variant="outline" onClick={reset}>Reset</Button>
           </>
         )}
+
+        {beforeFile && <CrossToolLinks format={detectFormat(beforeFile.name)} fileId={beforeFileId ?? undefined} />}
       </div>
     </ToolPage>
   );

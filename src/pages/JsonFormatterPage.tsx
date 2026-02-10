@@ -7,6 +7,7 @@ import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useFileStore } from "@/contexts/FileStoreContext";
+import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
 
 const SAMPLE = `{"name":"Alice","age":30,"address":{"city":"Portland","zip":"97201"},"tags":["dev","data"],"active":true}`;
 
@@ -139,6 +140,8 @@ export default function JsonFormatterPage() {
     };
     reader.readAsText(f);
   }
+
+  useAutoLoadFile(handleFileUpload);
 
   async function handleCopy() {
     await navigator.clipboard.writeText(output);

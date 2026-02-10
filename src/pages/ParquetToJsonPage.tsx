@@ -213,6 +213,7 @@ export default function ParquetToJsonPage() {
             )}
 
             <CrossToolLinks format="parquet" fileId={storedFileId ?? undefined} />
+            {result && <CrossToolLinks format="json" />}
           </div>
         )}
 

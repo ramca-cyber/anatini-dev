@@ -386,6 +386,7 @@ export default function CsvToSqlPage() {
               )}
 
               <CrossToolLinks format="csv" fileId={storedFileId ?? undefined} />
+              {output && <CrossToolLinks format="csv" />}
             </div>
           )}
 

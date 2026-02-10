@@ -20,6 +20,17 @@ interface FileOverview {
   rowGroups: number;
   compression: string;
   createdBy: string;
+  parquetVersion?: string;
+}
+
+interface ColumnDetail {
+  name: string;
+  type: string;
+  encoding: string;
+  compression: string;
+  nullCount: number;
+  compressedSize: number;
+  uncompressedSize: number;
 }
 
 interface RowGroupInfo {
@@ -43,6 +54,8 @@ export default function ParquetInspectorPage() {
   const [rowGroups, setRowGroups] = useState<RowGroupInfo[]>([]);
   const [kvMeta, setKvMeta] = useState<{ key: string; value: string }[]>([]);
   const [preview, setPreview] = useState<{ columns: string[]; rows: any[][]; types: string[] } | null>(null);
+  const [columnDetails, setColumnDetails] = useState<ColumnDetail[]>([]);
+  const [parquetWarnings, setParquetWarnings] = useState<string[]>([]);
   const [tab, setTab] = useState<"overview" | "columns" | "rowgroups" | "metadata" | "preview">("overview");
   const autoLoaded = useRef(false);
 
@@ -58,7 +71,7 @@ export default function ParquetInspectorPage() {
   async function processFile(f: File) {
     if (!db) return;
     setFile(f); setLoading(true); setError(null);
-    setOverview(null); setSchemaData(null); setRowGroups([]); setKvMeta([]); setPreview(null); setTab("overview");
+    setOverview(null); setSchemaData(null); setRowGroups([]); setKvMeta([]); setPreview(null); setColumnDetails([]); setParquetWarnings([]); setTab("overview");
     try {
       const tableName = sanitizeTableName(f.name);
       const info = await registerFile(db, f, tableName);
@@ -67,13 +80,16 @@ export default function ParquetInspectorPage() {
       let rowGroupCount = 0;
       let compression = "Unknown";
       let createdBy = "Unknown";
+      let parquetVersion: string | undefined;
       try {
         const fileMeta = await runQuery(db, `SELECT * FROM parquet_file_metadata('${f.name}')`);
         if (fileMeta.rows[0]) {
           const createdIdx = fileMeta.columns.indexOf("created_by");
           const rgIdx = fileMeta.columns.indexOf("num_row_groups");
+          const verIdx = fileMeta.columns.indexOf("version");
           if (createdIdx >= 0) createdBy = String(fileMeta.rows[0][createdIdx] ?? "Unknown");
           if (rgIdx >= 0) rowGroupCount = Number(fileMeta.rows[0][rgIdx] ?? 0);
+          if (verIdx >= 0) parquetVersion = String(fileMeta.rows[0][verIdx] ?? "");
         }
       } catch {}
 
@@ -108,7 +124,52 @@ export default function ParquetInspectorPage() {
       } catch {}
       setRowGroups(rgs);
 
-      setOverview({ rows: info.rowCount, columns: info.columns.length, rowGroups: rowGroupCount, compression, createdBy });
+      setOverview({ rows: info.rowCount, columns: info.columns.length, rowGroups: rowGroupCount, compression, createdBy, parquetVersion });
+
+      // Build enriched column details from parquet_metadata
+      const colDetails: ColumnDetail[] = [];
+      try {
+        const meta = await runQuery(db, `SELECT * FROM parquet_metadata('${f.name}')`);
+        const nameIdx = meta.columns.indexOf("path_in_schema");
+        const encIdx = meta.columns.indexOf("encoding");
+        const compIdx = meta.columns.indexOf("compression");
+        const nullIdx = meta.columns.indexOf("stats_null_count");
+        const compSizeIdx = meta.columns.indexOf("total_compressed_size");
+        const uncompSizeIdx = meta.columns.indexOf("total_uncompressed_size");
+        const typeIdx = meta.columns.indexOf("type");
+
+        const colMap = new Map<string, ColumnDetail>();
+        for (const row of meta.rows) {
+          const name = nameIdx >= 0 ? String(row[nameIdx] ?? "") : "";
+          if (!name) continue;
+          if (!colMap.has(name)) {
+            colMap.set(name, {
+              name,
+              type: typeIdx >= 0 ? String(row[typeIdx] ?? "") : "",
+              encoding: encIdx >= 0 ? String(row[encIdx] ?? "") : "",
+              compression: compIdx >= 0 ? String(row[compIdx] ?? "") : "",
+              nullCount: 0,
+              compressedSize: 0,
+              uncompressedSize: 0,
+            });
+          }
+          const detail = colMap.get(name)!;
+          if (nullIdx >= 0) detail.nullCount += Number(row[nullIdx] ?? 0);
+          if (compSizeIdx >= 0) detail.compressedSize += Number(row[compSizeIdx] ?? 0);
+          if (uncompSizeIdx >= 0) detail.uncompressedSize += Number(row[uncompSizeIdx] ?? 0);
+        }
+        colDetails.push(...colMap.values());
+      } catch {}
+      setColumnDetails(colDetails);
+
+      // Parquet warnings
+      const pWarns: string[] = [];
+      if (rowGroupCount > 100) pWarns.push(`High row group count (${rowGroupCount}). Consider merging for better read performance.`);
+      const highNullCols = colDetails.filter(c => info.rowCount > 0 && c.nullCount / info.rowCount > 0.5);
+      if (highNullCols.length > 0) pWarns.push(`${highNullCols.length} column(s) are >50% null: ${highNullCols.map(c => c.name).join(", ")}`);
+      const dictEncodings = colDetails.filter(c => c.encoding.includes("DICT") || c.encoding.includes("RLE_DICTIONARY"));
+      if (dictEncodings.length > 0) pWarns.push(`${dictEncodings.length}/${colDetails.length} columns use dictionary encoding`);
+      setParquetWarnings(pWarns);
 
       // Schema
       try {
@@ -171,7 +232,7 @@ export default function ParquetInspectorPage() {
             <div className="space-y-6">
               <div className="flex items-center justify-between gap-4 flex-wrap">
                 <FileInfo name={file.name} size={formatBytes(file.size)} rows={overview.rows} columns={overview.columns} />
-                <Button variant="outline" onClick={() => { setFile(null); setOverview(null); setSchemaData(null); setRowGroups([]); setKvMeta([]); setPreview(null); }}>New file</Button>
+                <Button variant="outline" onClick={() => { setFile(null); setOverview(null); setSchemaData(null); setRowGroups([]); setKvMeta([]); setPreview(null); setColumnDetails([]); setParquetWarnings([]); }}>New file</Button>
               </div>
 
               {/* Tab bar */}
@@ -196,6 +257,7 @@ export default function ParquetInspectorPage() {
                       ["Row groups", String(overview.rowGroups)],
                       ["Compression", overview.compression],
                       ["Created by", overview.createdBy],
+                      ...(overview.parquetVersion ? [["Parquet version", overview.parquetVersion]] : []),
                     ].map(([k, v]) => (
                       <div key={k} className="bg-card px-4 py-3"><div className="text-[10px] text-muted-foreground font-bold uppercase">{k}</div><div className="text-sm font-medium font-mono break-all">{v}</div></div>
                     ))}
@@ -204,21 +266,48 @@ export default function ParquetInspectorPage() {
               )}
 
               {/* Column Schema */}
-              {tab === "columns" && schemaData && (
-                <div className="overflow-auto border-2 border-border max-h-[500px]">
-                  <table className="w-full text-xs">
-                    <thead><tr className="border-b-2 border-border bg-muted/50">{schemaData.columns.map(c => <th key={c} className="sticky top-0 bg-muted/80 backdrop-blur-sm px-3 py-2 text-left font-bold text-muted-foreground whitespace-nowrap">{c}</th>)}</tr></thead>
-                    <tbody>
-                      {schemaData.rows.map((row, i) => (
-                        <tr key={i} className="border-b border-border/50 hover:bg-muted/20">
-                          {row.map((val, j) => <td key={j} className="px-3 py-1.5 font-mono whitespace-nowrap max-w-[200px] truncate">{val === null ? <span className="text-muted-foreground/40">∅</span> : String(val)}</td>)}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+              {tab === "columns" && (
+                <div className="space-y-4">
+                  {columnDetails.length > 0 && (
+                    <div className="overflow-auto border-2 border-border max-h-[500px]">
+                      <table className="w-full text-xs">
+                        <thead><tr className="border-b-2 border-border bg-muted/50">{["Column", "Physical Type", "Encoding", "Compression", "Nulls", "Compressed", "Uncompressed"].map(h => <th key={h} className="sticky top-0 bg-muted/80 backdrop-blur-sm px-3 py-2 text-left font-bold text-muted-foreground whitespace-nowrap">{h}</th>)}</tr></thead>
+                        <tbody>
+                          {columnDetails.map((col) => (
+                            <tr key={col.name} className="border-b border-border/50 hover:bg-muted/20">
+                              <td className="px-3 py-1.5 font-mono font-medium">{col.name}</td>
+                              <td className="px-3 py-1.5 font-mono text-muted-foreground">{col.type}</td>
+                              <td className="px-3 py-1.5 font-mono text-muted-foreground">{col.encoding}</td>
+                              <td className="px-3 py-1.5 font-mono text-muted-foreground">{col.compression}</td>
+                              <td className={`px-3 py-1.5 font-mono ${col.nullCount > 0 ? "text-amber-500" : "text-muted-foreground"}`}>{col.nullCount.toLocaleString()}</td>
+                              <td className="px-3 py-1.5 font-mono text-muted-foreground">{formatBytes(col.compressedSize)}</td>
+                              <td className="px-3 py-1.5 font-mono text-muted-foreground">{formatBytes(col.uncompressedSize)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                  {schemaData && (
+                    <details className="border-2 border-border">
+                      <summary className="px-4 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground cursor-pointer bg-muted/50">Raw Schema (parquet_schema)</summary>
+                      <div className="overflow-auto max-h-[300px]">
+                        <table className="w-full text-xs">
+                          <thead><tr className="border-b border-border bg-muted/30">{schemaData.columns.map(c => <th key={c} className="px-3 py-2 text-left font-bold text-muted-foreground whitespace-nowrap">{c}</th>)}</tr></thead>
+                          <tbody>
+                            {schemaData.rows.map((row, i) => (
+                              <tr key={i} className="border-b border-border/50 hover:bg-muted/20">
+                                {row.map((val, j) => <td key={j} className="px-3 py-1.5 font-mono whitespace-nowrap max-w-[200px] truncate">{val === null ? <span className="text-muted-foreground/40">∅</span> : String(val)}</td>)}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </details>
+                  )}
+                  {!schemaData && columnDetails.length === 0 && <p className="text-xs text-muted-foreground">Schema information not available for this file.</p>}
                 </div>
               )}
-              {tab === "columns" && !schemaData && <p className="text-xs text-muted-foreground">Schema information not available for this file.</p>}
 
               {/* Row Groups */}
               {tab === "rowgroups" && rowGroups.length > 0 && (
@@ -276,6 +365,18 @@ export default function ParquetInspectorPage() {
               {/* Data Preview */}
               {tab === "preview" && preview && (
                 <DataTable columns={preview.columns} rows={preview.rows} types={preview.types} className="max-h-[500px]" />
+              )}
+
+              {/* Warnings */}
+              {parquetWarnings.length > 0 && (
+                <div className="border-2 border-border">
+                  <div className="border-b-2 border-border bg-muted/50 px-4 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Observations ({parquetWarnings.length})</div>
+                  <div className="divide-y divide-border/50">
+                    {parquetWarnings.map((w, i) => (
+                      <div key={i} className="flex items-start gap-3 px-4 py-3 text-sm">{w}</div>
+                    ))}
+                  </div>
+                </div>
               )}
 
               {/* Actions */}
