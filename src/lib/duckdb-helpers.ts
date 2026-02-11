@@ -1,4 +1,17 @@
 import * as duckdb from "@duckdb/duckdb-wasm";
+import { toast } from "@/hooks/use-toast";
+
+const LARGE_FILE_THRESHOLD = 50 * 1024 * 1024; // 50 MB
+
+export function warnLargeFile(file: File): void {
+  if (file.size > LARGE_FILE_THRESHOLD) {
+    toast({
+      title: "Large file detected",
+      description: `This file is ${formatBytes(file.size)}. Large files may cause browser slowdowns or crashes.`,
+      variant: "destructive",
+    });
+  }
+}
 
 export interface QueryResult {
   columns: string[];

@@ -12,7 +12,7 @@ import { SqlEditor } from "@/components/shared/SqlEditor";
 import { LoadingState } from "@/components/shared/FileInfo";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
-import { registerFile, runQuery, exportToCSV, exportToParquet, exportQueryToJSON, downloadBlob, sanitizeTableName, type QueryResult } from "@/lib/duckdb-helpers";
+import { registerFile, runQuery, exportToCSV, exportToParquet, exportQueryToJSON, downloadBlob, sanitizeTableName, warnLargeFile, type QueryResult } from "@/lib/duckdb-helpers";
 import { getSampleCSV } from "@/lib/sample-data";
 import { toast } from "@/hooks/use-toast";
 
@@ -67,6 +67,7 @@ export default function SqlPage() {
 
   async function handleFile(f: File) {
     if (!db) return;
+    warnLargeFile(f);
     addFile(f);
     setLoading(true);
     setError(null);

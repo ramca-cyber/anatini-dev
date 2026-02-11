@@ -12,7 +12,7 @@ import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { Button } from "@/components/ui/button";
-import { downloadBlob, formatBytes } from "@/lib/duckdb-helpers";
+import { downloadBlob, formatBytes, warnLargeFile } from "@/lib/duckdb-helpers";
 
 export default function CsvToExcelPage() {
   const { addFile } = useFileStore();
@@ -36,6 +36,7 @@ export default function CsvToExcelPage() {
   useAutoLoadFile(handleFile);
 
   async function handleFile(f: File) {
+    warnLargeFile(f);
     const stored = addFile(f);
     setStoredFileId(stored.id);
     setFile(f);

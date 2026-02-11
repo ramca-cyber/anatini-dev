@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { useFileStore } from "@/contexts/FileStoreContext";
 import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
-import { registerFile, runQuery, exportToParquet, downloadBlob, formatBytes, sanitizeTableName } from "@/lib/duckdb-helpers";
+import { registerFile, runQuery, exportToParquet, downloadBlob, formatBytes, sanitizeTableName, warnLargeFile } from "@/lib/duckdb-helpers";
 
 interface ParquetMeta {
   rowGroups: number;
@@ -47,6 +47,7 @@ export default function JsonToParquetPage() {
 
   async function handleFile(f: File) {
     if (!db) return;
+    warnLargeFile(f);
     const stored = addFile(f);
     setStoredFileId(stored.id);
     setFile(f);

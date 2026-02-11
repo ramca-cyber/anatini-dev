@@ -12,7 +12,7 @@ import { DataTable } from "@/components/shared/DataTable";
 import { RawPreview } from "@/components/shared/RawPreview";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { Button } from "@/components/ui/button";
-import { downloadBlob, formatBytes } from "@/lib/duckdb-helpers";
+import { downloadBlob, formatBytes, warnLargeFile } from "@/lib/duckdb-helpers";
 import { generateSampleExcel } from "@/lib/sample-data";
 
 export default function ExcelToCsvPage() {
@@ -41,6 +41,7 @@ export default function ExcelToCsvPage() {
   useAutoLoadFile(handleFile);
 
   async function handleFile(f: File) {
+    warnLargeFile(f);
     const stored = addFile(f);
     setStoredFileId(stored.id);
     setFile(f);
