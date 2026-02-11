@@ -41,10 +41,16 @@ export async function runQuery(db: duckdb.AsyncDuckDB, sql: string): Promise<Que
   }
 }
 
+export interface CsvParseOptions {
+  delimiter?: string;
+  header?: boolean;
+}
+
 export async function registerFile(
   db: duckdb.AsyncDuckDB,
   file: File,
-  tableName: string
+  tableName: string,
+  csvOptions?: CsvParseOptions
 ): Promise<{ columns: string[]; rowCount: number; types: string[] }> {
   await db.registerFileHandle(file.name, file, duckdb.DuckDBDataProtocol.BROWSER_FILEREADER, true);
 
@@ -53,7 +59,15 @@ export async function registerFile(
   const conn = await db.connect();
   try {
     if (ext === "csv" || ext === "tsv") {
-      await conn.query(`CREATE OR REPLACE TABLE "${tableName}" AS SELECT * FROM read_csv_auto('${safeName}')`);
+      const opts: string[] = [];
+      if (csvOptions?.delimiter && csvOptions.delimiter !== ",") {
+        opts.push(`delim='${csvOptions.delimiter}'`);
+      }
+      if (csvOptions?.header === false) {
+        opts.push("header=false");
+      }
+      const optStr = opts.length > 0 ? `, ${opts.join(", ")}` : "";
+      await conn.query(`CREATE OR REPLACE TABLE "${tableName}" AS SELECT * FROM read_csv_auto('${safeName}'${optStr})`);
     } else if (ext === "parquet") {
       await conn.query(`CREATE OR REPLACE TABLE "${tableName}" AS SELECT * FROM read_parquet('${safeName}')`);
     } else if (ext === "json" || ext === "jsonl") {
