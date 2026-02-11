@@ -144,6 +144,7 @@ export default function DiffPage() {
       // Build diff preview rows
       const allCols = afterMeta!.columns;
       const colList = allCols.map(c => `"${c}"`).join(", ");
+      const aColList = allCols.map(c => `a."${c}"`).join(", ");
       const bColList = beforeMeta!.columns.map(c => `"${c}"`).join(", ");
 
       let diffSqlParts: string[] = [];
@@ -154,7 +155,7 @@ export default function DiffPage() {
       // Modified rows (show after version)
       if (nonKeyCommon.length > 0) {
         const diffCondition = nonKeyCommon.map(c => `a."${c}" IS DISTINCT FROM b."${c}"`).join(" OR ");
-        diffSqlParts.push(`SELECT 'modified' as _status, ${colList} FROM "${aTable}" a INNER JOIN "${bTable}" b ON a."${joinKey}" = b."${joinKey}" WHERE ${diffCondition}`);
+        diffSqlParts.push(`SELECT 'modified' as _status, ${aColList} FROM "${aTable}" a INNER JOIN "${bTable}" b ON a."${joinKey}" = b."${joinKey}" WHERE ${diffCondition}`);
       }
 
       const fullSql = diffSqlParts.join("\nUNION ALL\n");
