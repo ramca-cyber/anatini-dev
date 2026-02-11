@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,37 +7,48 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { DuckDBProvider } from "@/contexts/DuckDBContext";
 import { FileStoreProvider } from "@/contexts/FileStoreContext";
 import { Layout } from "@/components/layout/Layout";
-import Index from "./pages/Index";
-import About from "./pages/About";
-import CsvToParquetPage from "./pages/CsvToParquetPage";
-import ParquetToCsvPage from "./pages/ParquetToCsvPage";
-import FlattenPage from "./pages/FlattenPage";
-import SqlPage from "./pages/SqlPage";
-import ProfilerPage from "./pages/ProfilerPage";
-import DiffPage from "./pages/DiffPage";
-import SchemaPage from "./pages/SchemaPage";
-import JsonFormatterPage from "./pages/JsonFormatterPage";
-import CsvToJsonPage from "./pages/CsvToJsonPage";
-import JsonToCsvPage from "./pages/JsonToCsvPage";
-import JsonToParquetPage from "./pages/JsonToParquetPage";
-import ParquetToJsonPage from "./pages/ParquetToJsonPage";
-import ParquetViewerPage from "./pages/ParquetViewerPage";
-import CsvViewerPage from "./pages/CsvViewerPage";
-import CsvToSqlPage from "./pages/CsvToSqlPage";
+import { Loader2 } from "lucide-react";
 
-import ExcelToCsvPage from "./pages/ExcelToCsvPage";
-import CsvToExcelPage from "./pages/CsvToExcelPage";
-import CsvInspectorPage from "./pages/CsvInspectorPage";
-import JsonInspectorPage from "./pages/JsonInspectorPage";
-import ParquetInspectorPage from "./pages/ParquetInspectorPage";
-import NotFound from "./pages/NotFound";
-import BlogIndex from "./pages/blog/BlogIndex";
-import HowToConvertCsvToParquet from "./pages/blog/HowToConvertCsvToParquet";
-import HowToQueryCsvWithSql from "./pages/blog/HowToQueryCsvWithSql";
-import OfflineDataQualityProfiler from "./pages/blog/OfflineDataQualityProfiler";
-import JsonVsCsvVsParquet from "./pages/blog/JsonVsCsvVsParquet";
-import HowToGenerateSqlFromCsv from "./pages/blog/HowToGenerateSqlFromCsv";
+// Lazy-loaded pages
+const Index = lazy(() => import("./pages/Index"));
+const About = lazy(() => import("./pages/About"));
+const CsvToParquetPage = lazy(() => import("./pages/CsvToParquetPage"));
+const ParquetToCsvPage = lazy(() => import("./pages/ParquetToCsvPage"));
+const FlattenPage = lazy(() => import("./pages/FlattenPage"));
+const SqlPage = lazy(() => import("./pages/SqlPage"));
+const ProfilerPage = lazy(() => import("./pages/ProfilerPage"));
+const DiffPage = lazy(() => import("./pages/DiffPage"));
+const SchemaPage = lazy(() => import("./pages/SchemaPage"));
+const JsonFormatterPage = lazy(() => import("./pages/JsonFormatterPage"));
+const CsvToJsonPage = lazy(() => import("./pages/CsvToJsonPage"));
+const JsonToCsvPage = lazy(() => import("./pages/JsonToCsvPage"));
+const JsonToParquetPage = lazy(() => import("./pages/JsonToParquetPage"));
+const ParquetToJsonPage = lazy(() => import("./pages/ParquetToJsonPage"));
+const ParquetViewerPage = lazy(() => import("./pages/ParquetViewerPage"));
+const CsvViewerPage = lazy(() => import("./pages/CsvViewerPage"));
+const CsvToSqlPage = lazy(() => import("./pages/CsvToSqlPage"));
+const ExcelToCsvPage = lazy(() => import("./pages/ExcelToCsvPage"));
+const CsvToExcelPage = lazy(() => import("./pages/CsvToExcelPage"));
+const CsvInspectorPage = lazy(() => import("./pages/CsvInspectorPage"));
+const JsonInspectorPage = lazy(() => import("./pages/JsonInspectorPage"));
+const ParquetInspectorPage = lazy(() => import("./pages/ParquetInspectorPage"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const BlogIndex = lazy(() => import("./pages/blog/BlogIndex"));
+const HowToConvertCsvToParquet = lazy(() => import("./pages/blog/HowToConvertCsvToParquet"));
+const HowToQueryCsvWithSql = lazy(() => import("./pages/blog/HowToQueryCsvWithSql"));
+const OfflineDataQualityProfiler = lazy(() => import("./pages/blog/OfflineDataQualityProfiler"));
+const JsonVsCsvVsParquet = lazy(() => import("./pages/blog/JsonVsCsvVsParquet"));
+const HowToGenerateSqlFromCsv = lazy(() => import("./pages/blog/HowToGenerateSqlFromCsv"));
+
 const queryClient = new QueryClient();
+
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center py-32">
+      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+    </div>
+  );
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -46,63 +58,65 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <Routes>
-              <Route element={<Layout />}>
-                <Route path="/" element={<Index />} />
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                <Route element={<Layout />}>
+                  <Route path="/" element={<Index />} />
 
-                {/* Converters */}
-                <Route path="/csv-to-parquet" element={<CsvToParquetPage />} />
-                <Route path="/parquet-to-csv" element={<ParquetToCsvPage />} />
-                <Route path="/csv-to-json" element={<CsvToJsonPage />} />
-                <Route path="/json-to-csv" element={<JsonToCsvPage />} />
-                <Route path="/json-to-parquet" element={<JsonToParquetPage />} />
-                <Route path="/parquet-to-json" element={<ParquetToJsonPage />} />
-                <Route path="/excel-to-csv" element={<ExcelToCsvPage />} />
-                <Route path="/csv-to-excel" element={<CsvToExcelPage />} />
-                <Route path="/excel-csv-converter" element={<Navigate to="/excel-to-csv" replace />} />
+                  {/* Converters */}
+                  <Route path="/csv-to-parquet" element={<CsvToParquetPage />} />
+                  <Route path="/parquet-to-csv" element={<ParquetToCsvPage />} />
+                  <Route path="/csv-to-json" element={<CsvToJsonPage />} />
+                  <Route path="/json-to-csv" element={<JsonToCsvPage />} />
+                  <Route path="/json-to-parquet" element={<JsonToParquetPage />} />
+                  <Route path="/parquet-to-json" element={<ParquetToJsonPage />} />
+                  <Route path="/excel-to-csv" element={<ExcelToCsvPage />} />
+                  <Route path="/csv-to-excel" element={<CsvToExcelPage />} />
+                  <Route path="/excel-csv-converter" element={<Navigate to="/excel-to-csv" replace />} />
 
-                {/* Viewers & Formatters */}
-                <Route path="/csv-viewer" element={<CsvViewerPage />} />
-                <Route path="/parquet-viewer" element={<ParquetViewerPage />} />
-                <Route path="/json-formatter" element={<JsonFormatterPage />} />
+                  {/* Viewers & Formatters */}
+                  <Route path="/csv-viewer" element={<CsvViewerPage />} />
+                  <Route path="/parquet-viewer" element={<ParquetViewerPage />} />
+                  <Route path="/json-formatter" element={<JsonFormatterPage />} />
 
-                {/* Inspectors */}
-                <Route path="/csv-inspector" element={<CsvInspectorPage />} />
-                <Route path="/json-inspector" element={<JsonInspectorPage />} />
-                <Route path="/parquet-inspector" element={<ParquetInspectorPage />} />
+                  {/* Inspectors */}
+                  <Route path="/csv-inspector" element={<CsvInspectorPage />} />
+                  <Route path="/json-inspector" element={<JsonInspectorPage />} />
+                  <Route path="/parquet-inspector" element={<ParquetInspectorPage />} />
 
-                {/* Analysis & SQL */}
-                <Route path="/sql-playground" element={<SqlPage />} />
-                <Route path="/data-profiler" element={<ProfilerPage />} />
-                <Route path="/json-flattener" element={<FlattenPage />} />
-                <Route path="/schema-generator" element={<SchemaPage />} />
-                <Route path="/csv-to-sql" element={<CsvToSqlPage />} />
+                  {/* Analysis & SQL */}
+                  <Route path="/sql-playground" element={<SqlPage />} />
+                  <Route path="/data-profiler" element={<ProfilerPage />} />
+                  <Route path="/json-flattener" element={<FlattenPage />} />
+                  <Route path="/schema-generator" element={<SchemaPage />} />
+                  <Route path="/csv-to-sql" element={<CsvToSqlPage />} />
 
-                {/* Legacy */}
-                <Route path="/dataset-diff" element={<DiffPage />} />
-                <Route path="/diff" element={<Navigate to="/dataset-diff" replace />} />
+                  {/* Legacy */}
+                  <Route path="/dataset-diff" element={<DiffPage />} />
+                  <Route path="/diff" element={<Navigate to="/dataset-diff" replace />} />
 
-                {/* Redirects from old routes */}
-                <Route path="/convert" element={<Navigate to="/csv-to-parquet" replace />} />
-                <Route path="/flatten" element={<Navigate to="/json-flattener" replace />} />
-                <Route path="/sql" element={<Navigate to="/sql-playground" replace />} />
-                <Route path="/profiler" element={<Navigate to="/data-profiler" replace />} />
-                <Route path="/schema" element={<Navigate to="/schema-generator" replace />} />
+                  {/* Redirects from old routes */}
+                  <Route path="/convert" element={<Navigate to="/csv-to-parquet" replace />} />
+                  <Route path="/flatten" element={<Navigate to="/json-flattener" replace />} />
+                  <Route path="/sql" element={<Navigate to="/sql-playground" replace />} />
+                  <Route path="/profiler" element={<Navigate to="/data-profiler" replace />} />
+                  <Route path="/schema" element={<Navigate to="/schema-generator" replace />} />
 
-                <Route path="/about" element={<About />} />
+                  <Route path="/about" element={<About />} />
 
-                {/* Blog */}
-                <Route path="/blog" element={<BlogIndex />} />
-                <Route path="/blog/how-to-convert-csv-to-parquet" element={<HowToConvertCsvToParquet />} />
-                <Route path="/blog/how-to-query-csv-with-sql" element={<HowToQueryCsvWithSql />} />
-                <Route path="/blog/offline-data-quality-profiler" element={<OfflineDataQualityProfiler />} />
-                <Route path="/blog/json-vs-csv-vs-parquet" element={<JsonVsCsvVsParquet />} />
-                <Route path="/blog/how-to-generate-sql-from-csv" element={<HowToGenerateSqlFromCsv />} />
-              </Route>
-              <Route element={<Layout />}>
-                <Route path="*" element={<NotFound />} />
-              </Route>
-            </Routes>
+                  {/* Blog */}
+                  <Route path="/blog" element={<BlogIndex />} />
+                  <Route path="/blog/how-to-convert-csv-to-parquet" element={<HowToConvertCsvToParquet />} />
+                  <Route path="/blog/how-to-query-csv-with-sql" element={<HowToQueryCsvWithSql />} />
+                  <Route path="/blog/offline-data-quality-profiler" element={<OfflineDataQualityProfiler />} />
+                  <Route path="/blog/json-vs-csv-vs-parquet" element={<JsonVsCsvVsParquet />} />
+                  <Route path="/blog/how-to-generate-sql-from-csv" element={<HowToGenerateSqlFromCsv />} />
+                </Route>
+                <Route element={<Layout />}>
+                  <Route path="*" element={<NotFound />} />
+                </Route>
+              </Routes>
+            </Suspense>
           </BrowserRouter>
         </FileStoreProvider>
       </DuckDBProvider>

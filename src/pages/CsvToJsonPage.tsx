@@ -62,10 +62,11 @@ export default function CsvToJsonPage() {
       const tableName = sanitizeTableName(f.name);
       const delimOpt = delimiter === "," ? "" : `, delim='${delimiter}'`;
       const headerOpt = hasHeader ? "" : ", header=false";
+      const safeName = f.name.replace(/'/g, "''");
       const conn = await db.connect();
       try {
         await db.registerFileHandle(f.name, f, 2 /* BROWSER_FILEREADER */, true);
-        await conn.query(`CREATE OR REPLACE TABLE "${tableName}" AS SELECT * FROM read_csv_auto('${f.name}'${delimOpt}${headerOpt})`);
+        await conn.query(`CREATE OR REPLACE TABLE "${tableName}" AS SELECT * FROM read_csv_auto('${safeName}'${delimOpt}${headerOpt})`);
         const countRes = await conn.query(`SELECT COUNT(*) as cnt FROM "${tableName}"`);
         const rowCount = Number(countRes.getChildAt(0)?.get(0) ?? 0);
         const schemaRes = await conn.query(`DESCRIBE "${tableName}"`);

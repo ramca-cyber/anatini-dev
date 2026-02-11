@@ -120,6 +120,12 @@ export default function SqlPage() {
       const conn = await db.connect();
       try {
         await conn.query(`CREATE OR REPLACE TABLE __export_tmp AS ${sql}`);
+      } catch (innerErr) {
+        await conn.close();
+        toast({ title: "Parquet export failed", description: "Parquet export only works with SELECT queries.", variant: "destructive" });
+        return;
+      }
+      try {
         const buf = await exportToParquet(db, "__export_tmp");
         downloadBlob(buf, "query_result.parquet", "application/octet-stream");
         await conn.query(`DROP TABLE IF EXISTS __export_tmp`);
