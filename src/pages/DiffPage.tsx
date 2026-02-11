@@ -4,6 +4,7 @@ import { GitCompare, Download } from "lucide-react";
 import { useFileStore } from "@/contexts/FileStoreContext";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
+import { UrlInput } from "@/components/shared/UrlInput";
 import { DataTable } from "@/components/shared/DataTable";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
@@ -237,7 +238,10 @@ export default function DiffPage() {
           <div>
             <p className="mb-2 text-sm font-medium text-muted-foreground">Before</p>
           {!beforeFile ? (
-              <DropZone accept={[".csv", ".parquet"]} onFile={handleBefore} label="Drop the 'before' file" />
+              <div className="space-y-2">
+                <DropZone accept={[".csv", ".parquet"]} onFile={handleBefore} label="Drop the 'before' file" />
+                <UrlInput onFile={handleBefore} accept={[".csv", ".parquet"]} placeholder="https://example.com/before.csv" />
+              </div>
             ) : (
               <div className="flex items-center gap-2 flex-wrap">
                 <FileInfo name={beforeFile.name} size={formatBytes(beforeFile.size)} rows={beforeMeta?.rowCount} columns={beforeMeta?.columns.length} />
@@ -248,7 +252,10 @@ export default function DiffPage() {
           <div>
             <p className="mb-2 text-sm font-medium text-muted-foreground">After</p>
           {!afterFile ? (
-              <DropZone accept={[".csv", ".parquet"]} onFile={handleAfter} label="Drop the 'after' file" />
+              <div className="space-y-2">
+                <DropZone accept={[".csv", ".parquet"]} onFile={handleAfter} label="Drop the 'after' file" />
+                <UrlInput onFile={handleAfter} accept={[".csv", ".parquet"]} placeholder="https://example.com/after.csv" />
+              </div>
             ) : (
               <div className="flex items-center gap-2 flex-wrap">
                 <FileInfo name={afterFile.name} size={formatBytes(afterFile.size)} rows={afterMeta?.rowCount} columns={afterMeta?.columns.length} />

@@ -5,11 +5,12 @@ import { useFileStore } from "@/contexts/FileStoreContext";
 import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
 import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
 import { ToolPage } from "@/components/shared/ToolPage";
+import { UrlInput } from "@/components/shared/UrlInput";
+import { ToggleButton } from "@/components/shared/ToggleButton";
 import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
 import { RawPreview } from "@/components/shared/RawPreview";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
-import { ToggleButton } from "@/components/shared/ToggleButton";
 import { Button } from "@/components/ui/button";
 import { downloadBlob, formatBytes } from "@/lib/duckdb-helpers";
 import { generateSampleExcel } from "@/lib/sample-data";
@@ -18,6 +19,7 @@ export default function ExcelToCsvPage() {
   const { addFile } = useFileStore();
   const [storedFileId, setStoredFileId] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
+  const [inputMode, setInputMode] = useState<"file" | "url">("file");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sheets, setSheets] = useState<string[]>([]);
@@ -123,12 +125,23 @@ export default function ExcelToCsvPage() {
     <ToolPage icon={FileText} title="Excel to CSV" description="Convert Excel (XLSX, XLS) files to CSV with multi-sheet support." metaDescription={getToolMetaDescription("excel-to-csv")} seoContent={getToolSeo("excel-to-csv")}>
       <div className="space-y-4">
         {!file && (
-          <DropZone
-            accept={[".xlsx", ".xls"]}
-            onFile={handleFile}
-            label="Drop an Excel file"
-            sampleAction={{ label: "⚗ Try with sample data", onClick: async () => { const f = await generateSampleExcel(); handleFile(f); } }}
-          />
+          <div className="space-y-4">
+            <ToggleButton
+              options={[{ label: "Upload File", value: "file" }, { label: "From URL", value: "url" }]}
+              value={inputMode}
+              onChange={setInputMode}
+            />
+            {inputMode === "file" ? (
+              <DropZone
+                accept={[".xlsx", ".xls"]}
+                onFile={handleFile}
+                label="Drop an Excel file"
+                sampleAction={{ label: "⚗ Try with sample data", onClick: async () => { const f = await generateSampleExcel(); handleFile(f); } }}
+              />
+            ) : (
+              <UrlInput onFile={handleFile} accept={[".xlsx", ".xls"]} placeholder="https://example.com/data.xlsx" label="Load Excel from URL" />
+            )}
+          </div>
         )}
 
         {file && (

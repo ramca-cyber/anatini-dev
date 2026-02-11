@@ -4,6 +4,8 @@ import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { Search, FlaskConical } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
+import { UrlInput } from "@/components/shared/UrlInput";
+import { ToggleButton } from "@/components/shared/ToggleButton";
 import { DataTable } from "@/components/shared/DataTable";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { DuckDBGate } from "@/components/shared/DuckDBGate";
@@ -46,6 +48,7 @@ export default function ParquetInspectorPage() {
   const { addFile, getFile } = useFileStore();
   const [searchParams] = useSearchParams();
   const [file, setFile] = useState<File | null>(null);
+  const [inputMode, setInputMode] = useState<"file" | "url">("file");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [storedFileId, setStoredFileId] = useState<string | null>(null);
@@ -215,13 +218,24 @@ export default function ParquetInspectorPage() {
       <DuckDBGate>
         <div className="space-y-6">
           {!file && !loading && (
-            <div className="space-y-3">
-              <DropZone accept={[".parquet", ".pq"]} onFile={handleFile} label="Drop a Parquet file" />
-              <div className="flex justify-center">
-                <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={async () => { if (db) { const f = await generateSampleParquet(db); handleFile(f); } }}>
-                  <FlaskConical className="h-4 w-4 mr-1" /> Try with sample data
-                </Button>
-              </div>
+            <div className="space-y-4">
+              <ToggleButton
+                options={[{ label: "Upload File", value: "file" }, { label: "From URL", value: "url" }]}
+                value={inputMode}
+                onChange={setInputMode}
+              />
+              {inputMode === "file" ? (
+                <div className="space-y-3">
+                  <DropZone accept={[".parquet", ".pq"]} onFile={handleFile} label="Drop a Parquet file" />
+                  <div className="flex justify-center">
+                    <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={async () => { if (db) { const f = await generateSampleParquet(db); handleFile(f); } }}>
+                      <FlaskConical className="h-4 w-4 mr-1" /> Try with sample data
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <UrlInput onFile={handleFile} accept={[".parquet"]} placeholder="https://example.com/data.parquet" label="Load Parquet from URL" />
+              )}
             </div>
           )}
 

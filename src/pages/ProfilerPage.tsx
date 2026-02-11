@@ -3,6 +3,8 @@ import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { BarChart3, AlertTriangle, AlertCircle, Info, FlaskConical, Download, FileText, FileJson, FileSpreadsheet, ClipboardCopy, ExternalLink } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
+import { UrlInput } from "@/components/shared/UrlInput";
+import { ToggleButton } from "@/components/shared/ToggleButton";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
 import { InspectLink } from "@/components/shared/InspectLink";
@@ -208,6 +210,7 @@ export default function ProfilerPage() {
   const { db } = useDuckDB();
   const { addFile } = useFileStore();
   const [file, setFile] = useState<File | null>(null);
+  const [inputMode, setInputMode] = useState<"file" | "url">("file");
   const [storedFileId, setStoredFileId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -516,13 +519,24 @@ ${findings.length === 0 ? "<p>No findings — data looks clean!</p>" : findings.
       pageTitle="Data Profiler — Analyze CSV Quality Online | Anatini.dev" metaDescription={getToolMetaDescription("data-profiler")} seoContent={getToolSeo("data-profiler")}>
       <div className="space-y-6">
         {!file && (
-          <div className="space-y-3">
-            <DropZone accept={[".csv", ".parquet", ".json"]} onFile={handleFile} label="Drop a dataset to profile" />
-            <div className="flex justify-center">
-              <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => handleFile(getSampleProfilerCSV())}>
-                <FlaskConical className="h-4 w-4 mr-1" /> Try with sample data
-              </Button>
-            </div>
+          <div className="space-y-4">
+            <ToggleButton
+              options={[{ label: "Upload File", value: "file" }, { label: "From URL", value: "url" }]}
+              value={inputMode}
+              onChange={setInputMode}
+            />
+            {inputMode === "file" ? (
+              <div className="space-y-3">
+                <DropZone accept={[".csv", ".parquet", ".json"]} onFile={handleFile} label="Drop a dataset to profile" />
+                <div className="flex justify-center">
+                  <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => handleFile(getSampleProfilerCSV())}>
+                    <FlaskConical className="h-4 w-4 mr-1" /> Try with sample data
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <UrlInput onFile={handleFile} accept={[".csv", ".parquet", ".json"]} placeholder="https://example.com/data.csv" label="Load dataset from URL" />
+            )}
           </div>
         )}
         {loading && <LoadingState message="Profiling dataset..." />}

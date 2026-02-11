@@ -4,6 +4,8 @@ import { Code, Copy, Check, ChevronRight, ChevronDown } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
+import { UrlInput } from "@/components/shared/UrlInput";
+import { ToggleButton } from "@/components/shared/ToggleButton";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useFileStore } from "@/contexts/FileStoreContext";
@@ -61,6 +63,7 @@ export default function JsonFormatterPage() {
   const { addFile } = useFileStore();
   const [storedFileId, setStoredFileId] = useState<string | null>(null);
   const [input, setInput] = useState("");
+  const [inputMode, setInputMode] = useState<"file" | "url">("file");
   const [output, setOutput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [indent, setIndent] = useState<number | string>(2);
@@ -160,7 +163,18 @@ export default function JsonFormatterPage() {
     <ToolPage icon={Code} title="JSON Formatter" seoContent={getToolSeo("json-formatter")} metaDescription={getToolMetaDescription("json-formatter")} description="Format, minify, and validate JSON with tree view and sorting.">
       <div className="space-y-4">
         {!input && (
-          <DropZone accept={[".json"]} onFile={handleFileUpload} label="Drop a JSON file or paste below" />
+          <div className="space-y-4">
+            <ToggleButton
+              options={[{ label: "Upload File", value: "file" }, { label: "From URL", value: "url" }]}
+              value={inputMode}
+              onChange={setInputMode}
+            />
+            {inputMode === "file" ? (
+              <DropZone accept={[".json"]} onFile={handleFileUpload} label="Drop a JSON file or paste below" />
+            ) : (
+              <UrlInput onFile={handleFileUpload} accept={[".json"]} placeholder="https://example.com/data.json" label="Load JSON from URL" />
+            )}
+          </div>
         )}
 
         {stats && (
