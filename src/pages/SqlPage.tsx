@@ -5,6 +5,8 @@ import { useFileStore } from "@/contexts/FileStoreContext";
 import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
+import { UrlInput } from "@/components/shared/UrlInput";
+import { ToggleButton } from "@/components/shared/ToggleButton";
 import { DataTable } from "@/components/shared/DataTable";
 import { SqlEditor } from "@/components/shared/SqlEditor";
 import { LoadingState } from "@/components/shared/FileInfo";
@@ -171,12 +173,15 @@ export default function SqlPage() {
           </div>
 
           {showDropZone && (
-            <DropZone
-              accept={[".csv", ".parquet", ".json"]}
-              onFile={handleFile}
-              label="Add a file"
-              sampleAction={tables.length === 0 ? { label: "⚗ Try with sample data", onClick: () => handleFile(getSampleCSV()) } : undefined}
-            />
+            <div className="space-y-2">
+              <DropZone
+                accept={[".csv", ".parquet", ".json"]}
+                onFile={handleFile}
+                label="Add a file"
+                sampleAction={tables.length === 0 ? { label: "⚗ Try with sample data", onClick: () => handleFile(getSampleCSV()) } : undefined}
+              />
+              <UrlInput onFile={handleFile} accept={[".csv", ".parquet", ".json"]} placeholder="https://example.com/data.csv" label="Or load from URL" />
+            </div>
           )}
 
           {tables.map((t) => (

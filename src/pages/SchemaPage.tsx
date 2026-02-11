@@ -3,6 +3,7 @@ import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { Database, Copy, Download } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
+import { UrlInput } from "@/components/shared/UrlInput";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
 import { InspectLink } from "@/components/shared/InspectLink";
@@ -83,6 +84,7 @@ export default function SchemaPage() {
   const { addFile } = useFileStore();
   useAutoLoadFile(handleFile, !!db);
   const [file, setFile] = useState<File | null>(null);
+  const [inputMode, setInputMode] = useState<"file" | "url">("file");
   const [storedFileId, setStoredFileId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -174,12 +176,23 @@ export default function SchemaPage() {
       pageTitle="Schema Generator — Infer DDL Online | Anatini.dev" metaDescription={getToolMetaDescription("schema-generator")} seoContent={getToolSeo("schema-generator")}>
       <div className="space-y-6">
         {!file && (
-          <DropZone
-            accept={[".csv", ".parquet", ".json"]}
-            onFile={handleFile}
-            label="Drop a file to infer schema"
-            sampleAction={{ label: "⚗ Try with sample data", onClick: () => handleFile(getSampleSchemaCSV()) }}
-          />
+          <div className="space-y-4">
+            <ToggleButton
+              options={[{ label: "Upload File", value: "file" }, { label: "From URL", value: "url" }]}
+              value={inputMode}
+              onChange={setInputMode}
+            />
+            {inputMode === "file" ? (
+              <DropZone
+                accept={[".csv", ".parquet", ".json"]}
+                onFile={handleFile}
+                label="Drop a file to infer schema"
+                sampleAction={{ label: "⚗ Try with sample data", onClick: () => handleFile(getSampleSchemaCSV()) }}
+              />
+            ) : (
+              <UrlInput onFile={handleFile} accept={[".csv", ".parquet", ".json"]} placeholder="https://example.com/data.csv" label="Load file from URL" />
+            )}
+          </div>
         )}
         {loading && <LoadingState message="Inferring schema..." />}
         {error && <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}

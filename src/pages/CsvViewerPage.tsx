@@ -4,6 +4,8 @@ import { Eye, Search, ArrowUpDown, ChevronLeft, ChevronRight, Download } from "l
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { DuckDBGate } from "@/components/shared/DuckDBGate";
+import { UrlInput } from "@/components/shared/UrlInput";
+import { ToggleButton } from "@/components/shared/ToggleButton";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
 import { InspectLink } from "@/components/shared/InspectLink";
@@ -22,6 +24,7 @@ export default function CsvViewerPage() {
   const { db } = useDuckDB();
   const { addFile } = useFileStore();
   const [file, setFile] = useState<File | null>(null);
+  const [inputMode, setInputMode] = useState<"file" | "url">("file");
   const [loading, setLoading] = useState(false);
   const [meta, setMeta] = useState<{ columns: string[]; rowCount: number; types: string[] } | null>(null);
   const [data, setData] = useState<{ columns: string[]; rows: any[][]; types: string[] } | null>(null);
@@ -134,12 +137,23 @@ export default function CsvViewerPage() {
       <DuckDBGate>
       <div className="space-y-4">
         {!file && (
-          <DropZone
-            accept={[".csv", ".tsv"]}
-            onFile={handleFile}
-            label="Drop a CSV file"
-            sampleAction={{ label: "⚗ Try with sample data", onClick: () => handleFile(getSampleCSV()) }}
-          />
+          <div className="space-y-4">
+            <ToggleButton
+              options={[{ label: "Upload File", value: "file" }, { label: "From URL", value: "url" }]}
+              value={inputMode}
+              onChange={setInputMode}
+            />
+            {inputMode === "file" ? (
+              <DropZone
+                accept={[".csv", ".tsv"]}
+                onFile={handleFile}
+                label="Drop a CSV file"
+                sampleAction={{ label: "⚗ Try with sample data", onClick: () => handleFile(getSampleCSV()) }}
+              />
+            ) : (
+              <UrlInput onFile={handleFile} accept={[".csv", ".tsv"]} placeholder="https://example.com/data.csv" label="Load CSV from URL" />
+            )}
+          </div>
         )}
 
         {file && meta && (

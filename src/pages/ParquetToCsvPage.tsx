@@ -4,6 +4,7 @@ import { FileSpreadsheet, ArrowRightLeft, FlaskConical, Copy, Check, Download } 
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DuckDBGate } from "@/components/shared/DuckDBGate";
 import { DropZone } from "@/components/shared/DropZone";
+import { UrlInput } from "@/components/shared/UrlInput";
 import { DataTable } from "@/components/shared/DataTable";
 import { RawPreview } from "@/components/shared/RawPreview";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
@@ -37,6 +38,7 @@ export default function ParquetToCsvPage() {
   const { db } = useDuckDB();
   const { addFile } = useFileStore();
   const [file, setFile] = useState<File | null>(null);
+  const [inputMode, setInputMode] = useState<"file" | "url">("file");
   const [loading, setLoading] = useState(false);
   const [meta, setMeta] = useState<{ columns: string[]; rowCount: number; types: string[] } | null>(null);
   const [preview, setPreview] = useState<{ columns: string[]; rows: any[][]; types: string[] } | null>(null);
@@ -134,12 +136,23 @@ export default function ParquetToCsvPage() {
       <DuckDBGate>
       <div className="space-y-4">
         {!file && (
-          <DropZone
-            accept={[".parquet"]}
-            onFile={handleFile}
-            label="Drop a Parquet file"
-            sampleAction={{ label: "⚗ Try with sample data", onClick: async () => { if (db) { const f = await generateSampleParquet(db); handleFile(f); } } }}
-          />
+          <div className="space-y-4">
+            <ToggleButton
+              options={[{ label: "Upload File", value: "file" }, { label: "From URL", value: "url" }]}
+              value={inputMode}
+              onChange={setInputMode}
+            />
+            {inputMode === "file" ? (
+              <DropZone
+                accept={[".parquet"]}
+                onFile={handleFile}
+                label="Drop a Parquet file"
+                sampleAction={{ label: "⚗ Try with sample data", onClick: async () => { if (db) { const f = await generateSampleParquet(db); handleFile(f); } } }}
+              />
+            ) : (
+              <UrlInput onFile={handleFile} accept={[".parquet"]} placeholder="https://example.com/data.parquet" label="Load Parquet from URL" />
+            )}
+          </div>
         )}
 
         {file && meta && (

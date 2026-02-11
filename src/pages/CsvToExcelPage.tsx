@@ -6,6 +6,8 @@ import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
 import { getSampleCSV } from "@/lib/sample-data";
 import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
 import { ToolPage } from "@/components/shared/ToolPage";
+import { UrlInput } from "@/components/shared/UrlInput";
+import { ToggleButton } from "@/components/shared/ToggleButton";
 import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
@@ -16,6 +18,7 @@ export default function CsvToExcelPage() {
   const { addFile } = useFileStore();
   const [storedFileId, setStoredFileId] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
+  const [inputMode, setInputMode] = useState<"file" | "url">("file");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<{ columns: string[]; rows: any[][] } | null>(null);
@@ -98,12 +101,23 @@ export default function CsvToExcelPage() {
     <ToolPage icon={FileText} title="CSV to Excel" description="Convert CSV files to Excel (XLSX) with multi-sheet support." metaDescription={getToolMetaDescription("csv-to-excel")} seoContent={getToolSeo("csv-to-excel")}>
       <div className="space-y-4">
         {!file && (
-          <DropZone
-            accept={[".csv", ".tsv"]}
-            onFile={handleFile}
-            label="Drop a CSV file"
-            sampleAction={{ label: "⚗ Try with sample data", onClick: () => handleFile(getSampleCSV()) }}
-          />
+          <div className="space-y-4">
+            <ToggleButton
+              options={[{ label: "Upload File", value: "file" }, { label: "From URL", value: "url" }]}
+              value={inputMode}
+              onChange={setInputMode}
+            />
+            {inputMode === "file" ? (
+              <DropZone
+                accept={[".csv", ".tsv"]}
+                onFile={handleFile}
+                label="Drop a CSV file"
+                sampleAction={{ label: "⚗ Try with sample data", onClick: () => handleFile(getSampleCSV()) }}
+              />
+            ) : (
+              <UrlInput onFile={handleFile} accept={[".csv", ".tsv"]} placeholder="https://example.com/data.csv" label="Load CSV from URL" />
+            )}
+          </div>
         )}
 
         {file && (
