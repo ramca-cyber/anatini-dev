@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ErrorAlert } from "@/components/shared/ErrorAlert";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { FileSpreadsheet, ArrowRightLeft, FlaskConical, Settings2, ChevronDown, ChevronUp, Download } from "lucide-react";
@@ -87,6 +87,12 @@ export default function CsvToParquetPage() {
   }
 
   useAutoLoadFile(handleFile, !!db);
+
+  useEffect(() => {
+    if (meta && file && !conversionResult) {
+      handleConvert();
+    }
+  }, [meta]);
 
   async function handleConvert() {
     if (!db || !file) return;

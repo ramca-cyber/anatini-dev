@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ErrorAlert } from "@/components/shared/ErrorAlert";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { Braces, ArrowRightLeft, Download, Copy, Check } from "lucide-react";
@@ -63,6 +63,12 @@ export default function ParquetToJsonPage() {
   }
 
   useAutoLoadFile(handleFile, !!db);
+
+  useEffect(() => {
+    if (meta && file && !result) {
+      handleConvert();
+    }
+  }, [meta]);
 
   async function handleConvert() {
     if (!db || !file) return;
