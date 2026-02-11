@@ -232,7 +232,7 @@ export default function DiffPage() {
 
   return (
     <ToolPage icon={GitCompare} title="Dataset Diff" description="Compare two dataset versions to see added, removed and modified rows."
-      pageTitle="Dataset Diff — Compare CSV Files Online | Anatini.dev" metaDescription={getToolMetaDescription("diff")} seoContent={getToolSeo("diff")}>
+      pageTitle="Dataset Diff — Compare CSV Files Online | SwiftDataTools.com" metaDescription={getToolMetaDescription("diff")} seoContent={getToolSeo("diff")}>
       <div className="space-y-6">
         <div className="grid gap-4 md:grid-cols-2">
           <div>

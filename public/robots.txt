@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://anatini.dev/sitemap.xml
+Sitemap: https://swiftdatatools.com/sitemap.xml

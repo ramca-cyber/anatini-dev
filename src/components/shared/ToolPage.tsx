@@ -14,16 +14,16 @@ interface ToolPageProps {
 }
 
 export function ToolPage({ icon: Icon, title, description, pageTitle, metaDescription, children, seoContent }: ToolPageProps) {
-  const fullTitle = pageTitle ?? `${title} — Free, Offline | Anatini.dev`;
+  const fullTitle = pageTitle ?? `${title} — Free, Offline | SwiftDataTools.com`;
   const fullDescription = metaDescription ?? description;
 
   // SoftwareApplication JSON-LD for each tool
   const toolJsonLd = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    "name": `${title} — Anatini.dev`,
+    "name": `${title} — SwiftDataTools.com`,
     "description": fullDescription,
-    "url": `https://anatini.dev${window.location.pathname}`,
+    "url": `https://swiftdatatools.com${window.location.pathname}`,
     "applicationCategory": "DeveloperApplication",
     "operatingSystem": "Any (browser-based)",
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
@@ -57,7 +57,7 @@ export function ToolPage({ icon: Icon, title, description, pageTitle, metaDescri
           "@context": "https://schema.org",
           "@type": "BreadcrumbList",
           "itemListElement": [
-            { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://anatini.dev/" },
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://swiftdatatools.com/" },
             { "@type": "ListItem", "position": 2, "name": title },
           ],
         }) }}

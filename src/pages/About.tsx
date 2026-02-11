@@ -4,18 +4,18 @@ import { PageMeta } from "@/components/shared/PageMeta";
 const orgJsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
-  "name": "Anatini.dev",
-  "url": "https://anatini.dev",
+  "name": "SwiftDataTools.com",
+  "url": "https://swiftdatatools.com",
   "description": "Free, offline browser-based data tools powered by DuckDB-WASM. No data ever leaves your machine.",
-  "logo": "https://anatini.dev/og-image.png",
+  "logo": "https://swiftdatatools.com/og-image.png",
 };
 
 export default function About() {
   return (
     <>
       <PageMeta
-        title="About — Anatini.dev"
-        description="Anatini.dev is a collection of free, offline browser-based data tools. No data ever leaves your machine — everything runs via WebAssembly."
+        title="About — SwiftDataTools.com"
+        description="SwiftDataTools.com is a collection of free, offline browser-based data tools. No data ever leaves your machine — everything runs via WebAssembly."
       />
       <script
         type="application/ld+json"
@@ -24,7 +24,7 @@ export default function About() {
       <div className="container max-w-3xl py-16">
         <div className="flex items-center gap-3 mb-8">
           <Bird className="h-8 w-8 text-primary" />
-          <h1 className="text-3xl font-bold">About Anatini.dev</h1>
+          <h1 className="text-3xl font-bold">About SwiftDataTools.com</h1>
         </div>
 
         <div className="space-y-10">
@@ -34,7 +34,7 @@ export default function About() {
               <h2 className="text-xl font-semibold">Privacy First</h2>
             </div>
             <p className="text-muted-foreground leading-relaxed">
-              Anatini.dev is a collection of browser-based data tools that process everything locally. 
+              SwiftDataTools.com is a collection of browser-based data tools that process everything locally. 
               No data ever leaves your machine — there's no backend, no analytics, no tracking. 
               Every computation happens via WebAssembly right in your browser tab.
             </p>
