@@ -77,7 +77,7 @@ export function Footer() {
           </div>
 
           <p className="text-xs text-muted-foreground/60">
-            © {new Date().getFullYear()} SwiftDataTools.com
+            © {new Date().getFullYear()} Anatini.dev
           </p>
         </div>
       </div>

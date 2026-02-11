@@ -67,7 +67,7 @@ export function Navbar() {
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 font-semibold text-foreground">
           <Bird className="h-6 w-6 text-[#FFD43B]" />
-          <span className="text-lg tracking-tight">SwiftDataTools</span>
+          <span className="text-lg tracking-tight">Anatini.dev</span>
         </Link>
 
         {/* Desktop nav */}

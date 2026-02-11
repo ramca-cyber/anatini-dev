@@ -211,7 +211,7 @@ export default function FlattenPage() {
 
   return (
     <ToolPage icon={Braces} title="JSON Flattener" description="Flatten nested JSON/JSONL into tabular format for analysis."
-      pageTitle="Flatten JSON Online — Free, Offline | SwiftDataTools.com" metaDescription={getToolMetaDescription("json-flattener")} seoContent={getToolSeo("json-flattener")}>
+      pageTitle="Flatten JSON Online — Free, Offline | Anatini.dev" metaDescription={getToolMetaDescription("json-flattener")} seoContent={getToolSeo("json-flattener")}>
       <div className="space-y-6">
         {!file && (
           <div className="space-y-4">

@@ -48,8 +48,8 @@ const features = [
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "WebApplication",
-  "name": "SwiftDataTools.com",
-  "url": "https://swiftdatatools.com",
+  "name": "Anatini.dev",
+  "url": "https://anatini.dev",
   "description": "Free, offline browser-powered data tools. Convert, query, profile and transform datasets using DuckDB-WASM.",
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "Any",
@@ -79,7 +79,7 @@ export default function Index() {
   return (
     <>
       <PageMeta
-        title="SwiftDataTools.com — Free, Offline Data Tools for Developers"
+        title="Anatini.dev — Free, Offline Data Tools for Developers"
         description="15+ free, offline data tools powered by DuckDB-WASM. Convert CSV, Parquet, JSON, Excel. Query with SQL. Profile datasets. All in your browser."
       />
 
@@ -165,10 +165,10 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Why SwiftDataTools */}
+      {/* Why Anatini */}
       <section className="border-b-2 border-border">
         <div className="container py-16">
-          <h2 className="mb-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">Why SwiftDataTools?</h2>
+          <h2 className="mb-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">Why Anatini?</h2>
           <div className="mb-8 h-0.5 w-12 bg-foreground" />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {features.map((f) => (
