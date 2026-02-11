@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { ErrorAlert } from "@/components/shared/ErrorAlert";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
-import { FileSpreadsheet, ArrowRightLeft, FlaskConical, Settings2, ChevronDown, ChevronUp, Download } from "lucide-react";
+import { FileSpreadsheet, ArrowRightLeft, Download, CheckCircle2, ChevronDown, ChevronUp } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { UrlInput } from "@/components/shared/UrlInput";
 import { DuckDBGate } from "@/components/shared/DuckDBGate";
@@ -13,6 +13,7 @@ import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
 import { InspectLink } from "@/components/shared/InspectLink";
 import { ToggleButton } from "@/components/shared/ToggleButton";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { useFileStore } from "@/contexts/FileStoreContext";
 import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
@@ -35,7 +36,6 @@ export default function CsvToParquetPage() {
   const [preview, setPreview] = useState<{ columns: string[]; rows: any[][]; types: string[] } | null>(null);
   const [rawInput, setRawInput] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [showOptions, setShowOptions] = useState(false);
   const [compression, setCompression] = useState<"snappy" | "zstd" | "gzip" | "none">("snappy");
   const [rowGroupSize, setRowGroupSize] = useState<number | null>(null);
   const [conversionResult, setConversionResult] = useState<{ durationMs: number; outputSize: number } | null>(null);
@@ -46,6 +46,8 @@ export default function CsvToParquetPage() {
   const [parquetMeta, setParquetMeta] = useState<ParquetMeta | null>(null);
   const [outputBuf, setOutputBuf] = useState<Uint8Array | null>(null);
   const [storedFileId, setStoredFileId] = useState<string | null>(null);
+  const [showInputPreview, setShowInputPreview] = useState(true);
+  const [showOutputPreview, setShowOutputPreview] = useState(false);
 
   async function handleFile(f: File) {
     if (!db) return;
@@ -179,29 +181,20 @@ export default function CsvToParquetPage() {
 
         {file && meta && (
           <div className="space-y-4">
-            {/* File info + actions */}
+            {/* 1. File info bar */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div className="flex items-center gap-2 flex-wrap">
                 <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
                 {storedFileId && <InspectLink fileId={storedFileId} format="csv" />}
               </div>
-              <div className="flex items-center gap-2">
-                <Button onClick={handleConvert} disabled={loading}>
-                  <ArrowRightLeft className="h-4 w-4 mr-1" /> {conversionResult ? "Re-convert" : "Convert to Parquet"}
-                </Button>
-                <Button variant="outline" onClick={resetAll}>New file</Button>
-              </div>
+              <Button variant="outline" onClick={resetAll}>New file</Button>
             </div>
 
-            {/* Options (collapsible) */}
-            <button onClick={() => setShowOptions(!showOptions)} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1">
-              <Settings2 className="h-4 w-4" /> Compression Options
-              {showOptions ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-            </button>
-            {showOptions && (
-              <div className="border border-border p-4 space-y-3">
-                <div className="space-y-1">
-                  <label className="text-xs text-muted-foreground font-bold">Parquet Compression</label>
+            {/* 2. Options + Convert row */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border border-border bg-muted/30 px-4 py-3">
+              <div className="flex items-center gap-4 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-muted-foreground font-bold">Compression</label>
                   <ToggleButton
                     options={[
                       { label: "Snappy", value: "snappy" },
@@ -213,8 +206,8 @@ export default function CsvToParquetPage() {
                     onChange={setCompression}
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs text-muted-foreground font-bold">Row Group Size</label>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-muted-foreground font-bold">Row Group</label>
                   <select value={rowGroupSize ?? ""} onChange={(e) => setRowGroupSize(e.target.value ? Number(e.target.value) : null)} className="border border-border bg-background px-2 py-1 text-xs">
                     <option value="">Default</option>
                     <option value={10000}>10,000</option>
@@ -223,80 +216,96 @@ export default function CsvToParquetPage() {
                   </select>
                 </div>
               </div>
-            )}
-
-            {/* INPUT SECTION */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Input</h3>
-                <ToggleButton options={inputTabs} value={inputView} onChange={setInputView} />
-              </div>
-
-              {preview && inputView === "table" && (
-                <DataTable columns={preview.columns} rows={preview.rows} types={preview.types} className="max-h-[500px]" />
-              )}
-              {meta && inputView === "schema" && (
-                <div className="border-2 border-border">
-                  <div className="grid grid-cols-3 border-b-2 border-border bg-muted/50 px-3 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                    <span>Column</span><span>Detected Type</span><span>Nullable</span>
-                  </div>
-                  {meta.columns.map((col, i) => (
-                    <div key={col} className="grid grid-cols-3 border-b border-border/50 px-3 py-2 text-xs">
-                      <span className="font-medium">{col}</span>
-                      <span className="font-mono text-muted-foreground">{meta.types[i]}</span>
-                      <span className={nullableInfo[i] ? "text-amber-500" : "text-muted-foreground"}>{nullableInfo[i] ? "YES" : "NO"}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {inputView === "raw-input" && (
-                <RawPreview content={rawInput} label="Raw Input" fileName={file?.name} />
-              )}
+              <Button onClick={handleConvert} disabled={loading}>
+                <ArrowRightLeft className="h-4 w-4 mr-1" /> Convert to Parquet
+              </Button>
             </div>
 
-            {/* OUTPUT SECTION */}
+            {/* 3. OUTPUT section (primary) */}
             {conversionResult && (
-              <div className="space-y-3 border-t-2 border-border pt-4">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Output</h3>
-                  <Button size="sm" onClick={handleDownload}>
-                    <Download className="h-4 w-4 mr-1" /> Download Parquet
-                  </Button>
+              <div className="space-y-3 border-2 border-border p-4">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Output</h3>
+
+                {/* Consolidated stats bar */}
+                <div className="flex items-center gap-4 flex-wrap bg-muted/30 px-4 py-2 text-xs">
+                  <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                  <span><span className="text-muted-foreground">Converted in</span> <span className="font-bold">{(conversionResult.durationMs / 1000).toFixed(1)}s</span></span>
+                  <span><span className="text-muted-foreground">·</span></span>
+                  <span><span className="font-bold">{formatBytes(conversionResult.outputSize)}</span></span>
+                  <span><span className="text-muted-foreground">·</span></span>
+                  <span><span className="font-bold">{file.size > 0 ? `${Math.round((1 - conversionResult.outputSize / file.size) * 100)}% smaller` : "—"}</span></span>
+                  <span><span className="text-muted-foreground">·</span></span>
+                  <span><span className="font-bold">{compression === "none" ? "None" : compression.toUpperCase()}</span></span>
+                  {parquetMeta && (
+                    <>
+                      <span><span className="text-muted-foreground">·</span></span>
+                      <span><span className="font-bold">{parquetMeta.rowGroups} row group{parquetMeta.rowGroups !== 1 ? "s" : ""}</span></span>
+                    </>
+                  )}
                 </div>
 
-                {/* Compact conversion stats */}
-                <div className="flex items-center gap-4 flex-wrap border border-border bg-muted/30 px-4 py-2 text-xs">
-                  <span><span className="text-muted-foreground">Time:</span> <span className="font-bold">{(conversionResult.durationMs / 1000).toFixed(1)}s</span></span>
-                  <span><span className="text-muted-foreground">Output:</span> <span className="font-bold">{formatBytes(conversionResult.outputSize)}</span></span>
-                  <span><span className="text-muted-foreground">Compression:</span> <span className="font-bold">{file.size > 0 ? `${Math.round((1 - conversionResult.outputSize / file.size) * 100)}% smaller` : "—"}</span></span>
-                </div>
+                {/* Large download button */}
+                <Button onClick={handleDownload} className="w-full" size="lg">
+                  <Download className="h-5 w-5 mr-2" /> Download Parquet
+                </Button>
 
-                {/* Output tabs */}
-                <ToggleButton
-                  options={[{ label: "Output Preview", value: "preview" }, { label: "Raw Output", value: "raw" }]}
-                  value={outputView}
-                  onChange={setOutputView}
-                />
-
-                {outputView === "preview" && outputPreview && (
-                  <div className="space-y-3">
-                    {parquetMeta && (
-                      <div className="flex items-center gap-4 flex-wrap border border-border bg-muted/30 px-4 py-2 text-xs">
-                        <span><span className="text-muted-foreground">Row Groups:</span> <span className="font-bold">{parquetMeta.rowGroups}</span></span>
-                        <span><span className="text-muted-foreground">Compressed:</span> <span className="font-bold">{formatBytes(parquetMeta.totalCompressed)}</span></span>
-                        <span><span className="text-muted-foreground">Uncompressed:</span> <span className="font-bold">{formatBytes(parquetMeta.totalUncompressed)}</span></span>
-                        <span><span className="text-muted-foreground">Codec:</span> <span className="font-bold">{compression === "none" ? "None" : compression.toUpperCase()}</span></span>
-                      </div>
+                {/* Collapsible output preview */}
+                <Collapsible open={showOutputPreview} onOpenChange={setShowOutputPreview}>
+                  <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full">
+                    {showOutputPreview ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                    <span className="text-xs font-bold uppercase tracking-widest">Preview output data</span>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="pt-3 space-y-3">
+                    <ToggleButton
+                      options={[{ label: "Output Preview", value: "preview" }, { label: "Raw Output", value: "raw" }]}
+                      value={outputView}
+                      onChange={setOutputView}
+                    />
+                    {outputView === "preview" && outputPreview && (
+                      <DataTable columns={outputPreview.columns} rows={outputPreview.rows} types={outputPreview.types} className="max-h-[500px]" />
                     )}
-                    <DataTable columns={outputPreview.columns} rows={outputPreview.rows} types={outputPreview.types} className="max-h-[500px]" />
-                  </div>
-                )}
-                {outputView === "raw" && (
-                  <RawPreview content={null} label="Raw Output" binary />
-                )}
+                    {outputView === "raw" && (
+                      <RawPreview content={null} label="Raw Output" binary />
+                    )}
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
             )}
 
+            {/* 4. INPUT PREVIEW section (secondary, collapsible) */}
+            <Collapsible open={showInputPreview} onOpenChange={setShowInputPreview}>
+              <div className="flex items-center justify-between gap-3">
+                <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  {showInputPreview ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                  <h3 className="text-xs font-bold uppercase tracking-widest">Input Preview</h3>
+                </CollapsibleTrigger>
+                <ToggleButton options={inputTabs} value={inputView} onChange={setInputView} />
+              </div>
+              <CollapsibleContent className="pt-3 space-y-3">
+                {preview && inputView === "table" && (
+                  <DataTable columns={preview.columns} rows={preview.rows} types={preview.types} className="max-h-[500px]" />
+                )}
+                {meta && inputView === "schema" && (
+                  <div className="border-2 border-border">
+                    <div className="grid grid-cols-3 border-b-2 border-border bg-muted/50 px-3 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                      <span>Column</span><span>Detected Type</span><span>Nullable</span>
+                    </div>
+                    {meta.columns.map((col, i) => (
+                      <div key={col} className="grid grid-cols-3 border-b border-border/50 px-3 py-2 text-xs">
+                        <span className="font-medium">{col}</span>
+                        <span className="font-mono text-muted-foreground">{meta.types[i]}</span>
+                        <span className={nullableInfo[i] ? "text-amber-500" : "text-muted-foreground"}>{nullableInfo[i] ? "YES" : "NO"}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {inputView === "raw-input" && (
+                  <RawPreview content={rawInput} label="Raw Input" fileName={file?.name} />
+                )}
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* 5. CrossToolLinks */}
             <CrossToolLinks format="csv" fileId={storedFileId ?? undefined} excludeRoute="/csv-to-parquet" />
           </div>
         )}
