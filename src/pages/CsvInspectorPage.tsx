@@ -10,7 +10,7 @@ import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { PasteInput } from "@/components/shared/PasteInput";
 import { UrlInput } from "@/components/shared/UrlInput";
 import { DuckDBGate } from "@/components/shared/DuckDBGate";
-
+import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
 import { ToggleButton } from "@/components/shared/ToggleButton";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
@@ -421,7 +421,7 @@ export default function CsvInspectorPage() {
               )}
 
               {/* Actions */}
-              
+              <CrossToolLinks format="csv" fileId={storedFileId ?? undefined} excludeRoute="/csv-inspector" />
             </div>
           )}
         </div>

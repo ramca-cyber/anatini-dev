@@ -1,33 +1,43 @@
 
+# Auto-Convert on File Load
 
-# Simplify Converter Pages: Remove Parquet Inspector and Cross-Links
+## What Changes
 
-## What's changing
+All 7 converter pages will automatically trigger conversion immediately after a file is successfully loaded. Downloads remain user-initiated (no change there). The convert button stays visible but always shows "Re-convert" after auto-conversion completes.
 
-### 1. Remove ParquetOutputInspector from converter pages
-Replace the heavy tabbed Parquet inspector (Overview, Columns, Row Groups, Data Preview) on **CsvToParquetPage** and **JsonToParquetPage** with a simple output section: just the conversion stats bar and the download button -- nothing more. Since Parquet is a binary format, there's no "raw view" equivalent like CSV/JSON have. The output will simply be:
-- Conversion stats (time, output size, compression ratio) -- already there
-- Download button -- already there
-- That's it. Clean and simple.
+## Approach
 
-### 2. Remove all CrossToolLinks from every page
-Remove the `CrossToolLinks` component usage from all 19 pages that currently use it. These "Work with this file" link sections are confusing and files don't actually carry over reliably between tools.
+In each converter page's `handleFile` function, after the file is registered and preview is loaded, call `handleConvert()` automatically. To avoid issues with stale state (since `handleConvert` reads from state like `file`, `meta`, `delimiter`), the conversion will be triggered via a `useEffect` that watches for a successful file load.
 
-**Pages affected:** CsvToParquetPage, JsonToParquetPage, CsvToJsonPage, CsvToSqlPage, CsvToExcelPage, CsvViewerPage, CsvInspectorPage, JsonToCsvPage, JsonFormatterPage, JsonInspectorPage, FlattenPage, ParquetToCsvPage, ParquetToJsonPage, ParquetViewerPage, ParquetInspectorPage, SchemaPage, ProfilerPage, DiffPage, ExcelToCsvPage.
+### Pattern
 
-### 3. Remove all InspectLink from every page
-Remove the "Inspect" button that appears next to file info on converter pages. Same reason -- it links to other tools but files don't carry over properly.
+Add a simple `useEffect` to each page:
 
-**Pages affected:** CsvToParquetPage, JsonToParquetPage, CsvToJsonPage, CsvToSqlPage, CsvViewerPage, JsonToCsvPage, JsonFormatterPage, FlattenPage, ParquetToCsvPage, ParquetToJsonPage, ParquetViewerPage, SchemaPage, ProfilerPage, ExcelToCsvPage.
+```text
+useEffect(() => {
+  if (meta && file && !conversionResult) {
+    handleConvert();
+  }
+}, [meta]);
+```
 
-### 4. Clean up unused code
-- Remove unused imports of `CrossToolLinks` and `InspectLink` from all modified pages
-- Remove `storedFileId` state and `useFileStore`/`addFile` usage if they were only used for cross-links (will check per page -- some may still need FileStore for other purposes like `useAutoLoadFile`)
+This fires once after `handleFile` completes and sets `meta`, triggering conversion automatically. Since `conversionResult` is cleared in `handleFile`, it won't re-trigger on subsequent renders.
 
-## Technical details
+## Files Modified
 
-- **CsvToParquetPage.tsx**: Remove `ParquetOutputInspector` usage (lines 242-251), remove `CrossToolLinks` block (lines 255-260), remove `InspectLink` (line 154), clean imports
-- **JsonToParquetPage.tsx**: Remove `ParquetOutputInspector` usage (lines 259-268), remove `CrossToolLinks` block (lines 272-277), remove `InspectLink` (line 177), clean imports
-- **All other 17 pages**: Remove `CrossToolLinks` and `InspectLink` usage and imports
-- The `ParquetOutputInspector.tsx`, `CrossToolLinks.tsx`, and `InspectLink.tsx` component files themselves can be kept (they're not hurting anything) or deleted -- will delete them to keep the codebase clean since nothing will reference them
+1. `src/pages/CsvToJsonPage.tsx` -- add auto-convert useEffect
+2. `src/pages/JsonToCsvPage.tsx` -- add auto-convert useEffect
+3. `src/pages/CsvToParquetPage.tsx` -- add auto-convert useEffect
+4. `src/pages/ParquetToCsvPage.tsx` -- add auto-convert useEffect
+5. `src/pages/JsonToParquetPage.tsx` -- add auto-convert useEffect
+6. `src/pages/ParquetToJsonPage.tsx` -- add auto-convert useEffect
+7. `src/pages/CsvToSqlPage.tsx` -- add auto-convert useEffect
 
+Each change is ~4 lines added. No other modifications needed -- the convert button already shows "Re-convert" when output exists, and downloads are already user-initiated via explicit button clicks.
+
+## What Stays the Same
+
+- Download buttons remain manual (user must click)
+- Copy-to-clipboard remains manual
+- Re-convert button stays visible for when users change options
+- All conversion stats and output sections appear as before

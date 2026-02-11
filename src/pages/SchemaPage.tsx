@@ -5,6 +5,8 @@ import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { UrlInput } from "@/components/shared/UrlInput";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
+import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
+import { InspectLink } from "@/components/shared/InspectLink";
 import { ToggleButton } from "@/components/shared/ToggleButton";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -201,6 +203,7 @@ export default function SchemaPage() {
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-2">
                 <FileInfo name={file.name} size={formatBytes(file.size)} columns={cols.length} />
+                {storedFileId && <InspectLink fileId={storedFileId} format={file.name.endsWith('.json') ? 'json' : file.name.endsWith('.parquet') ? 'parquet' : 'csv'} />}
               </div>
               <Button variant="outline" onClick={() => { setFile(null); setCols([]); setStoredFileId(null); }}>New file</Button>
             </div>
@@ -327,7 +330,7 @@ export default function SchemaPage() {
               </TabsContent>
             </Tabs>
 
-            
+            <CrossToolLinks format={file.name.endsWith('.json') ? 'json' : file.name.endsWith('.parquet') ? 'parquet' : 'csv'} fileId={storedFileId ?? undefined} excludeRoute="/schema-generator" />
           </>
         )}
       </div>

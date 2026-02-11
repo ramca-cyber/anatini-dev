@@ -6,6 +6,8 @@ import { DropZone } from "@/components/shared/DropZone";
 import { UrlInput } from "@/components/shared/UrlInput";
 import { ToggleButton } from "@/components/shared/ToggleButton";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
+import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
+import { InspectLink } from "@/components/shared/InspectLink";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDuckDB } from "@/contexts/DuckDBContext";
@@ -546,6 +548,7 @@ ${findings.length === 0 ? "<p>No findings — data looks clean!</p>" : findings.
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-center gap-2">
                 <FileInfo name={file.name} size={formatBytes(file.size)} rows={overview.rowCount} columns={overview.colCount} />
+                {storedFileId && <InspectLink fileId={storedFileId} format={file.name.endsWith('.json') ? 'json' : file.name.endsWith('.parquet') ? 'parquet' : 'csv'} />}
               </div>
               <div className="flex gap-2">
                 <Link to="/sql-playground">
@@ -678,7 +681,7 @@ ${findings.length === 0 ? "<p>No findings — data looks clean!</p>" : findings.
               </TabsContent>
             </Tabs>
 
-            
+            <CrossToolLinks format={file.name.endsWith('.json') ? 'json' : file.name.endsWith('.parquet') ? 'parquet' : 'csv'} fileId={storedFileId ?? undefined} />
           </>
         )}
       </div>

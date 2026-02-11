@@ -7,6 +7,8 @@ import { DropZone } from "@/components/shared/DropZone";
 import { UrlInput } from "@/components/shared/UrlInput";
 import { DataTable } from "@/components/shared/DataTable";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
+import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
+import { InspectLink } from "@/components/shared/InspectLink";
 import { ToggleButton } from "@/components/shared/ToggleButton";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -243,6 +245,7 @@ export default function DiffPage() {
             ) : (
               <div className="flex items-center gap-2 flex-wrap">
                 <FileInfo name={beforeFile.name} size={formatBytes(beforeFile.size)} rows={beforeMeta?.rowCount} columns={beforeMeta?.columns.length} />
+                {beforeFileId && <InspectLink fileId={beforeFileId} format={detectFormat(beforeFile.name)} />}
               </div>
             )}
           </div>
@@ -256,6 +259,7 @@ export default function DiffPage() {
             ) : (
               <div className="flex items-center gap-2 flex-wrap">
                 <FileInfo name={afterFile.name} size={formatBytes(afterFile.size)} rows={afterMeta?.rowCount} columns={afterMeta?.columns.length} />
+                {afterFileId && <InspectLink fileId={afterFileId} format={detectFormat(afterFile.name)} />}
               </div>
             )}
           </div>
@@ -372,6 +376,8 @@ export default function DiffPage() {
           </>
         )}
 
+        {beforeFile && <CrossToolLinks format={detectFormat(beforeFile.name)} fileId={beforeFileId ?? undefined} excludeRoute="/dataset-diff" />}
+        {afterFile && afterFile.name !== beforeFile?.name && <CrossToolLinks format={detectFormat(afterFile.name)} fileId={afterFileId ?? undefined} excludeRoute="/dataset-diff" />}
       </div>
     </ToolPage>
   );

@@ -5,7 +5,7 @@ import { FileText, Upload, Download } from "lucide-react";
 import { useFileStore } from "@/contexts/FileStoreContext";
 import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
 import { getSampleCSV } from "@/lib/sample-data";
-
+import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { UrlInput } from "@/components/shared/UrlInput";
 import { ToggleButton } from "@/components/shared/ToggleButton";
@@ -176,7 +176,7 @@ export default function CsvToExcelPage() {
           <DataTable columns={preview.columns} rows={preview.rows} className="max-h-[500px]" maxRows={200} />
         )}
 
-        
+        {file && <CrossToolLinks format="csv" fileId={storedFileId ?? undefined} excludeRoute="/csv-to-excel" />}
       </div>
     </ToolPage>
   );

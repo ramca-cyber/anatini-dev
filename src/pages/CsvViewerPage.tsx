@@ -8,6 +8,8 @@ import { DuckDBGate } from "@/components/shared/DuckDBGate";
 import { UrlInput } from "@/components/shared/UrlInput";
 import { ToggleButton } from "@/components/shared/ToggleButton";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
+import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
+import { InspectLink } from "@/components/shared/InspectLink";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useDuckDB } from "@/contexts/DuckDBContext";
@@ -159,7 +161,10 @@ export default function CsvViewerPage() {
         {file && meta && (
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-4 flex-wrap">
-              <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
+              <div className="flex items-center gap-2">
+                <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
+                {storedFileId && <InspectLink fileId={storedFileId} format="csv" />}
+              </div>
               <div className="flex gap-2">
                 <Link to="/sql-playground"><Button variant="outline" size="sm">Open in SQL Playground</Button></Link>
                 <Button variant="outline" size="sm" onClick={() => { setFile(null); setMeta(null); setData(null); setColStats(null); setStoredFileId(null); }}>New file</Button>
@@ -194,7 +199,7 @@ export default function CsvViewerPage() {
               </div>
             )}
 
-            
+            <CrossToolLinks format="csv" fileId={storedFileId ?? undefined} excludeRoute="/csv-viewer" />
           </div>
         )}
 

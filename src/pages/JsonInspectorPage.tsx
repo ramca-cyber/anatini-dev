@@ -9,7 +9,7 @@ import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { PasteInput } from "@/components/shared/PasteInput";
 import { UrlInput } from "@/components/shared/UrlInput";
 import { ToggleButton } from "@/components/shared/ToggleButton";
-
+import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
 import { Button } from "@/components/ui/button";
 import { useFileStore } from "@/contexts/FileStoreContext";
 import { formatBytes } from "@/lib/duckdb-helpers";
@@ -433,7 +433,7 @@ export default function JsonInspectorPage() {
               </div>
             )}
 
-            
+            <CrossToolLinks format="json" fileId={storedFileId ?? undefined} />
           </div>
         )}
       </div>

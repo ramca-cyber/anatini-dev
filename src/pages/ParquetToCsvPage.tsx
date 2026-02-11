@@ -9,6 +9,8 @@ import { UrlInput } from "@/components/shared/UrlInput";
 import { DataTable } from "@/components/shared/DataTable";
 import { RawPreview } from "@/components/shared/RawPreview";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
+import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
+import { InspectLink } from "@/components/shared/InspectLink";
 import { ToggleButton } from "@/components/shared/ToggleButton";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
@@ -166,6 +168,7 @@ export default function ParquetToCsvPage() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div className="flex items-center gap-2 flex-wrap">
                 <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} extras={fileInfoExtras} />
+                {storedFileId && <InspectLink fileId={storedFileId} format="parquet" />}
               </div>
               <div className="flex items-center gap-2">
                 <Button onClick={handleConvert} disabled={loading}>
@@ -239,6 +242,12 @@ export default function ParquetToCsvPage() {
               </div>
             )}
 
+            <div className="border border-border p-4 space-y-4">
+              <CrossToolLinks format="parquet" fileId={storedFileId ?? undefined} excludeRoute="/parquet-to-csv" heading={conversionResult ? "Source file" : undefined} inline />
+              {conversionResult && (
+                <CrossToolLinks format="csv" excludeRoute="/parquet-to-csv" heading="Converted output" inline />
+              )}
+            </div>
           </div>
         )}
 
