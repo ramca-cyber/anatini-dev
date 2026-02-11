@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { ErrorAlert } from "@/components/shared/ErrorAlert";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
-import { Table, FlaskConical, Copy, Check, ArrowRightLeft, Download } from "lucide-react";
+import { Table, Copy, Check, ArrowRightLeft, Download, CheckCircle2, ChevronDown, ChevronUp } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
@@ -14,6 +14,7 @@ import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
 import { InspectLink } from "@/components/shared/InspectLink";
 import { ToggleButton } from "@/components/shared/ToggleButton";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { useFileStore } from "@/contexts/FileStoreContext";
 import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
@@ -46,6 +47,8 @@ export default function JsonToCsvPage() {
   const [outputView, setOutputView] = useState<"table" | "raw">("table");
   const [outputPreview, setOutputPreview] = useState<{ columns: string[]; rows: any[][]; types: string[] } | null>(null);
   const [storedFileId, setStoredFileId] = useState<string | null>(null);
+  const [showInputPreview, setShowInputPreview] = useState(true);
+  const [showOutputPreview, setShowOutputPreview] = useState(false);
 
   async function handleFile(f: File) {
     if (!db) return;
@@ -149,7 +152,6 @@ export default function JsonToCsvPage() {
                 value={inputMode}
                 onChange={setInputMode}
               />
-
               {inputMode === "file" ? (
                 <DropZone
                   accept={[".json", ".jsonl"]}
@@ -173,88 +175,101 @@ export default function JsonToCsvPage() {
 
           {file && meta && (
             <div className="space-y-4">
+              {/* 1. File info bar */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-2 flex-wrap">
                   <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
                   {storedFileId && <InspectLink fileId={storedFileId} format="json" />}
                 </div>
-                <div className="flex gap-2">
-                  <Button onClick={handleConvert} disabled={loading}>
-                    <ArrowRightLeft className="h-4 w-4 mr-1" /> {csvOutput ? "Re-convert" : "Convert to CSV"}
+                <Button variant="outline" onClick={resetAll}>New file</Button>
+              </div>
+
+              {/* 2. Options + Convert row */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border border-border bg-muted/30 px-4 py-3">
+                <div className="flex items-center gap-4 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs text-muted-foreground font-bold">Delimiter</label>
+                    <ToggleButton options={DELIMITERS} value={delimiter} onChange={setDelimiter} />
+                  </div>
+                  <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                    <input type="checkbox" checked={includeHeader} onChange={(e) => setIncludeHeader(e.target.checked)} className="rounded" />
+                    <span className="font-bold">Include header</span>
+                  </label>
+                </div>
+                <Button onClick={handleConvert} disabled={loading}>
+                  <ArrowRightLeft className="h-4 w-4 mr-1" /> Convert to CSV
+                </Button>
+              </div>
+
+              {/* 3. OUTPUT section (primary) */}
+              {csvOutput && conversionResult && (
+                <div className="space-y-3 border-2 border-border p-4">
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Output</h3>
+
+                  <div className="flex items-center gap-4 flex-wrap bg-muted/30 px-4 py-2 text-xs">
+                    <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                    <span><span className="text-muted-foreground">Converted in</span> <span className="font-bold">{(conversionResult.durationMs / 1000).toFixed(1)}s</span></span>
+                    <span><span className="text-muted-foreground">·</span></span>
+                    <span><span className="font-bold">{formatBytes(conversionResult.outputSize)}</span></span>
+                    <span><span className="text-muted-foreground">·</span></span>
+                    <span><span className="font-bold">{file.size > 0 ? `${Math.round((conversionResult.outputSize / file.size - 1) * 100)}% ${conversionResult.outputSize > file.size ? "larger" : "smaller"}` : "—"}</span></span>
+                  </div>
+
+                  <Button onClick={handleDownload} className="w-full" size="lg">
+                    <Download className="h-5 w-5 mr-2" /> Download CSV
                   </Button>
-                  <Button variant="outline" onClick={resetAll}>New file</Button>
-                </div>
-              </div>
 
-              {/* Options */}
-              <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center border border-border p-3 sm:gap-4">
-                <div className="flex items-center gap-2 col-span-2 sm:col-span-1">
-                  <label className="text-xs text-muted-foreground font-bold">Delimiter:</label>
-                  <ToggleButton options={DELIMITERS} value={delimiter} onChange={setDelimiter} />
-                </div>
-                <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
-                  <input type="checkbox" checked={includeHeader} onChange={(e) => setIncludeHeader(e.target.checked)} className="rounded" />
-                  <span className="font-bold">Include header row</span>
-                </label>
-              </div>
+                  <Button variant="outline" onClick={handleCopy} className="w-full">
+                    {copied ? <Check className="h-4 w-4 mr-1" /> : <Copy className="h-4 w-4 mr-1" />}
+                    {copied ? "Copied" : "Copy to clipboard"}
+                  </Button>
 
-              {/* INPUT SECTION */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Input</h3>
+                  <Collapsible open={showOutputPreview} onOpenChange={setShowOutputPreview}>
+                    <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full">
+                      {showOutputPreview ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                      <span className="text-xs font-bold uppercase tracking-widest">Preview output data</span>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="pt-3 space-y-3">
+                      <ToggleButton
+                        options={[{ label: "Table View", value: "table" }, { label: "Raw Output", value: "raw" }]}
+                        value={outputView}
+                        onChange={setOutputView}
+                      />
+                      {outputView === "table" && outputPreview && (
+                        <DataTable columns={outputPreview.columns} rows={outputPreview.rows} types={outputPreview.types} className="max-h-[500px]" />
+                      )}
+                      {outputView === "raw" && (
+                        <RawPreview content={csvOutput} label="Raw Output" fileName="output.csv" onDownload={handleDownload} />
+                      )}
+                    </CollapsibleContent>
+                  </Collapsible>
+                </div>
+              )}
+
+              {/* 4. INPUT PREVIEW section (secondary, collapsible) */}
+              <Collapsible open={showInputPreview} onOpenChange={setShowInputPreview}>
+                <div className="flex items-center justify-between gap-3">
+                  <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    {showInputPreview ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                    <h3 className="text-xs font-bold uppercase tracking-widest">Input Preview</h3>
+                  </CollapsibleTrigger>
                   <ToggleButton
                     options={[{ label: "Table View", value: "table" }, { label: "Raw Input", value: "raw-input" }]}
                     value={inputView}
                     onChange={setInputView}
                   />
                 </div>
-
-                {preview && inputView === "table" && (
-                  <DataTable columns={preview.columns} rows={preview.rows} types={preview.types} className="max-h-[500px]" />
-                )}
-                {inputView === "raw-input" && (
-                  <RawPreview content={rawInput} label="Raw Input" fileName={file?.name} />
-                )}
-              </div>
-
-              {/* OUTPUT SECTION */}
-              {csvOutput && conversionResult && (
-                <div className="space-y-3 border-t-2 border-border pt-4">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Output</h3>
-                    <div className="flex gap-2">
-                      <Button size="sm" onClick={handleDownload}>
-                        <Download className="h-4 w-4 mr-1" /> Download CSV
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={handleCopy}>
-                        {copied ? <Check className="h-4 w-4 mr-1" /> : <Copy className="h-4 w-4 mr-1" />}
-                        {copied ? "Copied" : "Copy"}
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Compact conversion stats */}
-                  <div className="flex items-center gap-4 flex-wrap border border-border bg-muted/30 px-4 py-2 text-xs">
-                    <span><span className="text-muted-foreground">Time:</span> <span className="font-bold">{(conversionResult.durationMs / 1000).toFixed(1)}s</span></span>
-                    <span><span className="text-muted-foreground">Output:</span> <span className="font-bold">{formatBytes(conversionResult.outputSize)}</span></span>
-                    <span><span className="text-muted-foreground">Change:</span> <span className="font-bold">{file.size > 0 ? `${Math.round((conversionResult.outputSize / file.size - 1) * 100)}% ${conversionResult.outputSize > file.size ? "larger" : "smaller"}` : "—"}</span></span>
-                  </div>
-
-                  <ToggleButton
-                    options={[{ label: "Table View", value: "table" }, { label: "Raw Output", value: "raw" }]}
-                    value={outputView}
-                    onChange={setOutputView}
-                  />
-
-                  {outputView === "table" && outputPreview && (
-                    <DataTable columns={outputPreview.columns} rows={outputPreview.rows} types={outputPreview.types} className="max-h-[500px]" />
+                <CollapsibleContent className="pt-3 space-y-3">
+                  {preview && inputView === "table" && (
+                    <DataTable columns={preview.columns} rows={preview.rows} types={preview.types} className="max-h-[500px]" />
                   )}
-                  {outputView === "raw" && (
-                    <RawPreview content={csvOutput} label="Raw Output" fileName="output.csv" onDownload={handleDownload} />
+                  {inputView === "raw-input" && (
+                    <RawPreview content={rawInput} label="Raw Input" fileName={file?.name} />
                   )}
-                </div>
-              )}
+                </CollapsibleContent>
+              </Collapsible>
 
+              {/* 5. CrossToolLinks */}
               <CrossToolLinks format="json" fileId={storedFileId ?? undefined} excludeRoute="/json-to-csv" />
             </div>
           )}

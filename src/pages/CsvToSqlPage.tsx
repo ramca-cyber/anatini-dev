@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { ErrorAlert } from "@/components/shared/ErrorAlert";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
-import { Database, ArrowRightLeft, Download, Copy, Check } from "lucide-react";
+import { Database, ArrowRightLeft, Download, Copy, Check, CheckCircle2, ChevronDown, ChevronUp } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { RawPreview } from "@/components/shared/RawPreview";
@@ -14,6 +14,7 @@ import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
 import { InspectLink } from "@/components/shared/InspectLink";
 import { ToggleButton } from "@/components/shared/ToggleButton";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { useFileStore } from "@/contexts/FileStoreContext";
 import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
@@ -78,6 +79,7 @@ export default function CsvToSqlPage() {
   const [copied, setCopied] = useState(false);
   const [conversionResult, setConversionResult] = useState<{ durationMs: number; outputSize: number } | null>(null);
   const [storedFileId, setStoredFileId] = useState<string | null>(null);
+  const [showInputPreview, setShowInputPreview] = useState(true);
 
   function buildQualifiedName() {
     const q = quotedIdentifiers ? '"' : '';
@@ -264,44 +266,45 @@ export default function CsvToSqlPage() {
 
           {file && meta && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between gap-4 flex-wrap">
-                <div className="flex items-center gap-2">
+              {/* 1. File info bar */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2 flex-wrap">
                   <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
                   {storedFileId && <InspectLink fileId={storedFileId} format="csv" />}
                 </div>
-                <div className="flex gap-2">
-                  <Button onClick={handleConvert} disabled={loading}>
-                    <ArrowRightLeft className="h-4 w-4 mr-1" /> {output ? "Re-convert" : "Convert to SQL"}
-                  </Button>
-                  <Button variant="outline" onClick={resetAll}>New file</Button>
-                </div>
+                <Button variant="outline" onClick={resetAll}>New file</Button>
               </div>
 
-              {/* Options panel */}
-              <div className="border border-border p-4 space-y-3">
-                <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs text-muted-foreground font-bold">Dialect</label>
-                    <ToggleButton
-                      options={dialects.map(d => ({ label: d.label, value: d.id }))}
-                      value={dialect}
-                      onChange={handleDialectChange}
-                    />
+              {/* 2. Options + Convert row */}
+              <div className="border border-border bg-muted/30 px-4 py-3 space-y-3">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <label className="text-xs text-muted-foreground font-bold">Dialect</label>
+                      <ToggleButton
+                        options={dialects.map(d => ({ label: d.label, value: d.id }))}
+                        value={dialect}
+                        onChange={handleDialectChange}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <label className="text-xs text-muted-foreground font-bold">Table</label>
+                      <input value={tableName} onChange={(e) => setTableName(e.target.value)} className="border border-border bg-background px-2 py-1 text-xs w-32" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <label className="text-xs text-muted-foreground font-bold">Schema</label>
+                      <input value={schemaName} onChange={(e) => setSchemaName(e.target.value)} placeholder="(none)" className="border border-border bg-background px-2 py-1 text-xs w-24" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <label className="text-xs text-muted-foreground font-bold">Batch</label>
+                      <select value={batchSize} onChange={(e) => setBatchSize(Number(e.target.value))} className="border border-border bg-background px-2 py-1 text-xs">
+                        <option value={50}>50</option><option value={100}>100</option><option value={500}>500</option><option value={1000}>1000</option>
+                      </select>
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-xs text-muted-foreground font-bold">Table name</label>
-                    <input value={tableName} onChange={(e) => setTableName(e.target.value)} className="border border-border bg-background px-2 py-1 text-xs w-32" />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs text-muted-foreground font-bold">Schema</label>
-                    <input value={schemaName} onChange={(e) => setSchemaName(e.target.value)} placeholder="(none)" className="border border-border bg-background px-2 py-1 text-xs w-24" />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs text-muted-foreground font-bold">Batch size</label>
-                    <select value={batchSize} onChange={(e) => setBatchSize(Number(e.target.value))} className="border border-border bg-background px-2 py-1 text-xs">
-                      <option value={50}>50</option><option value={100}>100</option><option value={500}>500</option><option value={1000}>1000</option>
-                    </select>
-                  </div>
+                  <Button onClick={handleConvert} disabled={loading}>
+                    <ArrowRightLeft className="h-4 w-4 mr-1" /> Convert to SQL
+                  </Button>
                 </div>
                 <div className="flex flex-wrap gap-4">
                   <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -341,51 +344,57 @@ export default function CsvToSqlPage() {
                 </div>
               </div>
 
-              {/* INPUT SECTION */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Input</h3>
+              {/* 3. OUTPUT section (primary) */}
+              {output && conversionResult && (
+                <div className="space-y-3 border-2 border-border p-4">
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Output</h3>
+
+                  <div className="flex items-center gap-4 flex-wrap bg-muted/30 px-4 py-2 text-xs">
+                    <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                    <span><span className="text-muted-foreground">Generated in</span> <span className="font-bold">{(conversionResult.durationMs / 1000).toFixed(1)}s</span></span>
+                    <span><span className="text-muted-foreground">·</span></span>
+                    <span><span className="font-bold">{formatBytes(conversionResult.outputSize)}</span></span>
+                    <span><span className="text-muted-foreground">·</span></span>
+                    <span><span className="font-bold">{file.size > 0 ? `${Math.round((conversionResult.outputSize / file.size - 1) * 100)}% ${conversionResult.outputSize > file.size ? "larger" : "smaller"}` : "—"}</span></span>
+                  </div>
+
+                  <Button onClick={handleDownload} className="w-full" size="lg">
+                    <Download className="h-5 w-5 mr-2" /> Download SQL
+                  </Button>
+
+                  <Button variant="outline" onClick={handleCopy} className="w-full">
+                    {copied ? <Check className="h-4 w-4 mr-1" /> : <Copy className="h-4 w-4 mr-1" />}
+                    {copied ? "Copied" : "Copy to clipboard"}
+                  </Button>
+
+                  <RawPreview content={output} label="Raw Output" fileName={`${tableName}.sql`} onDownload={handleDownload} />
+                </div>
+              )}
+
+              {/* 4. INPUT PREVIEW section (secondary, collapsible) */}
+              <Collapsible open={showInputPreview} onOpenChange={setShowInputPreview}>
+                <div className="flex items-center justify-between gap-3">
+                  <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    {showInputPreview ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                    <h3 className="text-xs font-bold uppercase tracking-widest">Input Preview</h3>
+                  </CollapsibleTrigger>
                   <ToggleButton
                     options={[{ label: "Table View", value: "table" }, { label: "Raw Input", value: "raw-input" }]}
                     value={inputView}
                     onChange={setInputView}
                   />
                 </div>
+                <CollapsibleContent className="pt-3 space-y-3">
+                  {preview && inputView === "table" && (
+                    <DataTable columns={preview.columns} rows={preview.rows} types={preview.types} className="max-h-[500px]" />
+                  )}
+                  {inputView === "raw-input" && (
+                    <RawPreview content={rawInput} label="Raw Input" fileName={file?.name} />
+                  )}
+                </CollapsibleContent>
+              </Collapsible>
 
-                {preview && inputView === "table" && (
-                  <DataTable columns={preview.columns} rows={preview.rows} types={preview.types} className="max-h-[500px]" />
-                )}
-                {inputView === "raw-input" && (
-                  <RawPreview content={rawInput} label="Raw Input" fileName={file?.name} />
-                )}
-              </div>
-
-              {/* OUTPUT SECTION */}
-              {output && conversionResult && (
-                <div className="space-y-3 border-t-2 border-border pt-4">
-                  <div className="flex items-center justify-between gap-4 flex-wrap">
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Output</h3>
-                    <div className="flex gap-2">
-                      <Button size="sm" onClick={handleDownload}>
-                        <Download className="h-4 w-4 mr-1" /> Download SQL
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={handleCopy}>
-                        {copied ? <Check className="h-4 w-4 mr-1" /> : <Copy className="h-4 w-4 mr-1" />}
-                        {copied ? "Copied" : "Copy"}
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="border border-border bg-muted/30 px-4 py-2 flex items-center gap-6 flex-wrap">
-                    <span className="text-xs"><span className="text-muted-foreground">Time:</span> <span className="font-bold">{(conversionResult.durationMs / 1000).toFixed(1)}s</span></span>
-                    <span className="text-xs"><span className="text-muted-foreground">Output:</span> <span className="font-bold">{formatBytes(conversionResult.outputSize)}</span></span>
-                    <span className="text-xs"><span className="text-muted-foreground">Change:</span> <span className="font-bold">{file.size > 0 ? `${Math.round((conversionResult.outputSize / file.size - 1) * 100)}% ${conversionResult.outputSize > file.size ? "larger" : "smaller"}` : "—"}</span></span>
-                  </div>
-
-                  <RawPreview content={output} label="Raw Output" fileName={`${tableName}.sql`} onDownload={handleDownload} />
-                </div>
-              )}
-
+              {/* 5. CrossToolLinks */}
               <CrossToolLinks format="csv" fileId={storedFileId ?? undefined} excludeRoute="/csv-to-sql" />
             </div>
           )}

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ErrorAlert } from "@/components/shared/ErrorAlert";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
-import { FileText, Download, Check, FlaskConical } from "lucide-react";
+import { FileText, Download, Check, CheckCircle2, ChevronDown, ChevronUp } from "lucide-react";
 import { useFileStore } from "@/contexts/FileStoreContext";
 import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
 import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
@@ -13,6 +13,7 @@ import { DataTable } from "@/components/shared/DataTable";
 import { RawPreview } from "@/components/shared/RawPreview";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { downloadBlob, formatBytes, warnLargeFile } from "@/lib/duckdb-helpers";
 import { generateSampleExcel } from "@/lib/sample-data";
 
@@ -31,6 +32,7 @@ export default function ExcelToCsvPage() {
   const [workbook, setWorkbook] = useState<any>(null);
   const [csvOutput, setCsvOutput] = useState<string | null>(null);
   const [view, setView] = useState<"table" | "raw-output">("table");
+  const [showDataPreview, setShowDataPreview] = useState(true);
 
   async function loadXlsx() {
     if (xlsxMod) return xlsxMod;
@@ -150,18 +152,11 @@ export default function ExcelToCsvPage() {
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <FileInfo name={file.name} size={formatBytes(file.size)} extras={[{ label: "Sheets", value: sheets.length }]} />
-              <div className="flex items-center gap-2">
-                <Button onClick={handleDownload} disabled={selectedSheets.size === 0}>
-                  <Download className="h-4 w-4 mr-1" />
-                  {selectedSheets.size > 1 ? `Download ${selectedSheets.size} CSVs` : "Download CSV"}
-                </Button>
-                <Button variant="outline" onClick={resetAll}>New file</Button>
-              </div>
+              <Button variant="outline" onClick={resetAll}>New file</Button>
             </div>
 
-            {/* Sheet selector with checkboxes */}
             {sheets.length > 0 && (
-              <div className="space-y-2">
+              <div className="border border-border bg-muted/30 px-4 py-3 space-y-2">
                 <div className="text-xs font-bold text-muted-foreground">Select sheets to export:</div>
                 <div className="flex flex-wrap gap-2">
                   {sheets.map((s) => (
@@ -185,29 +180,42 @@ export default function ExcelToCsvPage() {
               </div>
             )}
 
-            {/* View toggle */}
-            <ToggleButton
-              options={[
-                { label: "Table View", value: "table" },
-                ...(csvOutput ? [{ label: "Raw CSV Output", value: "raw-output" }] : []),
-              ]}
-              value={view}
-              onChange={(v) => setView(v as any)}
-            />
+            <Button onClick={handleDownload} disabled={selectedSheets.size === 0} className="w-full" size="lg">
+              <Download className="h-5 w-5 mr-2" />
+              {selectedSheets.size > 1 ? `Download ${selectedSheets.size} CSVs` : "Download CSV"}
+            </Button>
+
+            <Collapsible open={showDataPreview} onOpenChange={setShowDataPreview}>
+              <div className="flex items-center justify-between gap-3">
+                <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  {showDataPreview ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                  <h3 className="text-xs font-bold uppercase tracking-widest">Data Preview</h3>
+                </CollapsibleTrigger>
+                <ToggleButton
+                  options={[
+                    { label: "Table View", value: "table" },
+                    ...(csvOutput ? [{ label: "Raw CSV Output", value: "raw-output" }] : []),
+                  ]}
+                  value={view}
+                  onChange={(v) => setView(v as any)}
+                />
+              </div>
+              <CollapsibleContent className="pt-3 space-y-3">
+                {preview && view === "table" && (
+                  <DataTable columns={preview.columns} rows={preview.rows} className="max-h-[500px]" maxRows={200} />
+                )}
+                {csvOutput && view === "raw-output" && (
+                  <RawPreview content={csvOutput} label="Raw CSV Output" fileName="output.csv" onDownload={handleDownloadCsv} />
+                )}
+              </CollapsibleContent>
+            </Collapsible>
+
+            <CrossToolLinks format="excel" fileId={storedFileId ?? undefined} excludeRoute="/excel-to-csv" />
           </div>
         )}
 
         {loading && <LoadingState message="Processing file..." />}
         {error && <ErrorAlert message={error} />}
-
-        {preview && view === "table" && (
-          <DataTable columns={preview.columns} rows={preview.rows} className="max-h-[500px]" maxRows={200} />
-        )}
-        {csvOutput && view === "raw-output" && (
-          <RawPreview content={csvOutput} label="Raw CSV Output" fileName="output.csv" onDownload={handleDownloadCsv} />
-        )}
-
-        {file && <CrossToolLinks format="excel" fileId={storedFileId ?? undefined} excludeRoute="/excel-to-csv" />}
       </div>
     </ToolPage>
   );
