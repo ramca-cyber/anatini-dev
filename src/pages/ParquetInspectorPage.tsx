@@ -10,7 +10,7 @@ import { ToggleButton } from "@/components/shared/ToggleButton";
 import { DataTable } from "@/components/shared/DataTable";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { DuckDBGate } from "@/components/shared/DuckDBGate";
-import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
+
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { useFileStore } from "@/contexts/FileStoreContext";

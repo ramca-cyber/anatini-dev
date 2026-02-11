@@ -8,8 +8,6 @@ import { UrlInput } from "@/components/shared/UrlInput";
 import { DataTable } from "@/components/shared/DataTable";
 import { RawPreview } from "@/components/shared/RawPreview";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
-import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
-import { InspectLink } from "@/components/shared/InspectLink";
 import { DuckDBGate } from "@/components/shared/DuckDBGate";
 import { ToggleButton } from "@/components/shared/ToggleButton";
 import { Button } from "@/components/ui/button";

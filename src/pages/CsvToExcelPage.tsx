@@ -5,7 +5,7 @@ import { FileText, Upload, Download } from "lucide-react";
 import { useFileStore } from "@/contexts/FileStoreContext";
 import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
 import { getSampleCSV } from "@/lib/sample-data";
-import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
+
 import { ToolPage } from "@/components/shared/ToolPage";
 import { UrlInput } from "@/components/shared/UrlInput";
 import { ToggleButton } from "@/components/shared/ToggleButton";

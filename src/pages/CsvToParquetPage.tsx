@@ -8,21 +8,16 @@ import { DuckDBGate } from "@/components/shared/DuckDBGate";
 import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
 import { RawPreview } from "@/components/shared/RawPreview";
-import { ParquetOutputInspector } from "@/components/shared/ParquetOutputInspector";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
-import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
-import { InspectLink } from "@/components/shared/InspectLink";
 import { ToggleButton } from "@/components/shared/ToggleButton";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
-import { useFileStore } from "@/contexts/FileStoreContext";
 import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
 import { registerFile, runQuery, exportToParquet, downloadBlob, formatBytes, sanitizeTableName, warnLargeFile } from "@/lib/duckdb-helpers";
 import { getSampleCSV } from "@/lib/sample-data";
 
 export default function CsvToParquetPage() {
   const { db } = useDuckDB();
-  const { addFile } = useFileStore();
   const [file, setFile] = useState<File | null>(null);
   const [inputMode, setInputMode] = useState<"file" | "url">("file");
   const [loading, setLoading] = useState(false);
@@ -37,13 +32,10 @@ export default function CsvToParquetPage() {
   const [inputView, setInputView] = useState<"table" | "schema" | "raw-input">("table");
   const [nullableInfo, setNullableInfo] = useState<boolean[]>([]);
   const [outputBuf, setOutputBuf] = useState<Uint8Array | null>(null);
-  const [storedFileId, setStoredFileId] = useState<string | null>(null);
 
   async function handleFile(f: File) {
     if (!db) return;
     warnLargeFile(f);
-    const stored = addFile(f);
-    setStoredFileId(stored.id);
     setFile(f);
     setLoading(true);
     setError(null);
@@ -112,7 +104,7 @@ export default function CsvToParquetPage() {
   function resetAll() {
     setFile(null); setMeta(null); setPreview(null); setRawInput(null);
     setConversionResult(null); setNullableInfo([]);
-    setOutputBuf(null); setStoredFileId(null);
+    setOutputBuf(null);
   }
 
   const inputTabs: { label: string; value: "table" | "schema" | "raw-input" }[] = [
@@ -149,10 +141,7 @@ export default function CsvToParquetPage() {
           <div className="space-y-4">
             {/* File info + actions */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-2 flex-wrap">
-                <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
-                {storedFileId && <InspectLink fileId={storedFileId} format="csv" />}
-              </div>
+              <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
               <div className="flex items-center gap-2">
                 <Button onClick={handleConvert} disabled={loading}>
                   <ArrowRightLeft className="h-4 w-4 mr-1" /> {conversionResult ? "Re-convert" : "Convert to Parquet"}
@@ -238,26 +227,8 @@ export default function CsvToParquetPage() {
                   <span><span className="text-muted-foreground">Output:</span> <span className="font-bold">{formatBytes(conversionResult.outputSize)}</span></span>
                   <span><span className="text-muted-foreground">Compression:</span> <span className="font-bold">{file.size > 0 ? `${Math.round((1 - conversionResult.outputSize / file.size) * 100)}% smaller` : "—"}</span></span>
                 </div>
-
-                {db && meta && (
-                  <ParquetOutputInspector
-                    db={db}
-                    fileName={`${sanitizeTableName(file.name)}_export.parquet`}
-                    tableName={sanitizeTableName(file.name)}
-                    rowCount={meta.rowCount}
-                    columnCount={meta.columns.length}
-                    fileSize={conversionResult.outputSize}
-                  />
-                )}
               </div>
             )}
-
-            <div className="border border-border p-4 space-y-4">
-              <CrossToolLinks format="csv" fileId={storedFileId ?? undefined} excludeRoute="/csv-to-parquet" heading={conversionResult ? "Source file" : undefined} inline />
-              {conversionResult && (
-                <CrossToolLinks format="parquet" excludeRoute="/csv-to-parquet" heading="Converted output" inline />
-              )}
-            </div>
           </div>
         )}
 
