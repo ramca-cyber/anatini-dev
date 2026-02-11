@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { useFileStore } from "@/contexts/FileStoreContext";
 import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
-import { registerFile, runQuery, downloadBlob, formatBytes, sanitizeTableName, warnLargeFile } from "@/lib/duckdb-helpers";
+import { registerFile, runQuery, downloadBlob, formatBytes, sanitizeTableName, warnLargeFile, bigIntReplacer } from "@/lib/duckdb-helpers";
 import { generateSampleParquet } from "@/lib/sample-data";
 import { toast } from "@/hooks/use-toast";
 
@@ -85,9 +85,9 @@ export default function ParquetToJsonPage() {
       });
       let output: string;
       if (format === "ndjson") {
-        output = objects.map((o) => JSON.stringify(o)).join("\n") + "\n";
+        output = objects.map((o) => JSON.stringify(o, bigIntReplacer)).join("\n") + "\n";
       } else {
-        output = pretty ? JSON.stringify(objects, null, 2) : JSON.stringify(objects);
+        output = pretty ? JSON.stringify(objects, bigIntReplacer, 2) : JSON.stringify(objects, bigIntReplacer);
       }
       setJsonOutput(output);
       const outputSize = new Blob([output]).size;
