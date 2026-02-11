@@ -244,7 +244,7 @@ export default function DiffPage() {
               <div className="flex items-center gap-2 flex-wrap">
                 <FileInfo name={beforeFile.name} size={formatBytes(beforeFile.size)} rows={beforeMeta?.rowCount} columns={beforeMeta?.columns.length} />
               </div>
-          </div>
+            )}
           <div>
             <p className="mb-2 text-sm font-medium text-muted-foreground">After</p>
           {!afterFile ? (
@@ -256,7 +256,7 @@ export default function DiffPage() {
               <div className="flex items-center gap-2 flex-wrap">
                 <FileInfo name={afterFile.name} size={formatBytes(afterFile.size)} rows={afterMeta?.rowCount} columns={afterMeta?.columns.length} />
               </div>
-          </div>
+            )}
         </div>
 
         {neitherLoaded && (
