@@ -298,12 +298,7 @@ export default function CsvToJsonPage() {
                 </div>
               )}
 
-              <div className="border border-border p-4 space-y-4">
-                <CrossToolLinks format="csv" fileId={storedFileId ?? undefined} excludeRoute="/csv-to-json" heading={output ? "Source file" : undefined} inline />
-                {output && (
-                  <CrossToolLinks format="json" excludeRoute="/csv-to-json" heading="Converted output" inline />
-                )}
-              </div>
+              <CrossToolLinks format="csv" fileId={storedFileId ?? undefined} excludeRoute="/csv-to-json" />
             </div>
           )}
 

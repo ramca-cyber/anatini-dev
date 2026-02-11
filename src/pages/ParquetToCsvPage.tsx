@@ -242,12 +242,7 @@ export default function ParquetToCsvPage() {
               </div>
             )}
 
-            <div className="border border-border p-4 space-y-4">
-              <CrossToolLinks format="parquet" fileId={storedFileId ?? undefined} excludeRoute="/parquet-to-csv" heading={conversionResult ? "Source file" : undefined} inline />
-              {conversionResult && (
-                <CrossToolLinks format="csv" excludeRoute="/parquet-to-csv" heading="Converted output" inline />
-              )}
-            </div>
+            <CrossToolLinks format="parquet" fileId={storedFileId ?? undefined} excludeRoute="/parquet-to-csv" />
           </div>
         )}
 
