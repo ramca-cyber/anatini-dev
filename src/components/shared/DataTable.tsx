@@ -5,7 +5,12 @@ import { ChevronLeft, ChevronRight, ArrowUp, ArrowDown } from "lucide-react";
 
 function formatValue(val: any): string {
   if (val === null || val === undefined) return "";
-  if (typeof val === "bigint") return val.toString();
+  if (typeof val === "boolean") return val ? "true" : "false";
+  if (typeof val === "bigint") return val.toLocaleString();
+  if (typeof val === "number") {
+    if (Number.isInteger(val) && Math.abs(val) >= 1000) return val.toLocaleString();
+    return String(val);
+  }
   if (typeof val === "object") {
     try {
       return JSON.stringify(val, (_key, v) => typeof v === "bigint" ? v.toString() : v);
@@ -101,9 +106,14 @@ export function DataTable({ columns, rows, types, maxRows = 100, className }: Da
           {displayRows.map((row, i) => (
             <tr key={i} className="border-b border-border/50 transition-colors hover:bg-muted/30 even:bg-muted/20">
               {row.map((val, j) => (
-                <td key={j} className="px-3 py-1.5 whitespace-nowrap font-mono text-xs">
+                <td key={j} className={cn(
+                  "px-3 py-1.5 whitespace-nowrap font-mono text-xs",
+                  (val === null || val === undefined || val === "") && "bg-destructive/5"
+                )}>
                   {val === null || val === undefined ? (
-                    <span className="text-muted-foreground/60">∅</span>
+                    <span className="text-destructive/40">∅</span>
+                  ) : val === "" ? (
+                    <span className="text-destructive/40 italic">empty</span>
                   ) : typeof val === "object" ? (
                     <span className="max-w-[200px] truncate block text-muted-foreground">{formatValue(val)}</span>
                   ) : (
