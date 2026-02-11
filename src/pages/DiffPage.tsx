@@ -378,7 +378,6 @@ export default function DiffPage() {
         )}
 
         {beforeFile && <CrossToolLinks format={detectFormat(beforeFile.name)} fileId={beforeFileId ?? undefined} excludeRoute="/dataset-diff" />}
-        {afterFile && afterFile.name !== beforeFile?.name && <CrossToolLinks format={detectFormat(afterFile.name)} fileId={afterFileId ?? undefined} excludeRoute="/dataset-diff" />}
       </div>
     </ToolPage>
   );
