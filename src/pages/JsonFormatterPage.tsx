@@ -4,7 +4,7 @@ import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { Code, Copy, Check, ChevronRight, ChevronDown } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
-import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
+
 import { UrlInput } from "@/components/shared/UrlInput";
 import { ToggleButton } from "@/components/shared/ToggleButton";
 import { Button } from "@/components/ui/button";
@@ -241,7 +241,7 @@ export default function JsonFormatterPage() {
           </div>
         </div>
 
-        {(input || output) && <CrossToolLinks format="json" fileId={storedFileId ?? undefined} />}
+        
       </div>
     </ToolPage>
   );

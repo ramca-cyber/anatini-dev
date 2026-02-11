@@ -4,7 +4,7 @@ import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { FileText, Download, Check, FlaskConical } from "lucide-react";
 import { useFileStore } from "@/contexts/FileStoreContext";
 import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
-import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
+
 import { ToolPage } from "@/components/shared/ToolPage";
 import { UrlInput } from "@/components/shared/UrlInput";
 import { ToggleButton } from "@/components/shared/ToggleButton";
@@ -207,7 +207,7 @@ export default function ExcelToCsvPage() {
           <RawPreview content={csvOutput} label="Raw CSV Output" fileName="output.csv" onDownload={handleDownloadCsv} />
         )}
 
-        {file && <CrossToolLinks format="excel" fileId={storedFileId ?? undefined} excludeRoute="/excel-to-csv" />}
+        
       </div>
     </ToolPage>
   );

@@ -8,8 +8,6 @@ import { UrlInput } from "@/components/shared/UrlInput";
 import { DataTable } from "@/components/shared/DataTable";
 import { RawPreview } from "@/components/shared/RawPreview";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
-import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
-import { InspectLink } from "@/components/shared/InspectLink";
 import { DuckDBGate } from "@/components/shared/DuckDBGate";
 import { ToggleButton } from "@/components/shared/ToggleButton";
 import { Button } from "@/components/ui/button";
@@ -152,7 +150,6 @@ export default function ParquetToJsonPage() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div className="flex items-center gap-2 flex-wrap">
                 <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
-                {storedFileId && <InspectLink fileId={storedFileId} format="parquet" />}
               </div>
               <div className="flex items-center gap-2">
                 <Button onClick={handleConvert} disabled={loading}>
@@ -227,12 +224,6 @@ export default function ParquetToJsonPage() {
               </div>
             )}
 
-            <div className="border border-border p-4 space-y-4">
-              <CrossToolLinks format="parquet" fileId={storedFileId ?? undefined} excludeRoute="/parquet-to-json" heading={result ? "Source file" : undefined} inline />
-              {result && (
-                <CrossToolLinks format="json" excludeRoute="/parquet-to-json" heading="Converted output" inline />
-              )}
-            </div>
           </div>
         )}
 

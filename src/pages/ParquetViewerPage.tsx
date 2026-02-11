@@ -9,8 +9,6 @@ import { DataTable } from "@/components/shared/DataTable";
 import { UrlInput } from "@/components/shared/UrlInput";
 import { ToggleButton } from "@/components/shared/ToggleButton";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
-import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
-import { InspectLink } from "@/components/shared/InspectLink";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useDuckDB } from "@/contexts/DuckDBContext";
@@ -160,10 +158,7 @@ export default function ParquetViewerPage() {
         {file && meta && (
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div className="flex items-center gap-2">
-                <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
-                {storedFileId && <InspectLink fileId={storedFileId} format="parquet" />}
-              </div>
+              <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={handleExportCSV}>Export CSV</Button>
                 <Button variant="outline" size="sm" onClick={handleExportJSON}>Export JSON</Button>
@@ -242,7 +237,7 @@ export default function ParquetViewerPage() {
               </div>
             )}
 
-            <CrossToolLinks format="parquet" fileId={storedFileId ?? undefined} excludeRoute="/parquet-viewer" />
+            
           </div>
         )}
 

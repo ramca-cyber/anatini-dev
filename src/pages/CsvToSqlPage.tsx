@@ -10,8 +10,6 @@ import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { PasteInput } from "@/components/shared/PasteInput";
 import { UrlInput } from "@/components/shared/UrlInput";
 import { DuckDBGate } from "@/components/shared/DuckDBGate";
-import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
-import { InspectLink } from "@/components/shared/InspectLink";
 import { ToggleButton } from "@/components/shared/ToggleButton";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
@@ -267,7 +265,6 @@ export default function CsvToSqlPage() {
               <div className="flex items-center justify-between gap-4 flex-wrap">
                 <div className="flex items-center gap-2">
                   <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
-                  {storedFileId && <InspectLink fileId={storedFileId} format="csv" />}
                 </div>
                 <div className="flex gap-2">
                   <Button onClick={handleConvert} disabled={loading}>
@@ -386,7 +383,7 @@ export default function CsvToSqlPage() {
                 </div>
               )}
 
-              <CrossToolLinks format="csv" fileId={storedFileId ?? undefined} excludeRoute="/csv-to-sql" />
+              
             </div>
           )}
 
