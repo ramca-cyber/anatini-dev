@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { useFileStore } from "@/contexts/FileStoreContext";
 import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
-import { registerFile, runQuery, formatBytes, sanitizeTableName, downloadBlob } from "@/lib/duckdb-helpers";
+import { registerFile, runQuery, formatBytes, sanitizeTableName, downloadBlob, warnLargeFile } from "@/lib/duckdb-helpers";
 import { getSampleProfilerCSV } from "@/lib/sample-data";
 import { toast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
@@ -223,6 +223,7 @@ export default function ProfilerPage() {
 
   async function handleFile(f: File) {
     if (!db) return;
+    warnLargeFile(f);
     const stored = addFile(f);
     setStoredFileId(stored.id);
     setFile(f);

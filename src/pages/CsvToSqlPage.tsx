@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { useFileStore } from "@/contexts/FileStoreContext";
 import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
-import { registerFile, runQuery, downloadBlob, formatBytes, sanitizeTableName } from "@/lib/duckdb-helpers";
+import { registerFile, runQuery, downloadBlob, formatBytes, sanitizeTableName, warnLargeFile } from "@/lib/duckdb-helpers";
 import { getSampleCSV } from "@/lib/sample-data";
 import { toast } from "@/hooks/use-toast";
 
@@ -90,6 +90,7 @@ export default function CsvToSqlPage() {
 
   async function handleFile(f: File) {
     if (!db) return;
+    warnLargeFile(f);
     const stored = addFile(f);
     setStoredFileId(stored.id);
     setFile(f);

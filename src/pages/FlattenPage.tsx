@@ -11,7 +11,7 @@ import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
 import { InspectLink } from "@/components/shared/InspectLink";
 import { ToggleButton } from "@/components/shared/ToggleButton";
 import { Button } from "@/components/ui/button";
-import { downloadBlob, formatBytes } from "@/lib/duckdb-helpers";
+import { downloadBlob, formatBytes, warnLargeFile } from "@/lib/duckdb-helpers";
 import { useFileStore } from "@/contexts/FileStoreContext";
 import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
 import { getSampleJSON } from "@/lib/sample-data";
@@ -137,6 +137,7 @@ export default function FlattenPage() {
   useAutoLoadFile(handleFile);
 
   async function handleFile(f: File) {
+    warnLargeFile(f);
     const stored = addFile(f);
     setStoredFileId(stored.id);
     setFile(f);
