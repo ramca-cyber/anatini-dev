@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { useFileStore } from "@/contexts/FileStoreContext";
 import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
-import { registerFile, runQuery, downloadBlob, formatBytes, sanitizeTableName, warnLargeFile } from "@/lib/duckdb-helpers";
+import { registerFile, runQuery, downloadBlob, formatBytes, sanitizeTableName, warnLargeFile, type CsvParseOptions } from "@/lib/duckdb-helpers";
 import { getSampleCSV } from "@/lib/sample-data";
 import { toast } from "@/hooks/use-toast";
 
@@ -61,30 +61,10 @@ export default function CsvToJsonPage() {
       const text = await f.text();
       setRawInput(text.slice(0, 50_000));
       const tableName = sanitizeTableName(f.name);
-      const delimOpt = delimiter === "," ? "" : `, delim='${delimiter}'`;
-      const headerOpt = hasHeader ? "" : ", header=false";
-      const safeName = f.name.replace(/'/g, "''");
-      const conn = await db.connect();
-      try {
-        await db.registerFileHandle(f.name, f, 2 /* BROWSER_FILEREADER */, true);
-        await conn.query(`CREATE OR REPLACE TABLE "${tableName}" AS SELECT * FROM read_csv_auto('${safeName}'${delimOpt}${headerOpt})`);
-        const countRes = await conn.query(`SELECT COUNT(*) as cnt FROM "${tableName}"`);
-        const rowCount = Number(countRes.getChildAt(0)?.get(0) ?? 0);
-        const schemaRes = await conn.query(`DESCRIBE "${tableName}"`);
-        const columns: string[] = [];
-        const types: string[] = [];
-        const nameCol = schemaRes.getChildAt(0);
-        const typeCol = schemaRes.getChildAt(1);
-        for (let i = 0; i < schemaRes.numRows; i++) {
-          columns.push(String(nameCol?.get(i)));
-          types.push(String(typeCol?.get(i)));
-        }
-        setMeta({ columns, rowCount, types });
-        const previewRes = await runQuery(db, `SELECT * FROM "${tableName}" LIMIT 100`);
-        setPreview(previewRes);
-      } finally {
-        await conn.close();
-      }
+      const result = await registerFile(db, f, tableName, { delimiter, header: hasHeader });
+      setMeta(result);
+      const previewRes = await runQuery(db, `SELECT * FROM "${tableName}" LIMIT 100`);
+      setPreview(previewRes);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load file");
     } finally {
