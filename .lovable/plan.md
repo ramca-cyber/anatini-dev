@@ -1,45 +1,109 @@
 
 
-# Add Pagination to DataTable Component
+# V2 Code Review — Remaining Action Items
 
-## Problem
+## Already Completed (No Action Needed)
 
-The shared `DataTable` component currently truncates data at `maxRows` (default 100) and shows a static "Showing 100 of X rows" message with no way to navigate further. This affects all 15+ pages that use it -- converters, inspectors, profiler, flatten, etc.
+- DataTable pagination (just implemented)
+- SQL escaping, large file warning, code splitting, CsvToJson refactor
 
-Note: `CsvViewerPage` has its own server-side pagination (querying DuckDB with LIMIT/OFFSET), so it is unaffected.
+## Action Items to Implement
 
-## Solution
+### Phase 1: Critical
 
-Add client-side pagination controls directly into `DataTable` so all consumers get pagination automatically without any changes to their code.
+**1. Column sorting in DataTable**
+Add click-to-sort on column headers in the shared `DataTable` component. Clicking a header sorts ascending; clicking again sorts descending; clicking a third time clears sort. Show a triangle indicator next to the sorted column.
 
-### Changes to `src/components/shared/DataTable.tsx`
+- File: `src/components/shared/DataTable.tsx`
+- Add `sortCol` and `sortAsc` state
+- Sort `displayRows` before rendering
+- Add clickable header with arrow indicator
 
-1. Add `useState` for the current page number (starting at 0)
-2. Calculate `totalPages` from `rows.length` and `maxRows` (which becomes `pageSize`)
-3. Slice rows to show only the current page: `rows.slice(page * pageSize, (page + 1) * pageSize)`
-4. Replace the static "Showing X of Y" footer with Previous/Next buttons and a page indicator (e.g., "Page 1 of 5")
-5. Reset page to 0 whenever the `rows` array reference changes (via `useEffect`)
+### Phase 2: UX Improvements
 
-### UI Design
+**2. Font optimization**
+Remove the unused Space Mono Google Font import and combine the remaining two font imports (Space Grotesk + JetBrains Mono) into a single request. Saves one render-blocking network request.
 
-The pagination footer will match the existing style used in `CsvViewerPage`:
-- Previous and Next buttons (using the existing `Button` component with `variant="outline" size="sm"`)
-- "Page X of Y" text in the center
-- Disabled state on Previous when on page 1, and Next when on the last page
-- Only shown when total rows exceed `maxRows`
+- File: `src/index.css` (lines 1-3)
 
-### No Changes Needed Elsewhere
+**3. Auto-convert on file load**
+In all converter pages, automatically trigger conversion after file loads instead of requiring users to click "Convert." Keep the button visible as "Re-convert" for when options change. After auto-conversion, default to the raw output view.
 
-Since all 15 pages pass `rows` and `maxRows` to `DataTable` already, they will all get pagination automatically. No page-level code changes required.
+- Files: `CsvToJsonPage.tsx`, `JsonToCsvPage.tsx`, `CsvToParquetPage.tsx`, `ParquetToCsvPage.tsx`, `JsonToParquetPage.tsx`, `ParquetToJsonPage.tsx`
+
+**4. Hide options until after file upload**
+In `CsvToJsonPage.tsx` (and similar pages), move the delimiter/header options panel so it only appears after a file is loaded, inside a collapsible section. This removes pre-upload visual clutter.
+
+- File: `CsvToJsonPage.tsx` (move the options block at lines 155-169 to after file load)
+
+**5. Move CrossToolLinks below output**
+Reorder converter page layouts so `CrossToolLinks` appears after the output/download section rather than between file info and output. Make it render as a compact inline list.
+
+- Files: All converter pages that use `CrossToolLinks`
+
+**6. Consistent error styling**
+Create a shared `ErrorAlert` component and replace the 3 different error box patterns across `DuckDBGate`, tool pages, and SQL Playground.
+
+- New file: `src/components/shared/ErrorAlert.tsx`
+- Update: `DuckDBGate.tsx`, `SqlPage.tsx`, and all converter pages
+
+### Phase 3: Nice to Have (deferred)
+
+These items from the review are noted but deferred:
+- DuckDB loading progress bar (complex; requires hooking into WASM download progress)
+- Homepage CTA context-awareness
+- Blog SSR/pre-rendering (requires build tooling changes outside Lovable)
+- Yellow bird logo color consistency (design decision, not a code fix)
 
 ## Technical Details
 
-### Files Modified
+### Column sorting implementation
 
-- `src/components/shared/DataTable.tsx` -- add `useState`, `useEffect`, pagination logic, and navigation controls
+```text
+// New state in DataTable
+const [sortCol, setSortCol] = useState<number | null>(null);
+const [sortAsc, setSortAsc] = useState(true);
 
-### Dependencies
+// Sort before pagination slice
+let sortedRows = [...rows];
+if (sortCol !== null) {
+  sortedRows.sort((a, b) => {
+    const va = a[sortCol] ?? "";
+    const vb = b[sortCol] ?? "";
+    const cmp = String(va).localeCompare(String(vb), undefined, { numeric: true });
+    return sortAsc ? cmp : -cmp;
+  });
+}
+const displayRows = sortedRows.slice(page * maxRows, (page + 1) * maxRows);
 
-- Uses existing `Button` from `@/components/ui/button`
-- Uses existing `ChevronLeft` / `ChevronRight` icons from `lucide-react`
+// Header becomes clickable with indicator
+<button onClick={() => handleSort(i)}>
+  {col} {sortCol === i ? (sortAsc ? "▲" : "▼") : ""}
+</button>
+```
+
+### Font optimization
+
+```text
+// Before (3 requests, Space Mono unused):
+@import url("...Space+Grotesk...");
+@import url("...Space+Mono...");     // DELETE
+@import url("...JetBrains+Mono...");
+
+// After (1 request):
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@300;400;500;600;700&display=swap");
+```
+
+### Files modified
+
+- `src/components/shared/DataTable.tsx` -- sorting
+- `src/index.css` -- font imports
+- `src/pages/CsvToJsonPage.tsx` -- auto-convert, hide options, move cross-links
+- `src/pages/JsonToCsvPage.tsx` -- auto-convert
+- `src/pages/CsvToParquetPage.tsx` -- auto-convert
+- `src/pages/ParquetToCsvPage.tsx` -- auto-convert
+- `src/pages/JsonToParquetPage.tsx` -- auto-convert
+- `src/pages/ParquetToJsonPage.tsx` -- auto-convert
+- New: `src/components/shared/ErrorAlert.tsx`
+- Various pages -- use ErrorAlert
 
