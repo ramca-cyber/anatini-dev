@@ -30,7 +30,12 @@ import CsvInspectorPage from "./pages/CsvInspectorPage";
 import JsonInspectorPage from "./pages/JsonInspectorPage";
 import ParquetInspectorPage from "./pages/ParquetInspectorPage";
 import NotFound from "./pages/NotFound";
-
+import BlogIndex from "./pages/blog/BlogIndex";
+import HowToConvertCsvToParquet from "./pages/blog/HowToConvertCsvToParquet";
+import HowToQueryCsvWithSql from "./pages/blog/HowToQueryCsvWithSql";
+import OfflineDataQualityProfiler from "./pages/blog/OfflineDataQualityProfiler";
+import JsonVsCsvVsParquet from "./pages/blog/JsonVsCsvVsParquet";
+import HowToGenerateSqlFromCsv from "./pages/blog/HowToGenerateSqlFromCsv";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -85,6 +90,14 @@ const App = () => (
                 <Route path="/schema" element={<Navigate to="/schema-generator" replace />} />
 
                 <Route path="/about" element={<About />} />
+
+                {/* Blog */}
+                <Route path="/blog" element={<BlogIndex />} />
+                <Route path="/blog/how-to-convert-csv-to-parquet" element={<HowToConvertCsvToParquet />} />
+                <Route path="/blog/how-to-query-csv-with-sql" element={<HowToQueryCsvWithSql />} />
+                <Route path="/blog/offline-data-quality-profiler" element={<OfflineDataQualityProfiler />} />
+                <Route path="/blog/json-vs-csv-vs-parquet" element={<JsonVsCsvVsParquet />} />
+                <Route path="/blog/how-to-generate-sql-from-csv" element={<HowToGenerateSqlFromCsv />} />
               </Route>
               <Route element={<Layout />}>
                 <Route path="*" element={<NotFound />} />
