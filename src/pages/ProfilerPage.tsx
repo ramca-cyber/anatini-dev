@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { ErrorAlert } from "@/components/shared/ErrorAlert";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { BarChart3, AlertTriangle, AlertCircle, Info, FlaskConical, Download, FileText, FileJson, FileSpreadsheet, ClipboardCopy, ExternalLink } from "lucide-react";
+import { DuckDBGate } from "@/components/shared/DuckDBGate";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { UrlInput } from "@/components/shared/UrlInput";
@@ -518,7 +520,8 @@ ${findings.length === 0 ? "<p>No findings — data looks clean!</p>" : findings.
   return (
     <ToolPage icon={BarChart3} title="Data Quality Profiler" description="Profile datasets for nulls, duplicates, outliers and quality issues."
       pageTitle="Data Profiler — Analyze CSV Quality Online | Anatini.dev" metaDescription={getToolMetaDescription("data-profiler")} seoContent={getToolSeo("data-profiler")}>
-      <div className="space-y-6">
+      <DuckDBGate>
+      <div className="relative space-y-6">
         {!file && (
           <div className="space-y-4">
             <ToggleButton
@@ -541,7 +544,7 @@ ${findings.length === 0 ? "<p>No findings — data looks clean!</p>" : findings.
           </div>
         )}
         {loading && <LoadingState message="Profiling dataset..." />}
-        {error && <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
+        {error && <ErrorAlert message={error} />}
 
         {file && overview && (
           <>
@@ -685,6 +688,7 @@ ${findings.length === 0 ? "<p>No findings — data looks clean!</p>" : findings.
           </>
         )}
       </div>
+      </DuckDBGate>
     </ToolPage>
   );
 }

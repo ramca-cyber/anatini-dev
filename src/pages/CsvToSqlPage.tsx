@@ -241,7 +241,7 @@ export default function CsvToSqlPage() {
   return (
     <ToolPage icon={Database} title="CSV to SQL" description="Generate CREATE TABLE and INSERT statements from CSV data." metaDescription={getToolMetaDescription("csv-to-sql")} seoContent={getToolSeo("csv-to-sql")}>
       <DuckDBGate>
-        <div className="space-y-4">
+        <div className="relative space-y-4">
           {!file && (
             <div className="space-y-4">
               <ToggleButton

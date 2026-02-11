@@ -129,7 +129,7 @@ export default function ParquetToJsonPage() {
   return (
     <ToolPage icon={Braces} title="Parquet to JSON" description="Export Parquet files to JSON or NDJSON format." pageTitle="Parquet to JSON — Free, Offline | Anatini.dev" metaDescription={getToolMetaDescription("parquet-to-json")} seoContent={getToolSeo("parquet-to-json")}>
       <DuckDBGate>
-      <div className="space-y-4">
+      <div className="relative space-y-4">
         {!file && (
           <div className="space-y-4">
             <ToggleButton

@@ -295,7 +295,7 @@ export default function CsvInspectorPage() {
   return (
     <ToolPage icon={Search} title="CSV Inspector" description="Analyze CSV file encoding, structure, and data quality." metaDescription={getToolMetaDescription("csv-inspector")} seoContent={getToolSeo("csv-inspector")}>
       <DuckDBGate>
-        <div className="space-y-6">
+        <div className="relative space-y-6">
           {!file && !loading && (
             <div className="space-y-4">
               <ToggleButton

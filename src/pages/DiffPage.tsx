@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { ErrorAlert } from "@/components/shared/ErrorAlert";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { GitCompare, Download } from "lucide-react";
 import { useFileStore } from "@/contexts/FileStoreContext";
+import { DuckDBGate } from "@/components/shared/DuckDBGate";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { UrlInput } from "@/components/shared/UrlInput";
@@ -234,7 +236,8 @@ export default function DiffPage() {
   return (
     <ToolPage icon={GitCompare} title="Dataset Diff" description="Compare two dataset versions to see added, removed and modified rows."
       pageTitle="Dataset Diff — Compare CSV Files Online | Anatini.dev" metaDescription={getToolMetaDescription("diff")} seoContent={getToolSeo("diff")}>
-      <div className="space-y-6">
+      <DuckDBGate>
+      <div className="relative space-y-6">
         <div className="grid gap-4 md:grid-cols-2">
           <div>
             <p className="mb-2 text-sm font-medium text-muted-foreground">Before</p>
@@ -323,7 +326,7 @@ export default function DiffPage() {
         )}
 
         {loading && <LoadingState message="Comparing datasets..." />}
-        {error && <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
+        {error && <ErrorAlert message={error} />}
 
         {summary && (
           <>
@@ -379,6 +382,7 @@ export default function DiffPage() {
 
         {beforeFile && <CrossToolLinks format={detectFormat(beforeFile.name)} fileId={beforeFileId ?? undefined} excludeRoute="/dataset-diff" />}
       </div>
+      </DuckDBGate>
     </ToolPage>
   );
 }

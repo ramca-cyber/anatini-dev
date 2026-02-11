@@ -170,7 +170,7 @@ export default function SqlPage() {
   return (
     <ToolPage icon={Terminal} title="SQL Playground" description="Run SQL queries against local files using DuckDB."
       pageTitle="SQL Playground — Query Files Offline | Anatini.dev" metaDescription={getToolMetaDescription("sql-playground")} seoContent={getToolSeo("sql-playground")}>
-      <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
+      <div className="relative grid gap-6 lg:grid-cols-[280px_1fr]">
         {/* Sidebar */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">

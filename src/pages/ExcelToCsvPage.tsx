@@ -127,7 +127,7 @@ export default function ExcelToCsvPage() {
 
   return (
     <ToolPage icon={FileText} title="Excel to CSV" description="Convert Excel (XLSX, XLS) files to CSV with multi-sheet support." metaDescription={getToolMetaDescription("excel-to-csv")} seoContent={getToolSeo("excel-to-csv")}>
-      <div className="space-y-4">
+      <div className="relative space-y-4">
         {!file && (
           <div className="space-y-4">
             <ToggleButton
