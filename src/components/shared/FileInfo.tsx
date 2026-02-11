@@ -26,9 +26,11 @@ export function FileInfo({ name, size, rows, columns, extras }: FileInfoProps) {
 
 export function LoadingState({ message = "Processing..." }: { message?: string }) {
   return (
-    <div className="flex items-center justify-center gap-3 rounded-lg border border-border bg-muted/20 p-8">
-      <Loader2 className="h-5 w-5 animate-spin text-primary" />
-      <span className="text-sm text-muted-foreground">{message}</span>
+    <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-[1px]">
+      <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/80 px-6 py-4">
+        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+        <span className="text-sm text-muted-foreground">{message}</span>
+      </div>
     </div>
   );
 }

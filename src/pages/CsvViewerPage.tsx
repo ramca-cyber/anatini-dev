@@ -137,7 +137,7 @@ export default function CsvViewerPage() {
   return (
     <ToolPage icon={Eye} title="CSV Viewer" description="View, search, filter, and sort CSV data with column statistics." metaDescription={getToolMetaDescription("csv-viewer")} seoContent={getToolSeo("csv-viewer")}>
       <DuckDBGate>
-      <div className="space-y-4">
+      <div className="relative space-y-4">
         {!file && (
           <div className="space-y-4">
             <ToggleButton
@@ -199,7 +199,6 @@ export default function CsvViewerPage() {
               </div>
             )}
 
-            <CrossToolLinks format="csv" fileId={storedFileId ?? undefined} excludeRoute="/csv-viewer" />
           </div>
         )}
 
@@ -251,6 +250,8 @@ export default function CsvViewerPage() {
                 </Button>
               </div>
             )}
+
+            <CrossToolLinks format="csv" fileId={storedFileId ?? undefined} excludeRoute="/csv-viewer" />
           </>
         )}
       </div>
