@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
 
 const linksByFormat: Record<string, { label: string; route: string }[]> = {
   csv: [
@@ -46,32 +45,20 @@ export function CrossToolLinks({ format, fileId, excludeRoute, heading, inline }
   const links = excludeRoute ? allLinks.filter((l) => l.route !== excludeRoute) : allLinks;
   if (links.length === 0) return null;
 
-  const content = (
-    <>
-      <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-        {heading ?? "Work with this file"}
-      </h3>
-      <div className="flex flex-wrap gap-2">
-        {links.map((link) => (
-          <Link
-            key={link.route}
-            to={fileId ? `${link.route}?fileId=${fileId}` : link.route}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-          >
-            {link.label} <ArrowRight className="h-3 w-3" />
-          </Link>
-        ))}
-      </div>
-    </>
-  );
-
-  if (inline) {
-    return <div className="space-y-2">{content}</div>;
-  }
-
   return (
-    <div className="border border-border p-4 space-y-3">
-      {content}
-    </div>
+    <p className="text-xs text-muted-foreground text-center">
+      Continue:{" "}
+      {links.map((link, i) => (
+        <span key={link.route}>
+          {i > 0 && " · "}
+          <Link
+            to={fileId ? `${link.route}?fileId=${fileId}` : link.route}
+            className="text-foreground hover:text-primary underline underline-offset-2 transition-colors"
+          >
+            {link.label}
+          </Link>
+        </span>
+      ))}
+    </p>
   );
 }

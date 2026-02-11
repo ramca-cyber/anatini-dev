@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ErrorAlert } from "@/components/shared/ErrorAlert";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
-import { FileText, Upload, Download } from "lucide-react";
+import { FileText, Upload, Download, ChevronDown, ChevronUp } from "lucide-react";
 import { useFileStore } from "@/contexts/FileStoreContext";
 import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
 import { getSampleCSV } from "@/lib/sample-data";
@@ -13,6 +13,7 @@ import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { downloadBlob, formatBytes, warnLargeFile } from "@/lib/duckdb-helpers";
 
 export default function CsvToExcelPage() {
@@ -26,6 +27,7 @@ export default function CsvToExcelPage() {
   const [xlsxMod, setXlsxMod] = useState<any>(null);
   const [csvFiles, setCsvFiles] = useState<File[]>([]);
   const [csvSheetNames, setCsvSheetNames] = useState<string[]>([]);
+  const [showDataPreview, setShowDataPreview] = useState(true);
 
   async function loadXlsx() {
     if (xlsxMod) return xlsxMod;
@@ -126,16 +128,10 @@ export default function CsvToExcelPage() {
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <FileInfo name={file.name} size={formatBytes(file.size)} extras={[{ label: "Sheets", value: csvFiles.length }]} />
-              <div className="flex items-center gap-2">
-                <Button onClick={handleDownload}>
-                  <Download className="h-4 w-4 mr-1" /> Download Excel
-                </Button>
-                <Button variant="outline" onClick={resetAll}>New file</Button>
-              </div>
+              <Button variant="outline" onClick={resetAll}>New file</Button>
             </div>
 
-            {/* Multi-file sheet naming */}
-            <div className="border border-border p-3 space-y-2">
+            <div className="border border-border bg-muted/30 px-4 py-3 space-y-2">
               <div className="text-xs font-bold text-muted-foreground">Sheets (one per CSV file)</div>
               {csvFiles.map((f, i) => (
                 <div key={i} className="flex items-center gap-2 text-xs">
@@ -166,17 +162,29 @@ export default function CsvToExcelPage() {
                 <Upload className="h-3 w-3 mr-1" /> Add more CSVs
               </Button>
             </div>
+
+            <Button onClick={handleDownload} className="w-full" size="lg">
+              <Download className="h-5 w-5 mr-2" /> Download Excel
+            </Button>
+
+            {preview && (
+              <Collapsible open={showDataPreview} onOpenChange={setShowDataPreview}>
+                <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  {showDataPreview ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                  <h3 className="text-xs font-bold uppercase tracking-widest">Data Preview</h3>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-3">
+                  <DataTable columns={preview.columns} rows={preview.rows} className="max-h-[500px]" maxRows={200} />
+                </CollapsibleContent>
+              </Collapsible>
+            )}
+
+            <CrossToolLinks format="csv" fileId={storedFileId ?? undefined} excludeRoute="/csv-to-excel" />
           </div>
         )}
 
         {loading && <LoadingState message="Processing file..." />}
         {error && <ErrorAlert message={error} />}
-
-        {preview && (
-          <DataTable columns={preview.columns} rows={preview.rows} className="max-h-[500px]" maxRows={200} />
-        )}
-
-        {file && <CrossToolLinks format="csv" fileId={storedFileId ?? undefined} excludeRoute="/csv-to-excel" />}
       </div>
     </ToolPage>
   );
