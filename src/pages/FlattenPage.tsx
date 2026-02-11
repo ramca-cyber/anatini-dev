@@ -6,6 +6,7 @@ import { DropZone } from "@/components/shared/DropZone";
 import { DataTable } from "@/components/shared/DataTable";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { PasteInput } from "@/components/shared/PasteInput";
+import { UrlInput } from "@/components/shared/UrlInput";
 import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
 import { InspectLink } from "@/components/shared/InspectLink";
 import { ToggleButton } from "@/components/shared/ToggleButton";
@@ -126,7 +127,7 @@ export default function FlattenPage() {
   const [naming, setNaming] = useState<"dot" | "underscore">("underscore");
   const [flattened, setFlattened] = useState<{ columns: string[]; rows: any[][] } | null>(null);
   const [showSideBySide, setShowSideBySide] = useState(true);
-  const [inputMode, setInputMode] = useState<"file" | "paste">("file");
+  const [inputMode, setInputMode] = useState<"file" | "paste" | "url">("file");
   const [maxDepth, setMaxDepth] = useState<number>(Infinity);
   const [arrayHandling, setArrayHandling] = useState<"index" | "bracket" | "stringify">("index");
   const [preserveNulls, setPreserveNulls] = useState(true);
@@ -215,7 +216,7 @@ export default function FlattenPage() {
         {!file && (
           <div className="space-y-4">
             <ToggleButton
-              options={[{ label: "Upload File", value: "file" }, { label: "Paste Data", value: "paste" }]}
+              options={[{ label: "Upload File", value: "file" }, { label: "Paste Data", value: "paste" }, { label: "From URL", value: "url" }]}
               value={inputMode}
               onChange={setInputMode}
             />
@@ -227,7 +228,7 @@ export default function FlattenPage() {
                 label="Drop a JSON or JSONL file"
                 sampleAction={{ label: "⚗ Try with sample data", onClick: () => handleFile(getSampleJSON()) }}
               />
-            ) : (
+            ) : inputMode === "paste" ? (
               <PasteInput
                 onSubmit={handlePaste}
                 placeholder='Paste JSON here... e.g. {"name": "Alice", "address": {"city": "Portland"}}'
@@ -235,6 +236,8 @@ export default function FlattenPage() {
                 accept={[".json", ".jsonl"]}
                 onFile={handleFile}
               />
+            ) : (
+              <UrlInput onFile={handleFile} accept={[".json", ".jsonl"]} placeholder="https://example.com/data.json" label="Load JSON from URL" />
             )}
           </div>
         )}

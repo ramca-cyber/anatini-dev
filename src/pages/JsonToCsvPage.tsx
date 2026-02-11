@@ -7,6 +7,7 @@ import { DataTable } from "@/components/shared/DataTable";
 import { RawPreview } from "@/components/shared/RawPreview";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { PasteInput } from "@/components/shared/PasteInput";
+import { UrlInput } from "@/components/shared/UrlInput";
 import { DuckDBGate } from "@/components/shared/DuckDBGate";
 import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
 import { InspectLink } from "@/components/shared/InspectLink";
@@ -36,7 +37,7 @@ export default function JsonToCsvPage() {
   const [rawInput, setRawInput] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [inputView, setInputView] = useState<"table" | "raw-input">("table");
-  const [inputMode, setInputMode] = useState<"file" | "paste">("file");
+  const [inputMode, setInputMode] = useState<"file" | "paste" | "url">("file");
   const [delimiter, setDelimiter] = useState(",");
   const [includeHeader, setIncludeHeader] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -136,7 +137,7 @@ export default function JsonToCsvPage() {
           {!file && (
             <div className="space-y-4">
               <ToggleButton
-                options={[{ label: "Upload File", value: "file" }, { label: "Paste Data", value: "paste" }]}
+                options={[{ label: "Upload File", value: "file" }, { label: "Paste Data", value: "paste" }, { label: "From URL", value: "url" }]}
                 value={inputMode}
                 onChange={setInputMode}
               />
@@ -148,7 +149,7 @@ export default function JsonToCsvPage() {
                   label="Drop a JSON or JSONL file"
                   sampleAction={{ label: "⚗ Try with sample data", onClick: handleSampleJson }}
                 />
-              ) : (
+              ) : inputMode === "paste" ? (
                 <PasteInput
                   onSubmit={handlePaste}
                   placeholder='Paste JSON here... e.g. [{"name": "Alice"}]'
@@ -156,6 +157,8 @@ export default function JsonToCsvPage() {
                   accept={[".json", ".jsonl"]}
                   onFile={handleFile}
                 />
+              ) : (
+                <UrlInput onFile={handleFile} accept={[".json", ".jsonl"]} placeholder="https://example.com/data.json" label="Load JSON from URL" />
               )}
             </div>
           )}

@@ -6,6 +6,8 @@ import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { PasteInput } from "@/components/shared/PasteInput";
+import { UrlInput } from "@/components/shared/UrlInput";
+import { ToggleButton } from "@/components/shared/ToggleButton";
 import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
 import { Button } from "@/components/ui/button";
 import { useFileStore } from "@/contexts/FileStoreContext";
@@ -211,7 +213,7 @@ export default function JsonInspectorPage() {
   const [keys, setKeys] = useState<KeyInfo[]>([]);
   const [warnings, setWarnings] = useState<Warning[]>([]);
   const [rawParsed, setRawParsed] = useState<any>(null);
-  const [inputMode, setInputMode] = useState<"file" | "paste">("file");
+  const [inputMode, setInputMode] = useState<"file" | "paste" | "url">("file");
   const autoLoaded = useRef(false);
 
   useEffect(() => {
@@ -274,13 +276,11 @@ export default function JsonInspectorPage() {
       <div className="space-y-6">
         {!file && !loading && (
           <div className="space-y-4">
-            <div className="flex gap-2">
-              {(["file", "paste"] as const).map((m) => (
-                <button key={m} onClick={() => setInputMode(m)} className={`px-3 py-1 text-xs font-bold border border-border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${inputMode === m ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-secondary"}`}>
-                  {m === "file" ? "Upload File" : "Paste Data"}
-                </button>
-              ))}
-            </div>
+            <ToggleButton
+              options={[{ label: "Upload File", value: "file" }, { label: "Paste Data", value: "paste" }, { label: "From URL", value: "url" }]}
+              value={inputMode}
+              onChange={setInputMode}
+            />
             {inputMode === "file" ? (
               <div className="space-y-3">
                 <DropZone accept={[".json", ".jsonl", ".ndjson"]} onFile={handleFile} label="Drop a JSON or JSONL file" />
@@ -290,8 +290,10 @@ export default function JsonInspectorPage() {
                   </Button>
                 </div>
               </div>
-            ) : (
+            ) : inputMode === "paste" ? (
               <PasteInput onSubmit={handlePaste} placeholder='Paste JSON here...' label="Paste JSON data" accept={[".json"]} onFile={handleFile} />
+            ) : (
+              <UrlInput onFile={handleFile} accept={[".json", ".jsonl"]} placeholder="https://example.com/data.json" label="Load JSON from URL" />
             )}
           </div>
         )}
