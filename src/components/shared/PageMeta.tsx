@@ -21,7 +21,7 @@ export function PageMeta({ title, description }: PageMetaProps) {
     // Canonical
     let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
     const prevCanonical = canonical?.href;
-    if (canonical) canonical.href = `https://anatini.dev${pathname}`;
+    if (canonical) canonical.href = `https://swiftdatatools.com${pathname}`;
 
     // OG tags
     const ogTitle = document.querySelector('meta[property="og:title"]') as HTMLMetaElement | null;
@@ -34,7 +34,7 @@ export function PageMeta({ title, description }: PageMetaProps) {
 
     const ogUrl = document.querySelector('meta[property="og:url"]') as HTMLMetaElement | null;
     const prevOgUrl = ogUrl?.content;
-    if (ogUrl) ogUrl.content = `https://anatini.dev${pathname}`;
+    if (ogUrl) ogUrl.content = `https://swiftdatatools.com${pathname}`;
 
     // Twitter tags
     const twTitle = document.querySelector('meta[name="twitter:title"]') as HTMLMetaElement | null;

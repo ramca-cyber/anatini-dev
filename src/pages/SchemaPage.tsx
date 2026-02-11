@@ -173,7 +173,7 @@ export default function SchemaPage() {
 
   return (
     <ToolPage icon={Database} title="Schema Generator" description="Infer schemas and generate DDL for Postgres, MySQL, BigQuery and more."
-      pageTitle="Schema Generator — Infer DDL Online | Anatini.dev" metaDescription={getToolMetaDescription("schema-generator")} seoContent={getToolSeo("schema-generator")}>
+      pageTitle="Schema Generator — Infer DDL Online | SwiftDataTools.com" metaDescription={getToolMetaDescription("schema-generator")} seoContent={getToolSeo("schema-generator")}>
       <div className="space-y-6">
         {!file && (
           <div className="space-y-4">
