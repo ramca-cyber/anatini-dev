@@ -1,181 +1,108 @@
 
 
-# End-to-End Website Audit
+# Code Review: Assessment & Action Plan
 
-## A. Dead Code / Orphaned Pages
+## Review Summary
 
-### 1. ExcelCsvPage.tsx is still in the codebase
-The old bidirectional `ExcelCsvPage.tsx` (at `/excel-csv-converter`) was replaced by two separate pages (`ExcelToCsvPage.tsx` and `CsvToExcelPage.tsx`). The route now redirects, but the 321-line file is still in the repo as dead code.
+The uploaded code review rates the project **8/10** and identifies bugs, missing features, and deviations. Many items from your earlier internal audit (`.lovable/plan.md`) have already been fixed. Here's what remains.
 
-**Fix:** Delete `src/pages/ExcelCsvPage.tsx` and remove its import from `App.tsx`.
+## Already Fixed (No Action Needed)
 
-### 2. ConvertPage.tsx is orphaned
-`ConvertPage.tsx` is a legacy bidirectional CSV/Parquet converter (276 lines). The route `/convert` redirects to `/csv-to-parquet`, so this page is never rendered. It also uses the old oversized conversion stats (`border-2 border-foreground`, `text-lg font-bold`) that were already fixed everywhere else.
+| Review Item | Status |
+|---|---|
+| Dead code (ExcelCsvPage, ConvertPage) | Deleted |
+| DataTable pagination (BUG 2) | CsvViewerPage has PAGE_SIZE=200 + pagination |
+| DuckDBGate on CsvViewerPage | Already wrapped |
+| Query history in SQL Playground | Already implemented |
+| Column sorting in CsvViewerPage | Already implemented |
 
-**Fix:** Delete `src/pages/ConvertPage.tsx` and remove its import from `App.tsx`.
+## Action Items (Grouped by Priority)
 
----
+### Phase 1: Security & Stability (Must Fix)
 
-## B. Inconsistent UI Patterns (Post-Optimization Gaps)
+**1. Sanitize file names in SQL queries (BUG 3)**
+- In `duckdb-helpers.ts` `registerFile()` (line 42-46): escape single quotes in `file.name` before interpolation
+- In `CsvToJsonPage.tsx` (line 68): same pattern — uses `f.name` directly in SQL
+- Search all pages for `f.name` in SQL strings and apply `file.name.replace(/'/g, "''")`
+- Affects: `duckdb-helpers.ts`, `CsvToJsonPage.tsx`, and any other page with manual `registerFileHandle` + SQL
 
-### 3. ConversionStats component is unused
-`src/components/shared/ConversionStats.tsx` was created as a shared component but is imported by zero pages -- all converters use inline stats bars instead. Dead code.
+**2. Guard Parquet export in SQL Playground (BUG 4)**
+- In `SqlPage.tsx` (lines 117-132): wrap the `CREATE TABLE __export_tmp` in a try/catch and show a user-friendly error if the SQL isn't a SELECT
+- Simple fix: catch the error and show "Parquet export only works with SELECT queries"
 
-**Fix:** Delete `src/components/shared/ConversionStats.tsx`.
+**3. Large file memory warning (BUG 6)**
+- Add a warning toast when loading files > 50MB that says "Large files may cause browser slowdowns"
+- Add this check in pages that do `SELECT * FROM table` to materialize all rows (CsvToJsonPage, JsonToCsvPage, etc.)
 
-### 4. Several pages still use old-style toggle buttons instead of ToggleButton component
-The following pages use raw inline `<button>` elements with `border-2` styling instead of the shared `ToggleButton` component:
-- `CsvInspectorPage.tsx` (line 300: file/paste toggle)
-- `FlattenPage.tsx` (lines 217-222: file/paste; lines 279-284: naming toggle; all use `border-2`)
-- `CsvToSqlPage.tsx` (lines 236-241: file/paste; lines 344-349: input view toggle; all `border-2`)
-- `SchemaPage.tsx` (lines 199-205: dialect toggle uses `border-2`)
-- `DiffPage.tsx` (lines 338-349: row filter uses rounded pills instead of ToggleButton)
-- `ExcelCsvPage.tsx` (legacy, but its replacement `ExcelToCsvPage.tsx` line 162 also uses raw buttons)
+### Phase 2: UX Improvements (Should Fix)
 
-These pages are inconsistent with the `ToggleButton` shared component (which uses `border` not `border-2`).
+**4. Improve URL input CORS UX (BUG 1)**
+- Keep the URL input (it's already built and useful for GitHub raw URLs, public datasets)
+- Add example URLs to `UrlInput.tsx` that are known to work (GitHub raw, data.gov)
+- Make the CORS warning more prominent — move it above the input field
 
-**Fix:** Replace all inline toggle button patterns with the `ToggleButton` component. This standardizes styling and guarantees focus-visible states.
+**5. Code splitting with React.lazy (Build Size)**
+- Convert all 20 page imports in `App.tsx` from static to `React.lazy()` with `Suspense`
+- Lazy-load `xlsx` only on Excel pages
+- This will reduce initial bundle from ~480KB gzipped to ~200KB
 
-### 5. Sample data button inconsistency across pages
-After the DropZone optimization, some pages integrated the sample button into DropZone's `sampleAction` prop, but several still use a standalone `Button variant="ghost"` outside the DropZone:
-- `CsvViewerPage.tsx` (lines 137-142)
-- `ParquetViewerPage.tsx` (lines 139-143)
-- `CsvInspectorPage.tsx` (lines 308-311)
-- `SchemaPage.tsx` (lines 179-182)
-- `SqlPage.tsx` (lines 177-181)
-- `DiffPage.tsx` (lines 261-265)
-- `FlattenPage.tsx` (lines 228-232)
-- `CsvToSqlPage.tsx` (lines 246-249)
+**6. Refactor duplicate DuckDB patterns (BUG 5)**
+- Pages like `CsvToJsonPage` manually call `db.registerFileHandle` + `conn.query` instead of using the `registerFile` helper from `duckdb-helpers.ts`
+- Refactor these pages to use the shared helper, which also centralizes the filename sanitization fix from Phase 1
 
-**Fix:** Move these to use DropZone's `sampleAction` prop for consistency.
+### Phase 3: Nice to Have
 
-### 6. CsvViewerPage.tsx has no DuckDBGate wrapper
-All DuckDB-dependent pages use `<DuckDBGate>` to show a loading spinner while DuckDB initializes, except `CsvViewerPage.tsx`. If a user loads the page before DuckDB is ready, clicking "Try with sample data" silently fails because `db` is null.
+**7. Alternating row colors in DataTable**
+- Add `even:bg-muted/20` to table row classes for better readability
 
-**Fix:** Wrap CsvViewerPage content in `<DuckDBGate>`.
+**8. Null display enhancement**
+- Keep the `∅` symbol (cleaner than red italic NULL) but make it slightly more visible with `text-muted-foreground/60` instead of `/40`
 
-### 7. ParquetToJsonPage.tsx is missing DuckDBGate wrapper
-Same issue. The page uses `useDuckDB()` but has no `<DuckDBGate>` wrapper. The DropZone is rendered even when DuckDB hasn't loaded yet.
+**9. ErrorBoundary enhancement for DuckDB crashes**
+- The existing `ErrorBoundary` redirects home. Add a "Retry" button that resets component state instead of navigating away
 
-**Fix:** Add `<DuckDBGate>` wrapper.
+## Technical Details
 
----
+### File name sanitization (Phase 1, Item 1)
+```text
+// Current (vulnerable):
+conn.query(`...FROM read_csv_auto('${f.name}')`)
 
-## C. Border Inconsistencies
+// Fixed:
+const safeName = f.name.replace(/'/g, "''");
+conn.query(`...FROM read_csv_auto('${safeName}')`)
+```
+Apply in: `duckdb-helpers.ts` (registerFile), `CsvToJsonPage.tsx`, and grep for all other `f.name` in SQL.
 
-### 8. Mixed border weights across tool pages
-The UI optimization reduced secondary containers to `border` (1px), but several pages still use `border-2`:
-- `CsvToSqlPage.tsx`: Options panel (line 274), schema editor (line 315), dialect buttons (line 281)
-- `FlattenPage.tsx`: Toggle buttons (line 219, 281, 289), flatten stats (line 346)
-- `SchemaPage.tsx`: Dialect buttons (line 202), varchar sizing select (line 303)
-- `CsvViewerPage.tsx`: Column stats box (line 176 -- uses `border-2 border-foreground`, the old heavy style)
-- `ConvertPage.tsx`: Entire options + stats (legacy, to be deleted)
-- `ExcelCsvPage.tsx`: Direction info + sheet controls (legacy, to be deleted)
+### Code splitting (Phase 2, Item 5)
+```text
+// Current:
+import CsvToParquetPage from "./pages/CsvToParquetPage";
 
-**Fix:** Normalize to `border` (1px) for secondary containers and `border-2` only for primary data sections (tables, output areas).
+// After:
+const CsvToParquetPage = lazy(() => import("./pages/CsvToParquetPage"));
 
-### 9. CsvViewerPage column stats uses old heavy styling
-Line 176: `border-2 border-foreground bg-card p-3` -- this is the same heavy style that was reduced in converter stats. It should be `border border-border bg-muted/30` for consistency.
+// Wrap routes in:
+<Suspense fallback={<LoadingSpinner />}>
+  <Routes>...</Routes>
+</Suspense>
+```
 
-**Fix:** Update column stats container to match the compact stats pattern.
+### Files to modify
+- `src/lib/duckdb-helpers.ts` — sanitize filenames
+- `src/pages/CsvToJsonPage.tsx` — use shared helper, sanitize
+- `src/pages/SqlPage.tsx` — guard Parquet export
+- `src/components/shared/UrlInput.tsx` — improve CORS UX
+- `src/components/shared/DataTable.tsx` — alternating rows, null visibility
+- `src/App.tsx` — React.lazy() all page imports
+- `src/components/shared/ErrorBoundary.tsx` — add retry button
+- Various converter pages — add large file warning
 
----
+## Items Intentionally Skipped
 
-## D. Missing Inspector Section Accents
-
-### 10. CsvInspectorPage "Column Overview" header missing left accent
-The audit plan added `border-l-4 border-l-foreground` accents to inspector sections, but the "Column Overview" header (line 352) was missed. It still uses the plain style without the accent border.
-
-**Fix:** Add `border-l-4 border-l-foreground` to the Column Overview header.
-
----
-
-## E. Navigation Issues
-
-### 11. Dataset Diff is outside the main tool groups
-In the navbar (line 107), footer tool grid, and homepage Index, "Dataset Diff" is listed separately or appended outside the Analysis group. On the Navbar, it appears as a standalone item after the dropdown separator. In the footer, it's correctly inside "Analysis & SQL". On the Index homepage, it's inside the `analysis` array. But the Navbar has it dangling.
-
-**Fix:** Move "Dataset Diff" into the "Analysis & SQL" group in the Navbar's `toolGroups` array (it's already in the analysis array on other pages).
-
-### 12. DiffPage route is `/diff` but could be `/dataset-diff`
-All other tools use descriptive slugs (`/data-profiler`, `/json-flattener`, `/schema-generator`). `/diff` is terse and less SEO-friendly.
-
-**Fix:** This is a minor SEO consideration. Add a redirect from `/diff` to `/dataset-diff` and update all internal links. Low priority.
-
----
-
-## F. Functional Issues
-
-### 13. CsvToExcelPage has no sample data button
-Unlike all other tool pages, `CsvToExcelPage.tsx` has no sample data option (neither inline nor standalone). First-time users can't try the tool without having a CSV file ready.
-
-**Fix:** Add `sampleAction` to the DropZone using `getSampleCSV()`.
-
-### 14. ExcelToCsvPage sample data uses `generateSampleExcel()` but no DuckDBGate
-`ExcelToCsvPage.tsx` doesn't require DuckDB (it uses the `xlsx` library), so no gate is needed. However, the sample data works correctly. No issue here.
-
-### 15. CrossToolLinks missing `excludeRoute` on non-converter pages
-Viewer, inspector, and analysis pages show CrossToolLinks but don't pass `excludeRoute`. For example, `CsvViewerPage` shows a "View Data" link pointing to `/csv-viewer` -- linking to itself.
-
-**Fix:** Add `excludeRoute` to all non-converter pages that display CrossToolLinks.
-
----
-
-## G. SEO / Meta Issues
-
-### 16. About page has no PageMeta
-`About.tsx` doesn't use `<PageMeta>` component, so it falls back to whatever the previous page set. If a user navigates directly to `/about`, the document title and meta description will be stale defaults from `index.html`.
-
-**Fix:** Add `<PageMeta>` to About page.
-
-### 17. DiffPage not using descriptive route
-Already noted in item 12.
-
----
-
-## H. Mobile-Specific Issues (Observed at 390px)
-
-### 18. Homepage renders well on mobile
-The hero padding reduction to `py-12` is effective. Tool cards stack properly in single-column. Footer tool grid uses 2-column layout. No issues observed.
-
-### 19. Converter pages options bars are properly responsive
-The `grid grid-cols-2 gap-3 sm:flex` pattern is applied on updated converter pages. No issues on pages that were updated.
-
-### 20. Pages that weren't updated still have layout issues on mobile
-`CsvToSqlPage.tsx` and `FlattenPage.tsx` still have `flex-wrap` on options without the responsive grid pattern, causing tall stacks of controls on mobile.
-
-**Fix:** Apply the `grid grid-cols-2 gap-3 sm:flex sm:flex-wrap` pattern to these pages.
-
----
-
-## Summary & Priority
-
-| Priority | Item | Description |
-|----------|------|-------------|
-| High | #6, #7 | Missing DuckDBGate on CsvViewer + ParquetToJson |
-| High | #1, #2, #3 | Delete dead code (ExcelCsvPage, ConvertPage, ConversionStats) |
-| High | #15 | Self-links in CrossToolLinks on viewer/inspector/analysis pages |
-| Medium | #4 | Standardize all toggle buttons to ToggleButton component |
-| Medium | #5 | Move sample data buttons into DropZone sampleAction |
-| Medium | #8, #9 | Normalize border weights |
-| Medium | #11 | Move Dataset Diff into Navbar tool group |
-| Medium | #13 | Add sample data to CsvToExcelPage |
-| Low | #10 | Add accent to Column Overview inspector header |
-| Low | #16 | Add PageMeta to About page |
-| Low | #12 | Rename /diff to /dataset-diff |
-| Low | #20 | Mobile grid layout on CsvToSql + Flatten pages |
-
-## Implementation Order
-
-1. Delete dead files (ExcelCsvPage.tsx, ConvertPage.tsx, ConversionStats.tsx) and clean App.tsx imports
-2. Add DuckDBGate to CsvViewerPage and ParquetToJsonPage
-3. Add excludeRoute to CrossToolLinks on all non-converter pages
-4. Replace all inline toggle buttons with ToggleButton component
-5. Move standalone sample buttons into DropZone sampleAction
-6. Normalize border weights across remaining pages
-7. Move Dataset Diff into Navbar toolGroups
-8. Add sample data to CsvToExcelPage
-9. Add PageMeta to About page
-10. Add accent border to Column Overview inspector header
-11. Apply responsive grid to CsvToSqlPage and FlattenPage options
+- **Remove URL input entirely**: Keeping it — it works for CORS-friendly URLs and is already built
+- **Virtual scrolling**: CsvViewerPage already has pagination (PAGE_SIZE=200), which is sufficient
+- **Profiler quality score / PDF export / correlation**: Feature additions for a future iteration
+- **JSON tree view**: Feature addition for later
+- **PWA manifest**: Nice to have, not critical
 
