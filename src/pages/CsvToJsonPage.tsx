@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ErrorAlert } from "@/components/shared/ErrorAlert";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { FileJson, FlaskConical, ArrowRightLeft, Download, Copy, Check } from "lucide-react";
@@ -74,6 +74,12 @@ export default function CsvToJsonPage() {
   }
 
   useAutoLoadFile(handleFile, !!db);
+
+  useEffect(() => {
+    if (meta && file && !conversionResult) {
+      handleConvert();
+    }
+  }, [meta]);
 
   function handlePaste(text: string) {
     const blob = new Blob([text], { type: "text/csv" });

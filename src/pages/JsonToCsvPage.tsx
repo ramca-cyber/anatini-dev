@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ErrorAlert } from "@/components/shared/ErrorAlert";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { Table, FlaskConical, Copy, Check, ArrowRightLeft, Download } from "lucide-react";
@@ -76,6 +76,12 @@ export default function JsonToCsvPage() {
   }
 
   useAutoLoadFile(handleFile, !!db);
+
+  useEffect(() => {
+    if (meta && file && !conversionResult) {
+      handleConvert();
+    }
+  }, [meta]);
 
   async function handleConvert() {
     if (!db || !file || !meta) return;
