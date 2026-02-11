@@ -1,50 +1,152 @@
 
 
-# CSV to Parquet Page Layout Restructure
+# Standardize All Converter Pages to Match UI Philosophy
 
-## Summary
-Reorganize the page layout based on user feedback to improve information hierarchy: file info at top, options + convert together, output section promoted with prominent download, input preview demoted to collapsible secondary section.
+## Overview
+Apply the CsvToParquet layout pattern (already implemented) to all 8 remaining converter pages. The goal is consistent structure across every converter: file bar at top, options next to their action button, output promoted above input, download as the dominant element, and input preview demoted to a collapsible section.
 
-## New Layout Order
+## Reference Pattern (from CsvToParquetPage)
 
 ```text
-1. File info bar:  [employees.csv - 1.2 KB - 20 rows - 7 cols] [Inspect] [New file]
-2. Options + Convert row:  Compression: [Snappy|Zstd|GZIP|None]  Row Group: [Default v]  [Convert to Parquet]
-3. OUTPUT section (primary):
-   - Success stats bar (time, size, compression ratio, codec)
-   - Large download button (full-width or near-full, prominent)
-   - Collapsible data preview + raw toggle
-4. INPUT PREVIEW section (secondary, collapsible, open by default)
-   - [Table|Schema|Raw] toggle tabs
-   - Data table / schema / raw content
-5. CrossToolLinks
+1. FILE BAR:     [file info + Inspect]  ─────────────────  [New file]
+2. OPTIONS ROW:  [config controls]  ─────────  [Convert to X]
+3. OUTPUT:       border-2 container with:
+                 - CheckCircle2 + consolidated stats line
+                 - Full-width large Download button
+                 - Collapsible "Preview output data"
+4. INPUT:        Collapsible section (open by default)
+                 - Toggle tabs inside collapsible header
+5. CROSS LINKS:  At bottom
 ```
 
-## Key Changes
+## Changes Per Page
 
-1. **File info bar** -- Move "New file" button into the file info row (right side). Remove the convert button from here.
+### 1. CsvToJsonPage
+- Move Convert button from file bar into the options row (next to Output Format / Pretty Print / Indent controls)
+- Remove "Re-convert" label, always say "Convert to JSON"
+- Move OUTPUT section above INPUT section
+- Wrap output in `border-2` container with CheckCircle2 stats bar
+- Make Download button full-width `size="lg"` (currently `size="sm"`)
+- Wrap output preview (table/raw) in Collapsible "Preview output data"
+- Wrap INPUT section in Collapsible (open by default), add `showInputPreview` state
+- Add `showOutputPreview` state
 
-2. **Options + Convert row** -- Always visible (no collapsible chevron). Compression toggle and row group select shown inline on a single row. "Convert to Parquet" button sits at the far right of this row. Button label stays "Convert to Parquet" always (no "Re-convert" label change -- the action is the same regardless).
+### 2. JsonToCsvPage
+- Move Convert button from file bar into options row (next to Delimiter / Include Header)
+- Remove "Re-convert", always "Convert to CSV"
+- Move OUTPUT above INPUT
+- Wrap output in `border-2` with CheckCircle2 stats
+- Download button: full-width `size="lg"`
+- Wrap output preview in Collapsible
+- Wrap INPUT in Collapsible (open by default)
 
-3. **Output section (promoted)** -- Appears after conversion. Stats bar consolidated into a single line with a checkmark icon. Download button is large and visually dominant (full default size, not `size="sm"`). Output preview (table + raw toggle) is below the download, shown as a collapsible "Preview output data" section.
+### 3. ParquetToCsvPage
+- Move Convert button from file bar into options row (next to Delimiter / Header / Null repr)
+- Remove "Re-convert", always "Convert to CSV"
+- Move OUTPUT above INPUT
+- Wrap output in `border-2` with CheckCircle2 stats
+- Download button: full-width `size="lg"`
+- Wrap output preview in Collapsible
+- Wrap INPUT in Collapsible (open by default) -- currently it's a bare DataTable with a note
 
-4. **Input preview (demoted)** -- Wrapped in a Collapsible component, open by default. Header reads "INPUT PREVIEW" with the table/schema/raw toggles. Users can collapse it since they already know what they uploaded.
+### 4. JsonToParquetPage
+- Move Convert button from file bar into options row (next to Compression / Row Group Size)
+- Make options row single-line (currently stacked vertically), matching CsvToParquet layout
+- Remove "Re-convert", always "Convert to Parquet"
+- Move OUTPUT above INPUT
+- Wrap output in `border-2` with CheckCircle2 stats (merge the two stats bars into one)
+- Download button: full-width `size="lg"` (currently `size="sm"`)
+- Wrap output preview in Collapsible
+- Wrap INPUT in Collapsible (open by default)
 
-5. **Two redundant stats bars merged** -- Currently there are two stats bars in the output (conversion stats + parquet meta). These will be merged into one consolidated bar showing: time, output size, compression ratio, codec, and row groups.
+### 5. ParquetToJsonPage
+- Move Convert button from file bar into options row (next to Output Format / Pretty-print)
+- Make options always visible inline row (currently a bordered box with stacked layout)
+- Remove "Re-convert", always "Convert to JSON"
+- Move OUTPUT above INPUT
+- Wrap output in `border-2` with CheckCircle2 stats
+- Download button: full-width `size="lg"` (currently `size="sm"`)
+- Wrap output preview in Collapsible
+- Wrap INPUT in Collapsible (open by default) -- currently bare DataTable with note
+
+### 6. ExcelToCsvPage
+- Move Download button below the sheet selector as a large full-width button (currently in file bar as normal size)
+- File bar keeps only [FileInfo] and [New file]
+- No separate output section needed (conversion is instant/implicit), but the table/raw toggle and data should be wrapped in a clear output-like container
+- Keep sheet selector as the "options" area
+
+### 7. CsvToExcelPage
+- Move Download Excel button out of file bar, make it large full-width below the sheet naming section
+- File bar keeps only [FileInfo] and [New file]
+- Data preview should be in a collapsible section below
+
+### 8. CsvToSqlPage
+- Move Convert button from file bar into the options panel (at the end of the options row)
+- Remove "Re-convert", always "Convert to SQL"
+- Move OUTPUT above INPUT
+- Wrap output in `border-2` with CheckCircle2 stats
+- Download button: full-width `size="lg"` (currently `size="sm"`)
+- Wrap INPUT in Collapsible (open by default)
+- Schema Editor stays between options and output (it's a configuration tool, not input preview)
+
+### 9. CrossToolLinks Component
+- Change from bordered card to inline text links per philosophy: "Continue: Inspector . Flatten . SQL Playground"
+- Remove the border container, heading "Work with this file", and arrow icons
+- Render as a single line with centered dot separators
 
 ## Technical Details
 
-### File: `src/pages/CsvToParquetPage.tsx`
+### New imports needed on each page
+```typescript
+import { CheckCircle2, ChevronDown, ChevronUp } from "lucide-react";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+```
 
-- Remove the `showOptions` state and the collapsible chevron toggle -- options are always visible
-- Restructure the JSX into the four sections described above
-- Change the convert button label from the ternary `conversionResult ? "Re-convert" : "Convert to Parquet"` to just `"Convert to Parquet"`
-- Make the download button larger: remove `size="sm"`, use default size
-- Wrap the input preview section with Radix `Collapsible` (already installed), defaulting to open
-- Add a new `showInputPreview` state (default `true`) for the collapsible
-- Merge the two output stats bars (conversion stats + parquet meta) into one
-- Move `CrossToolLinks` outside the collapsible input section, keeping it at the bottom
+### New state variables per page
+```typescript
+const [showInputPreview, setShowInputPreview] = useState(true);
+const [showOutputPreview, setShowOutputPreview] = useState(false);
+```
 
-### No new dependencies or components needed
-All required UI primitives (`Collapsible`, `ToggleButton`, `Button`, `DataTable`, etc.) already exist.
+### Consistent output section pattern
+```tsx
+{conversionResult && (
+  <div className="space-y-3 border-2 border-border p-4">
+    <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Output</h3>
+    <div className="flex items-center gap-4 flex-wrap bg-muted/30 px-4 py-2 text-xs">
+      <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+      {/* stats */}
+    </div>
+    <Button onClick={handleDownload} className="w-full" size="lg">
+      <Download className="h-5 w-5 mr-2" /> Download {format}
+    </Button>
+    {/* Copy button for text outputs */}
+    <Collapsible open={showOutputPreview} onOpenChange={setShowOutputPreview}>
+      {/* preview toggle */}
+    </Collapsible>
+  </div>
+)}
+```
+
+### CrossToolLinks redesign
+```tsx
+// From bordered card with arrow icons to:
+<p className="text-xs text-muted-foreground text-center">
+  Continue: <Link>Inspector</Link> · <Link>Flatten</Link> · <Link>SQL Playground</Link>
+</p>
+```
+
+### Files modified
+- `src/pages/CsvToJsonPage.tsx`
+- `src/pages/JsonToCsvPage.tsx`
+- `src/pages/ParquetToCsvPage.tsx`
+- `src/pages/JsonToParquetPage.tsx`
+- `src/pages/ParquetToJsonPage.tsx`
+- `src/pages/ExcelToCsvPage.tsx`
+- `src/pages/CsvToExcelPage.tsx`
+- `src/pages/CsvToSqlPage.tsx`
+- `src/components/shared/CrossToolLinks.tsx`
+
+### No new dependencies needed
+All components (Collapsible, ToggleButton, Button, CheckCircle2) already exist in the project.
 
