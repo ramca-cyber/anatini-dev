@@ -258,6 +258,7 @@ export default function DiffPage() {
                 <FileInfo name={afterFile.name} size={formatBytes(afterFile.size)} rows={afterMeta?.rowCount} columns={afterMeta?.columns.length} />
               </div>
             )}
+          </div>
         </div>
 
         {neitherLoaded && (
