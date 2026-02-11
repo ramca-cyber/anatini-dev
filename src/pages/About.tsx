@@ -1,12 +1,25 @@
 import { Bird, Shield, Code, Cpu } from "lucide-react";
 import { PageMeta } from "@/components/shared/PageMeta";
 
+const orgJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Anatini.dev",
+  "url": "https://anatini.dev",
+  "description": "Free, offline browser-based data tools powered by DuckDB-WASM. No data ever leaves your machine.",
+  "logo": "https://anatini.dev/og-image.png",
+};
+
 export default function About() {
   return (
     <>
       <PageMeta
         title="About — Anatini.dev"
         description="Anatini.dev is a collection of free, offline browser-based data tools. No data ever leaves your machine — everything runs via WebAssembly."
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
       />
       <div className="container max-w-3xl py-16">
         <div className="flex items-center gap-3 mb-8">

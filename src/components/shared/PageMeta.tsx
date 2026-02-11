@@ -36,6 +36,15 @@ export function PageMeta({ title, description }: PageMetaProps) {
     const prevOgUrl = ogUrl?.content;
     if (ogUrl) ogUrl.content = `https://anatini.dev${pathname}`;
 
+    // Twitter tags
+    const twTitle = document.querySelector('meta[name="twitter:title"]') as HTMLMetaElement | null;
+    const prevTwTitle = twTitle?.content;
+    if (twTitle) twTitle.content = title;
+
+    const twDesc = document.querySelector('meta[name="twitter:description"]') as HTMLMetaElement | null;
+    const prevTwDesc = twDesc?.content;
+    if (twDesc) twDesc.content = description;
+
     return () => {
       document.title = prev;
       if (metaDesc && prevDesc) metaDesc.content = prevDesc;
@@ -43,6 +52,8 @@ export function PageMeta({ title, description }: PageMetaProps) {
       if (ogTitle && prevOgTitle) ogTitle.content = prevOgTitle;
       if (ogDesc && prevOgDesc) ogDesc.content = prevOgDesc;
       if (ogUrl && prevOgUrl) ogUrl.content = prevOgUrl;
+      if (twTitle && prevTwTitle) twTitle.content = prevTwTitle;
+      if (twDesc && prevTwDesc) twDesc.content = prevTwDesc;
     };
   }, [title, description, pathname]);
 
