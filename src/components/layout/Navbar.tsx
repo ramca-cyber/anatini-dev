@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Bird, Menu, X, Shield, ChevronDown } from "lucide-react";
+import { Menu, X, Shield, ChevronDown } from "lucide-react";
+import logoImg from "@/assets/logo.png";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
 import {
@@ -66,7 +67,7 @@ export function Navbar() {
       <div className="container flex h-14 items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 font-semibold text-foreground">
-          <Bird className="h-6 w-6 text-[#FFD43B]" />
+          <img src={logoImg} alt="SwiftDataTools logo" className="h-6 w-6" />
           <span className="text-lg tracking-tight">Anatini.dev</span>
         </Link>
 
