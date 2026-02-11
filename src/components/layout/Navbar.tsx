@@ -107,6 +107,17 @@ export function Navbar() {
           </DropdownMenu>
 
           <Link
+            to="/blog"
+            className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
+              location.pathname.startsWith("/blog")
+                ? "bg-primary/15 text-primary"
+                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+            }`}
+          >
+            Blog
+          </Link>
+
+          <Link
             to="/about"
             className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
               location.pathname === "/about"
@@ -163,6 +174,13 @@ export function Navbar() {
                 ))}
               </div>
             ))}
+            <Link
+              to="/blog"
+              onClick={() => setMobileOpen(false)}
+              className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground"
+            >
+              Blog
+            </Link>
             <Link
               to="/about"
               onClick={() => setMobileOpen(false)}
