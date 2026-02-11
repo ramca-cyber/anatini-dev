@@ -1,41 +1,45 @@
 
 
-# Refactor CsvToJsonPage to Use Shared registerFile Helper
+# Add Pagination to DataTable Component
 
-## What and Why
+## Problem
 
-The only remaining actionable item from the code review is **BUG 5**: `CsvToJsonPage.tsx` still manually calls `db.registerFileHandle` + `conn.query` instead of using the shared `registerFile` helper from `duckdb-helpers.ts`. This creates a maintenance burden and means CSV parsing options (delimiter, header) bypass the centralized helper.
+The shared `DataTable` component currently truncates data at `maxRows` (default 100) and shows a static "Showing 100 of X rows" message with no way to navigate further. This affects all 15+ pages that use it -- converters, inspectors, profiler, flatten, etc.
 
-All other review items have been implemented or were intentionally deferred as future features.
+Note: `CsvViewerPage` has its own server-side pagination (querying DuckDB with LIMIT/OFFSET), so it is unaffected.
 
-## Changes
+## Solution
 
-### 1. Extend `registerFile` in `duckdb-helpers.ts`
+Add client-side pagination controls directly into `DataTable` so all consumers get pagination automatically without any changes to their code.
 
-Add an optional `csvOptions` parameter to support custom delimiter and header settings:
+### Changes to `src/components/shared/DataTable.tsx`
 
-```text
-interface CsvParseOptions {
-  delimiter?: string;
-  header?: boolean;
-}
+1. Add `useState` for the current page number (starting at 0)
+2. Calculate `totalPages` from `rows.length` and `maxRows` (which becomes `pageSize`)
+3. Slice rows to show only the current page: `rows.slice(page * pageSize, (page + 1) * pageSize)`
+4. Replace the static "Showing X of Y" footer with Previous/Next buttons and a page indicator (e.g., "Page 1 of 5")
+5. Reset page to 0 whenever the `rows` array reference changes (via `useEffect`)
 
-export async function registerFile(
-  db: duckdb.AsyncDuckDB,
-  file: File,
-  tableName: string,
-  csvOptions?: CsvParseOptions
-): Promise<{ columns: string[]; rowCount: number; types: string[] }>
-```
+### UI Design
 
-When `csvOptions` is provided and the file is CSV/TSV, append `delim` and `header` options to the `read_csv_auto` call.
+The pagination footer will match the existing style used in `CsvViewerPage`:
+- Previous and Next buttons (using the existing `Button` component with `variant="outline" size="sm"`)
+- "Page X of Y" text in the center
+- Disabled state on Previous when on page 1, and Next when on the last page
+- Only shown when total rows exceed `maxRows`
 
-### 2. Refactor `CsvToJsonPage.tsx`
+### No Changes Needed Elsewhere
 
-Replace the manual `registerFileHandle` + `conn.query` block (lines 61-87) with a single call to the extended `registerFile` helper, passing the delimiter and header options.
+Since all 15 pages pass `rows` and `maxRows` to `DataTable` already, they will all get pagination automatically. No page-level code changes required.
+
+## Technical Details
 
 ### Files Modified
 
-- `src/lib/duckdb-helpers.ts` — add optional `csvOptions` parameter to `registerFile`
-- `src/pages/CsvToJsonPage.tsx` — replace manual DuckDB calls with `registerFile(db, f, tableName, { delimiter, header: hasHeader })`
+- `src/components/shared/DataTable.tsx` -- add `useState`, `useEffect`, pagination logic, and navigation controls
+
+### Dependencies
+
+- Uses existing `Button` from `@/components/ui/button`
+- Uses existing `ChevronLeft` / `ChevronRight` icons from `lucide-react`
 
