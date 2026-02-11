@@ -17,9 +17,29 @@ export function ToolPage({ icon: Icon, title, description, pageTitle, metaDescri
   const fullTitle = pageTitle ?? `${title} — Free, Offline | Anatini.dev`;
   const fullDescription = metaDescription ?? description;
 
+  // SoftwareApplication JSON-LD for each tool
+  const toolJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": `${title} — Anatini.dev`,
+    "description": fullDescription,
+    "url": `https://anatini.dev${window.location.pathname}`,
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "isAccessibleForFree": true,
+    "browserRequirements": "Requires a modern web browser with WebAssembly support",
+  };
+
   return (
     <div className="container py-8">
       <PageMeta title={fullTitle} description={fullDescription} />
+
+      {/* SoftwareApplication JSON-LD */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(toolJsonLd) }}
+      />
 
       {/* Breadcrumb */}
       <nav aria-label="Breadcrumb" className="mb-4 flex items-center gap-1 text-xs text-muted-foreground">
@@ -55,7 +75,7 @@ export function ToolPage({ icon: Icon, title, description, pageTitle, metaDescri
         </div>
       </div>
       {children}
-      {seoContent && <div className="mt-12">{seoContent}</div>}
+      {seoContent && <aside aria-label="Learn more" className="mt-12">{seoContent}</aside>}
     </div>
   );
 }
