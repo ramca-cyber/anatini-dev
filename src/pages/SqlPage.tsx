@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from "react";
+import { ErrorAlert } from "@/components/shared/ErrorAlert";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { Terminal, Play, Download, Plus, Copy, Table2, History, X, ChevronDown } from "lucide-react";
 import { useFileStore } from "@/contexts/FileStoreContext";
@@ -309,7 +310,7 @@ export default function SqlPage() {
           )}
 
           {loading && <LoadingState message="Running query..." />}
-          {error && <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
+          {error && <ErrorAlert message={error} />}
 
           {result && (
             <DataTable columns={result.columns} rows={result.rows} types={result.types} className="max-h-[500px]" />

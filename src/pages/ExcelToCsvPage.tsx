@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ErrorAlert } from "@/components/shared/ErrorAlert";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { FileText, Download, Check, FlaskConical } from "lucide-react";
 import { useFileStore } from "@/contexts/FileStoreContext";
@@ -197,7 +198,7 @@ export default function ExcelToCsvPage() {
         )}
 
         {loading && <LoadingState message="Processing file..." />}
-        {error && <div className="border-2 border-destructive bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+        {error && <ErrorAlert message={error} />}
 
         {preview && view === "table" && (
           <DataTable columns={preview.columns} rows={preview.rows} className="max-h-[500px]" maxRows={200} />

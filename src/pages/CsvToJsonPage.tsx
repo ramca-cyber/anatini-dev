@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ErrorAlert } from "@/components/shared/ErrorAlert";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { FileJson, FlaskConical, ArrowRightLeft, Download, Copy, Check } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
@@ -151,22 +152,27 @@ export default function CsvToJsonPage() {
                 onChange={setInputMode}
               />
 
-              {/* Pre-load options */}
-              <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center border border-border p-3 sm:gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs text-muted-foreground font-bold">Delimiter</label>
-                  <select value={delimiter} onChange={(e) => setDelimiter(e.target.value as any)} className="border border-border bg-background px-2 py-1 text-xs">
-                    <option value=",">Comma (,)</option>
-                    <option value={"\t"}>Tab</option>
-                    <option value=";">Semicolon (;)</option>
-                    <option value="|">Pipe (|)</option>
-                  </select>
+              {/* CSV parse options - shown before upload */}
+              <details className="border border-border">
+                <summary className="px-3 py-2 text-xs font-bold text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
+                  CSV Parse Options
+                </summary>
+                <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center p-3 border-t border-border sm:gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground font-bold">Delimiter</label>
+                    <select value={delimiter} onChange={(e) => setDelimiter(e.target.value as any)} className="border border-border bg-background px-2 py-1 text-xs">
+                      <option value=",">Comma (,)</option>
+                      <option value={"\t"}>Tab</option>
+                      <option value=";">Semicolon (;)</option>
+                      <option value="|">Pipe (|)</option>
+                    </select>
+                  </div>
+                  <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <input type="checkbox" checked={hasHeader} onChange={(e) => setHasHeader(e.target.checked)} />
+                    First row is header
+                  </label>
                 </div>
-                <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <input type="checkbox" checked={hasHeader} onChange={(e) => setHasHeader(e.target.checked)} />
-                  First row is header
-                </label>
-              </div>
+              </details>
 
               {inputMode === "file" ? (
                 <DropZone
@@ -296,7 +302,7 @@ export default function CsvToJsonPage() {
           )}
 
           {loading && <LoadingState message="Converting..." />}
-          {error && <div className="border-2 border-destructive bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+          {error && <ErrorAlert message={error} />}
         </div>
       </DuckDBGate>
     </ToolPage>
