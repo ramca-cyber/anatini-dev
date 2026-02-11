@@ -136,7 +136,7 @@ export default function ParquetViewerPage() {
   return (
     <ToolPage icon={Eye} title="Parquet Viewer" description="Explore Parquet files — data, schema, and metadata." metaDescription={getToolMetaDescription("parquet-viewer")} seoContent={getToolSeo("parquet-viewer")}>
       <DuckDBGate>
-      <div className="space-y-4">
+      <div className="relative space-y-4">
         {!file && (
           <div className="space-y-4">
             <ToggleButton

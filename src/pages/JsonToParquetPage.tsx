@@ -174,7 +174,7 @@ export default function JsonToParquetPage() {
   return (
     <ToolPage icon={Braces} title="JSON to Parquet" description="Convert JSON files to Parquet with compression options." metaDescription={getToolMetaDescription("json-to-parquet")} seoContent={getToolSeo("json-to-parquet")}>
       <DuckDBGate>
-        <div className="space-y-4">
+        <div className="relative space-y-4">
           {!file && (
             <div className="space-y-4">
               <ToggleButton

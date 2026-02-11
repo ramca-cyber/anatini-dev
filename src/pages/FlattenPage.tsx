@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { ErrorAlert } from "@/components/shared/ErrorAlert";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { Braces, Download, Eye, Columns, Copy, Check, ArrowRight } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
@@ -213,7 +214,7 @@ export default function FlattenPage() {
   return (
     <ToolPage icon={Braces} title="JSON Flattener" description="Flatten nested JSON/JSONL into tabular format for analysis."
       pageTitle="Flatten JSON Online — Free, Offline | Anatini.dev" metaDescription={getToolMetaDescription("json-flattener")} seoContent={getToolSeo("json-flattener")}>
-      <div className="space-y-6">
+      <div className="relative space-y-6">
         {!file && (
           <div className="space-y-4">
             <ToggleButton
@@ -367,7 +368,7 @@ export default function FlattenPage() {
         {file && storedFileId && <CrossToolLinks format="json" fileId={storedFileId} excludeRoute="/json-flattener" />}
 
         {loading && <LoadingState message="Processing JSON..." />}
-        {error && <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
+        {error && <ErrorAlert message={error} />}
       </div>
     </ToolPage>
   );

@@ -274,7 +274,7 @@ export default function JsonInspectorPage() {
 
   return (
     <ToolPage icon={Search} title="JSON Inspector" description="Analyze JSON file structure, schema consistency, and data patterns." metaDescription={getToolMetaDescription("json-inspector")} seoContent={getToolSeo("json-inspector")}>
-      <div className="space-y-6">
+      <div className="relative space-y-6">
         {!file && !loading && (
           <div className="space-y-4">
             <ToggleButton

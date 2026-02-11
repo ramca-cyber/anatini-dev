@@ -144,7 +144,7 @@ export default function JsonToCsvPage() {
   return (
     <ToolPage icon={Table} title="JSON to CSV" description="Convert JSON and NDJSON files to CSV format." metaDescription={getToolMetaDescription("json-to-csv")} seoContent={getToolSeo("json-to-csv")}>
       <DuckDBGate>
-        <div className="space-y-4">
+        <div className="relative space-y-4">
           {!file && (
             <div className="space-y-4">
               <ToggleButton

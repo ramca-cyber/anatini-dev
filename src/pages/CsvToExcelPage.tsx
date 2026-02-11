@@ -103,7 +103,7 @@ export default function CsvToExcelPage() {
 
   return (
     <ToolPage icon={FileText} title="CSV to Excel" description="Convert CSV files to Excel (XLSX) with multi-sheet support." metaDescription={getToolMetaDescription("csv-to-excel")} seoContent={getToolSeo("csv-to-excel")}>
-      <div className="space-y-4">
+      <div className="relative space-y-4">
         {!file && (
           <div className="space-y-4">
             <ToggleButton

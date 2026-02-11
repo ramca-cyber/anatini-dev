@@ -145,7 +145,7 @@ export default function ParquetToCsvPage() {
   return (
     <ToolPage icon={FileSpreadsheet} title="Parquet to CSV" description="Export Parquet files to CSV format." pageTitle="Parquet to CSV — Free, Offline | Anatini.dev" metaDescription={getToolMetaDescription("parquet-to-csv")} seoContent={getToolSeo("parquet-to-csv")}>
       <DuckDBGate>
-      <div className="space-y-4">
+      <div className="relative space-y-4">
         {!file && (
           <div className="space-y-4">
             <ToggleButton

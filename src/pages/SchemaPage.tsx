@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { ErrorAlert } from "@/components/shared/ErrorAlert";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { Database, Copy, Download } from "lucide-react";
+import { DuckDBGate } from "@/components/shared/DuckDBGate";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { UrlInput } from "@/components/shared/UrlInput";
@@ -175,7 +177,8 @@ export default function SchemaPage() {
   return (
     <ToolPage icon={Database} title="Schema Generator" description="Infer schemas and generate DDL for Postgres, MySQL, BigQuery and more."
       pageTitle="Schema Generator — Infer DDL Online | Anatini.dev" metaDescription={getToolMetaDescription("schema-generator")} seoContent={getToolSeo("schema-generator")}>
-      <div className="space-y-6">
+      <DuckDBGate>
+      <div className="relative space-y-6">
         {!file && (
           <div className="space-y-4">
             <ToggleButton
@@ -196,7 +199,7 @@ export default function SchemaPage() {
           </div>
         )}
         {loading && <LoadingState message="Inferring schema..." />}
-        {error && <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
+        {error && <ErrorAlert message={error} />}
 
         {file && cols.length > 0 && (
           <>
@@ -334,6 +337,7 @@ export default function SchemaPage() {
           </>
         )}
       </div>
+      </DuckDBGate>
     </ToolPage>
   );
 }

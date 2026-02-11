@@ -217,7 +217,7 @@ export default function ParquetInspectorPage() {
   return (
     <ToolPage icon={Search} title="Parquet Inspector" description="Deep-dive into Parquet file metadata, row groups, and column statistics." metaDescription={getToolMetaDescription("parquet-inspector")} seoContent={getToolSeo("parquet-inspector")}>
       <DuckDBGate>
-        <div className="space-y-6">
+        <div className="relative space-y-6">
           {!file && !loading && (
             <div className="space-y-4">
               <ToggleButton
