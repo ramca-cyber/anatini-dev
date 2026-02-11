@@ -201,7 +201,6 @@ export default function SchemaPage() {
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-2">
                 <FileInfo name={file.name} size={formatBytes(file.size)} columns={cols.length} />
-                {storedFileId && <InspectLink fileId={storedFileId} format={file.name.endsWith('.json') ? 'json' : file.name.endsWith('.parquet') ? 'parquet' : 'csv'} />}
               </div>
               <Button variant="outline" onClick={() => { setFile(null); setCols([]); setStoredFileId(null); }}>New file</Button>
             </div>
@@ -328,7 +327,7 @@ export default function SchemaPage() {
               </TabsContent>
             </Tabs>
 
-            <CrossToolLinks format={file.name.endsWith('.json') ? 'json' : file.name.endsWith('.parquet') ? 'parquet' : 'csv'} fileId={storedFileId ?? undefined} excludeRoute="/schema-generator" />
+            
           </>
         )}
       </div>

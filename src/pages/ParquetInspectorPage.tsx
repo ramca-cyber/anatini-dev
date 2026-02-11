@@ -395,7 +395,7 @@ export default function ParquetInspectorPage() {
               )}
 
               {/* Actions */}
-              <CrossToolLinks format="parquet" fileId={storedFileId ?? undefined} />
+              
             </div>
           )}
         </div>

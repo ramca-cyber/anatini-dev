@@ -207,7 +207,7 @@ export default function ExcelToCsvPage() {
           <RawPreview content={csvOutput} label="Raw CSV Output" fileName="output.csv" onDownload={handleDownloadCsv} />
         )}
 
-        {file && <CrossToolLinks format="excel" fileId={storedFileId ?? undefined} excludeRoute="/excel-to-csv" />}
+        
       </div>
     </ToolPage>
   );

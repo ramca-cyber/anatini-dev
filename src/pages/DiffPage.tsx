@@ -243,9 +243,7 @@ export default function DiffPage() {
             ) : (
               <div className="flex items-center gap-2 flex-wrap">
                 <FileInfo name={beforeFile.name} size={formatBytes(beforeFile.size)} rows={beforeMeta?.rowCount} columns={beforeMeta?.columns.length} />
-                {beforeFileId && <InspectLink fileId={beforeFileId} format={detectFormat(beforeFile.name)} />}
               </div>
-            )}
           </div>
           <div>
             <p className="mb-2 text-sm font-medium text-muted-foreground">After</p>
@@ -257,9 +255,7 @@ export default function DiffPage() {
             ) : (
               <div className="flex items-center gap-2 flex-wrap">
                 <FileInfo name={afterFile.name} size={formatBytes(afterFile.size)} rows={afterMeta?.rowCount} columns={afterMeta?.columns.length} />
-                {afterFileId && <InspectLink fileId={afterFileId} format={detectFormat(afterFile.name)} />}
               </div>
-            )}
           </div>
         </div>
 
@@ -374,8 +370,6 @@ export default function DiffPage() {
           </>
         )}
 
-        {beforeFile && <CrossToolLinks format={detectFormat(beforeFile.name)} fileId={beforeFileId ?? undefined} excludeRoute="/dataset-diff" />}
-        {afterFile && afterFile.name !== beforeFile?.name && <CrossToolLinks format={detectFormat(afterFile.name)} fileId={afterFileId ?? undefined} excludeRoute="/dataset-diff" />}
       </div>
     </ToolPage>
   );

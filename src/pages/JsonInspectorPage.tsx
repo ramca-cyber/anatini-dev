@@ -433,7 +433,7 @@ export default function JsonInspectorPage() {
               </div>
             )}
 
-            <CrossToolLinks format="json" fileId={storedFileId ?? undefined} />
+            
           </div>
         )}
       </div>

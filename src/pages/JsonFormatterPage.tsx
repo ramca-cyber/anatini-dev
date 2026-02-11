@@ -241,7 +241,7 @@ export default function JsonFormatterPage() {
           </div>
         </div>
 
-        {(input || output) && <CrossToolLinks format="json" fileId={storedFileId ?? undefined} />}
+        
       </div>
     </ToolPage>
   );

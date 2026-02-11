@@ -316,7 +316,6 @@ export default function FlattenPage() {
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-2">
                 <FileInfo name={file.name} size={formatBytes(file.size)} rows={flattened.rows.length} columns={flattened.columns.length} />
-                {storedFileId && <InspectLink fileId={storedFileId} format="json" />}
               </div>
               <div className="flex items-center gap-2">
                 <Button variant="ghost" size="sm" onClick={() => setShowSideBySide(!showSideBySide)} title="Toggle side-by-side view">
@@ -362,7 +361,7 @@ export default function FlattenPage() {
           </div>
         )}
 
-        {file && storedFileId && <CrossToolLinks format="json" fileId={storedFileId} excludeRoute="/json-flattener" />}
+        
 
         {loading && <LoadingState message="Processing JSON..." />}
         {error && <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}

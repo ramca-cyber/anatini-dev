@@ -176,7 +176,7 @@ export default function CsvToExcelPage() {
           <DataTable columns={preview.columns} rows={preview.rows} className="max-h-[500px]" maxRows={200} />
         )}
 
-        {file && <CrossToolLinks format="csv" fileId={storedFileId ?? undefined} excludeRoute="/csv-to-excel" />}
+        
       </div>
     </ToolPage>
   );

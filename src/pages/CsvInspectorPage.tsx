@@ -421,7 +421,7 @@ export default function CsvInspectorPage() {
               )}
 
               {/* Actions */}
-              <CrossToolLinks format="csv" fileId={storedFileId ?? undefined} excludeRoute="/csv-inspector" />
+              
             </div>
           )}
         </div>

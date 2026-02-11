@@ -172,10 +172,7 @@ export default function JsonToCsvPage() {
           {file && meta && (
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
-                  {storedFileId && <InspectLink fileId={storedFileId} format="json" />}
-                </div>
+                <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
                 <div className="flex gap-2">
                   <Button onClick={handleConvert} disabled={loading}>
                     <ArrowRightLeft className="h-4 w-4 mr-1" /> {csvOutput ? "Re-convert" : "Convert to CSV"}
@@ -253,12 +250,6 @@ export default function JsonToCsvPage() {
                 </div>
               )}
 
-              <div className="border border-border p-4 space-y-4">
-                <CrossToolLinks format="json" fileId={storedFileId ?? undefined} excludeRoute="/json-to-csv" heading={csvOutput ? "Source file" : undefined} inline />
-                {csvOutput && (
-                  <CrossToolLinks format="csv" excludeRoute="/json-to-csv" heading="Converted output" inline />
-                )}
-              </div>
             </div>
           )}
 
