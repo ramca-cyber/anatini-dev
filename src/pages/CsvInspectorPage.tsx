@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { ErrorAlert } from "@/components/shared/ErrorAlert";
 import { useSearchParams } from "react-router-dom";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { Search, AlertTriangle, Info, XCircle } from "lucide-react";
@@ -318,7 +319,7 @@ export default function CsvInspectorPage() {
           )}
 
           {loading && <LoadingState message="Analyzing file structure..." />}
-          {error && <div className="border-2 border-destructive bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+          {error && <ErrorAlert message={error} />}
 
           {done && (
             <div className="space-y-6">

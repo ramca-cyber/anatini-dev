@@ -1,6 +1,7 @@
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { Loader2 } from "lucide-react";
 import { type ReactNode } from "react";
+import { ErrorAlert } from "@/components/shared/ErrorAlert";
 
 export function DuckDBGate({ children }: { children: ReactNode }) {
   const { loading, error } = useDuckDB();
@@ -15,11 +16,7 @@ export function DuckDBGate({ children }: { children: ReactNode }) {
   }
 
   if (error) {
-    return (
-      <div className="border-2 border-destructive bg-destructive/10 p-4 text-sm text-destructive">
-        Failed to initialize DuckDB: {error}
-      </div>
-    );
+    return <ErrorAlert message={`Failed to initialize DuckDB: ${error}`} />;
   }
 
   return <>{children}</>;

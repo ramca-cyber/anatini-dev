@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ErrorAlert } from "@/components/shared/ErrorAlert";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { Database, ArrowRightLeft, Download, Copy, Check } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
@@ -384,7 +385,7 @@ export default function CsvToSqlPage() {
           )}
 
           {loading && <LoadingState message="Generating SQL..." />}
-          {error && <div className="border-2 border-destructive bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+          {error && <ErrorAlert message={error} />}
         </div>
       </DuckDBGate>
     </ToolPage>

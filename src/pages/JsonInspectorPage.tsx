@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+import { ErrorAlert } from "@/components/shared/ErrorAlert";
 import { useSearchParams } from "react-router-dom";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { Search, FlaskConical, AlertTriangle, Info, ChevronRight, ChevronDown } from "lucide-react";
@@ -299,7 +300,7 @@ export default function JsonInspectorPage() {
         )}
 
         {loading && <LoadingState message="Analyzing JSON structure..." />}
-        {error && <div className="border-2 border-destructive bg-destructive/10 p-3 text-sm text-destructive font-mono">{error}</div>}
+        {error && <ErrorAlert message={error} />}
 
         {done && (
           <div className="space-y-6">

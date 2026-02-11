@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowUp, ArrowDown } from "lucide-react";
 
 function formatValue(val: any): string {
   if (val === null || val === undefined) return "";
@@ -26,12 +26,51 @@ interface DataTableProps {
 
 export function DataTable({ columns, rows, types, maxRows = 100, className }: DataTableProps) {
   const [page, setPage] = useState(0);
-  const totalPages = Math.ceil(rows.length / maxRows);
-  const displayRows = rows.slice(page * maxRows, (page + 1) * maxRows);
+  const [sortCol, setSortCol] = useState<number | null>(null);
+  const [sortAsc, setSortAsc] = useState(true);
 
   useEffect(() => {
     setPage(0);
+    setSortCol(null);
   }, [rows]);
+
+  function handleSort(colIndex: number) {
+    if (sortCol === colIndex) {
+      if (sortAsc) {
+        setSortAsc(false);
+      } else {
+        setSortCol(null);
+        setSortAsc(true);
+      }
+    } else {
+      setSortCol(colIndex);
+      setSortAsc(true);
+    }
+    setPage(0);
+  }
+
+  const sortedRows = useMemo(() => {
+    if (sortCol === null) return rows;
+    return [...rows].sort((a, b) => {
+      const va = a[sortCol];
+      const vb = b[sortCol];
+      if (va == null && vb == null) return 0;
+      if (va == null) return 1;
+      if (vb == null) return -1;
+      if (typeof va === "number" && typeof vb === "number") {
+        return sortAsc ? va - vb : vb - va;
+      }
+      if (typeof va === "bigint" && typeof vb === "bigint") {
+        const cmp = va < vb ? -1 : va > vb ? 1 : 0;
+        return sortAsc ? cmp : -cmp;
+      }
+      const cmp = String(va).localeCompare(String(vb), undefined, { numeric: true });
+      return sortAsc ? cmp : -cmp;
+    });
+  }, [rows, sortCol, sortAsc]);
+
+  const totalPages = Math.ceil(sortedRows.length / maxRows);
+  const displayRows = sortedRows.slice(page * maxRows, (page + 1) * maxRows);
 
   return (
     <div className={cn("overflow-auto rounded-lg border border-border", className)}>
@@ -40,7 +79,17 @@ export function DataTable({ columns, rows, types, maxRows = 100, className }: Da
           <tr className="border-b border-border bg-muted/50">
             {columns.map((col, i) => (
               <th key={i} className="sticky top-0 bg-muted/80 backdrop-blur-sm px-3 py-2 text-left font-medium text-foreground whitespace-nowrap">
-                <div>{col}</div>
+                <button
+                  onClick={() => handleSort(i)}
+                  className="flex items-center gap-1 hover:text-primary transition-colors cursor-pointer"
+                >
+                  <span>{col}</span>
+                  {sortCol === i && (
+                    sortAsc
+                      ? <ArrowUp className="h-3 w-3 text-primary" />
+                      : <ArrowDown className="h-3 w-3 text-primary" />
+                  )}
+                </button>
                 {types?.[i] && (
                   <div className="font-mono text-[10px] font-normal text-muted-foreground">{types[i]}</div>
                 )}

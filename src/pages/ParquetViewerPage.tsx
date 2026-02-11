@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ErrorAlert } from "@/components/shared/ErrorAlert";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { Eye, Search, ChevronLeft, ChevronRight, Copy, Check } from "lucide-react";
 import { DuckDBGate } from "@/components/shared/DuckDBGate";
@@ -246,7 +247,7 @@ export default function ParquetViewerPage() {
         )}
 
         {loading && <LoadingState message="Loading Parquet file..." />}
-        {error && <div className="border-2 border-destructive bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+        {error && <ErrorAlert message={error} />}
       </div>
       </DuckDBGate>
     </ToolPage>

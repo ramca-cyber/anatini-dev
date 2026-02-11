@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ErrorAlert } from "@/components/shared/ErrorAlert";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { Eye, Search, ArrowUpDown, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
@@ -203,7 +204,7 @@ export default function CsvViewerPage() {
         )}
 
         {loading && <LoadingState message="Loading CSV..." />}
-        {error && <div className="border-2 border-destructive bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+        {error && <ErrorAlert message={error} />}
 
         {data && (
           <>

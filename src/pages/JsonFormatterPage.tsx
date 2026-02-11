@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ErrorAlert } from "@/components/shared/ErrorAlert";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { Code, Copy, Check, ChevronRight, ChevronDown } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
@@ -182,11 +183,7 @@ export default function JsonFormatterPage() {
             {stats}
           </div>
         )}
-        {error && (
-          <div className="border-2 border-destructive bg-destructive/10 p-3 text-sm text-destructive font-mono">
-            {error}
-          </div>
-        )}
+        {error && <ErrorAlert message={error} />}
 
         <div className="flex flex-wrap items-center gap-2">
           <Button onClick={handleFormat}>Format</Button>

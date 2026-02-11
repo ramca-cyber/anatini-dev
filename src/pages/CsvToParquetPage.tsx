@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ErrorAlert } from "@/components/shared/ErrorAlert";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { FileSpreadsheet, ArrowRightLeft, FlaskConical, Settings2, ChevronDown, ChevronUp, Download } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
@@ -300,7 +301,7 @@ export default function CsvToParquetPage() {
         )}
 
         {loading && <LoadingState message="Processing..." />}
-        {error && <div className="border-2 border-destructive bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+        {error && <ErrorAlert message={error} />}
       </div>
       </DuckDBGate>
     </ToolPage>
