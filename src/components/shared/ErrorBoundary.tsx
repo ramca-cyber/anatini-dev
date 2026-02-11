@@ -32,15 +32,23 @@ export class ErrorBoundary extends Component<Props, State> {
             <p className="text-muted-foreground">
               {this.state.error?.message || "An unexpected error occurred."}
             </p>
-            <button
-              onClick={() => {
-                this.setState({ hasError: false, error: null });
-                window.location.href = "/";
-              }}
-              className="inline-flex items-center gap-2 border-2 border-border bg-foreground px-5 py-2.5 text-sm font-bold text-background transition-all hover:shadow-xs"
-            >
-              Return to Home
-            </button>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={() => this.setState({ hasError: false, error: null })}
+                className="inline-flex items-center gap-2 border-2 border-primary bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground transition-all hover:shadow-xs"
+              >
+                Retry
+              </button>
+              <button
+                onClick={() => {
+                  this.setState({ hasError: false, error: null });
+                  window.location.href = "/";
+                }}
+                className="inline-flex items-center gap-2 border-2 border-border bg-foreground px-5 py-2.5 text-sm font-bold text-background transition-all hover:shadow-xs"
+              >
+                Return to Home
+              </button>
+            </div>
           </div>
         </div>
       );

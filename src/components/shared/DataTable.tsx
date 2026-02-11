@@ -40,11 +40,11 @@ export function DataTable({ columns, rows, types, maxRows = 100, className }: Da
         </thead>
         <tbody>
           {displayRows.map((row, i) => (
-            <tr key={i} className="border-b border-border/50 transition-colors hover:bg-muted/30">
+            <tr key={i} className="border-b border-border/50 transition-colors hover:bg-muted/30 even:bg-muted/20">
               {row.map((val, j) => (
                 <td key={j} className="px-3 py-1.5 whitespace-nowrap font-mono text-xs">
                   {val === null || val === undefined ? (
-                    <span className="text-muted-foreground/40">∅</span>
+                    <span className="text-muted-foreground/60">∅</span>
                   ) : typeof val === "object" ? (
                     <span className="max-w-[200px] truncate block text-muted-foreground">{formatValue(val)}</span>
                   ) : (

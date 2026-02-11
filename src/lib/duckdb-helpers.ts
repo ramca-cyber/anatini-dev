@@ -35,15 +35,16 @@ export async function registerFile(
 ): Promise<{ columns: string[]; rowCount: number; types: string[] }> {
   await db.registerFileHandle(file.name, file, duckdb.DuckDBDataProtocol.BROWSER_FILEREADER, true);
 
+  const safeName = file.name.replace(/'/g, "''");
   const ext = file.name.split(".").pop()?.toLowerCase();
   const conn = await db.connect();
   try {
     if (ext === "csv" || ext === "tsv") {
-      await conn.query(`CREATE OR REPLACE TABLE "${tableName}" AS SELECT * FROM read_csv_auto('${file.name}')`);
+      await conn.query(`CREATE OR REPLACE TABLE "${tableName}" AS SELECT * FROM read_csv_auto('${safeName}')`);
     } else if (ext === "parquet") {
-      await conn.query(`CREATE OR REPLACE TABLE "${tableName}" AS SELECT * FROM read_parquet('${file.name}')`);
+      await conn.query(`CREATE OR REPLACE TABLE "${tableName}" AS SELECT * FROM read_parquet('${safeName}')`);
     } else if (ext === "json" || ext === "jsonl") {
-      await conn.query(`CREATE OR REPLACE TABLE "${tableName}" AS SELECT * FROM read_json_auto('${file.name}')`);
+      await conn.query(`CREATE OR REPLACE TABLE "${tableName}" AS SELECT * FROM read_json_auto('${safeName}')`);
     } else {
       throw new Error(`Unsupported file type: .${ext}`);
     }

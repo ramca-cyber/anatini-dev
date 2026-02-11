@@ -42,6 +42,10 @@ export function UrlInput({ onFile, accept, placeholder, label }: UrlInputProps) 
       {label && (
         <label className="text-xs text-muted-foreground font-bold uppercase tracking-wider">{label}</label>
       )}
+      <div className="rounded border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-[11px] text-muted-foreground">
+        <strong className="text-amber-600 dark:text-amber-400">⚠ CORS note:</strong> Files are fetched directly in your browser — nothing is sent to any server.
+        Some domains block cross-origin requests. Try GitHub raw URLs or public dataset links.
+      </div>
       <div className="flex gap-2">
         <div className="relative flex-1">
           <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -50,7 +54,7 @@ export function UrlInput({ onFile, accept, placeholder, label }: UrlInputProps) 
             value={url}
             onChange={(e) => { setUrl(e.target.value); setError(null); }}
             onKeyDown={(e) => e.key === "Enter" && handleFetch()}
-            placeholder={placeholder || "https://example.com/data.csv"}
+            placeholder={placeholder || "https://raw.githubusercontent.com/user/repo/main/data.csv"}
             className="w-full h-10 pl-9 pr-3 border-2 border-border bg-background text-sm font-mono focus:outline-none focus:border-primary transition-colors"
             disabled={loading}
           />
@@ -64,10 +68,14 @@ export function UrlInput({ onFile, accept, placeholder, label }: UrlInputProps) 
           {error}
         </div>
       )}
-      <p className="text-[10px] text-muted-foreground">
-        The file is fetched directly in your browser — nothing is sent to any server.
-        CORS restrictions may prevent loading from some domains.
-      </p>
+      <div className="text-[10px] text-muted-foreground space-y-1">
+        <p className="font-medium">Example URLs that work:</p>
+        <ul className="list-disc pl-4 space-y-0.5">
+          <li><code>https://raw.githubusercontent.com/...</code> — GitHub raw files</li>
+          <li><code>https://data.gov/...</code> — US government open data</li>
+          <li><code>https://storage.googleapis.com/...</code> — Public GCS buckets</li>
+        </ul>
+      </div>
     </div>
   );
 }
