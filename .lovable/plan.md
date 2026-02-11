@@ -1,43 +1,50 @@
 
-# Auto-Convert on File Load
 
-## What Changes
+# CSV to Parquet Page Layout Restructure
 
-All 7 converter pages will automatically trigger conversion immediately after a file is successfully loaded. Downloads remain user-initiated (no change there). The convert button stays visible but always shows "Re-convert" after auto-conversion completes.
+## Summary
+Reorganize the page layout based on user feedback to improve information hierarchy: file info at top, options + convert together, output section promoted with prominent download, input preview demoted to collapsible secondary section.
 
-## Approach
-
-In each converter page's `handleFile` function, after the file is registered and preview is loaded, call `handleConvert()` automatically. To avoid issues with stale state (since `handleConvert` reads from state like `file`, `meta`, `delimiter`), the conversion will be triggered via a `useEffect` that watches for a successful file load.
-
-### Pattern
-
-Add a simple `useEffect` to each page:
+## New Layout Order
 
 ```text
-useEffect(() => {
-  if (meta && file && !conversionResult) {
-    handleConvert();
-  }
-}, [meta]);
+1. File info bar:  [employees.csv - 1.2 KB - 20 rows - 7 cols] [Inspect] [New file]
+2. Options + Convert row:  Compression: [Snappy|Zstd|GZIP|None]  Row Group: [Default v]  [Convert to Parquet]
+3. OUTPUT section (primary):
+   - Success stats bar (time, size, compression ratio, codec)
+   - Large download button (full-width or near-full, prominent)
+   - Collapsible data preview + raw toggle
+4. INPUT PREVIEW section (secondary, collapsible, open by default)
+   - [Table|Schema|Raw] toggle tabs
+   - Data table / schema / raw content
+5. CrossToolLinks
 ```
 
-This fires once after `handleFile` completes and sets `meta`, triggering conversion automatically. Since `conversionResult` is cleared in `handleFile`, it won't re-trigger on subsequent renders.
+## Key Changes
 
-## Files Modified
+1. **File info bar** -- Move "New file" button into the file info row (right side). Remove the convert button from here.
 
-1. `src/pages/CsvToJsonPage.tsx` -- add auto-convert useEffect
-2. `src/pages/JsonToCsvPage.tsx` -- add auto-convert useEffect
-3. `src/pages/CsvToParquetPage.tsx` -- add auto-convert useEffect
-4. `src/pages/ParquetToCsvPage.tsx` -- add auto-convert useEffect
-5. `src/pages/JsonToParquetPage.tsx` -- add auto-convert useEffect
-6. `src/pages/ParquetToJsonPage.tsx` -- add auto-convert useEffect
-7. `src/pages/CsvToSqlPage.tsx` -- add auto-convert useEffect
+2. **Options + Convert row** -- Always visible (no collapsible chevron). Compression toggle and row group select shown inline on a single row. "Convert to Parquet" button sits at the far right of this row. Button label stays "Convert to Parquet" always (no "Re-convert" label change -- the action is the same regardless).
 
-Each change is ~4 lines added. No other modifications needed -- the convert button already shows "Re-convert" when output exists, and downloads are already user-initiated via explicit button clicks.
+3. **Output section (promoted)** -- Appears after conversion. Stats bar consolidated into a single line with a checkmark icon. Download button is large and visually dominant (full default size, not `size="sm"`). Output preview (table + raw toggle) is below the download, shown as a collapsible "Preview output data" section.
 
-## What Stays the Same
+4. **Input preview (demoted)** -- Wrapped in a Collapsible component, open by default. Header reads "INPUT PREVIEW" with the table/schema/raw toggles. Users can collapse it since they already know what they uploaded.
 
-- Download buttons remain manual (user must click)
-- Copy-to-clipboard remains manual
-- Re-convert button stays visible for when users change options
-- All conversion stats and output sections appear as before
+5. **Two redundant stats bars merged** -- Currently there are two stats bars in the output (conversion stats + parquet meta). These will be merged into one consolidated bar showing: time, output size, compression ratio, codec, and row groups.
+
+## Technical Details
+
+### File: `src/pages/CsvToParquetPage.tsx`
+
+- Remove the `showOptions` state and the collapsible chevron toggle -- options are always visible
+- Restructure the JSX into the four sections described above
+- Change the convert button label from the ternary `conversionResult ? "Re-convert" : "Convert to Parquet"` to just `"Convert to Parquet"`
+- Make the download button larger: remove `size="sm"`, use default size
+- Wrap the input preview section with Radix `Collapsible` (already installed), defaulting to open
+- Add a new `showInputPreview` state (default `true`) for the collapsible
+- Merge the two output stats bars (conversion stats + parquet meta) into one
+- Move `CrossToolLinks` outside the collapsible input section, keeping it at the bottom
+
+### No new dependencies or components needed
+All required UI primitives (`Collapsible`, `ToggleButton`, `Button`, `DataTable`, etc.) already exist.
+
