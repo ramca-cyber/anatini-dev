@@ -7,6 +7,7 @@ import { DataTable } from "@/components/shared/DataTable";
 import { RawPreview } from "@/components/shared/RawPreview";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { PasteInput } from "@/components/shared/PasteInput";
+import { UrlInput } from "@/components/shared/UrlInput";
 import { DuckDBGate } from "@/components/shared/DuckDBGate";
 import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
 import { InspectLink } from "@/components/shared/InspectLink";
@@ -37,7 +38,7 @@ export default function JsonToParquetPage() {
   const [outputView, setOutputView] = useState<"preview" | "raw">("preview");
   const [compression, setCompression] = useState<"snappy" | "zstd" | "gzip" | "none">("snappy");
   const [rowGroupSize, setRowGroupSize] = useState<number | null>(null);
-  const [inputMode, setInputMode] = useState<"file" | "paste">("file");
+  const [inputMode, setInputMode] = useState<"file" | "paste" | "url">("file");
   const [nullableInfo, setNullableInfo] = useState<boolean[]>([]);
   const [outputPreview, setOutputPreview] = useState<{ columns: string[]; rows: any[][]; types: string[] } | null>(null);
   const [parquetMeta, setParquetMeta] = useState<ParquetMeta | null>(null);
@@ -166,7 +167,7 @@ export default function JsonToParquetPage() {
           {!file && (
             <div className="space-y-4">
               <ToggleButton
-                options={[{ label: "Upload File", value: "file" }, { label: "Paste Data", value: "paste" }]}
+                options={[{ label: "Upload File", value: "file" }, { label: "Paste Data", value: "paste" }, { label: "From URL", value: "url" }]}
                 value={inputMode}
                 onChange={setInputMode}
               />
@@ -178,7 +179,7 @@ export default function JsonToParquetPage() {
                   label="Drop a JSON or JSONL file"
                   sampleAction={{ label: "⚗ Try with sample data", onClick: handleSample }}
                 />
-              ) : (
+              ) : inputMode === "paste" ? (
                 <PasteInput
                   onSubmit={handlePaste}
                   placeholder='Paste JSON here... e.g. [{"name": "Alice", "score": 95.5}]'
@@ -186,6 +187,8 @@ export default function JsonToParquetPage() {
                   accept={[".json", ".jsonl"]}
                   onFile={handleFile}
                 />
+              ) : (
+                <UrlInput onFile={handleFile} accept={[".json", ".jsonl"]} placeholder="https://example.com/data.json" label="Load JSON from URL" />
               )}
             </div>
           )}

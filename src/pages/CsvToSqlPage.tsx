@@ -7,6 +7,7 @@ import { RawPreview } from "@/components/shared/RawPreview";
 import { DataTable } from "@/components/shared/DataTable";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { PasteInput } from "@/components/shared/PasteInput";
+import { UrlInput } from "@/components/shared/UrlInput";
 import { DuckDBGate } from "@/components/shared/DuckDBGate";
 import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
 import { InspectLink } from "@/components/shared/InspectLink";
@@ -65,7 +66,7 @@ export default function CsvToSqlPage() {
   const [rawInput, setRawInput] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [inputView, setInputView] = useState<"table" | "raw-input">("table");
-  const [inputMode, setInputMode] = useState<"file" | "paste">("file");
+  const [inputMode, setInputMode] = useState<"file" | "paste" | "url">("file");
   const [dialect, setDialect] = useState<Dialect>("postgresql");
   const [batchSize, setBatchSize] = useState(100);
   const [includeDropTable, setIncludeDropTable] = useState(false);
@@ -234,7 +235,7 @@ export default function CsvToSqlPage() {
           {!file && (
             <div className="space-y-4">
               <ToggleButton
-                options={[{ label: "Upload File", value: "file" }, { label: "Paste Data", value: "paste" }]}
+                options={[{ label: "Upload File", value: "file" }, { label: "Paste Data", value: "paste" }, { label: "From URL", value: "url" }]}
                 value={inputMode}
                 onChange={setInputMode}
               />
@@ -245,8 +246,10 @@ export default function CsvToSqlPage() {
                   label="Drop a CSV file"
                   sampleAction={{ label: "⚗ Try with sample data", onClick: () => handleFile(getSampleCSV()) }}
                 />
-              ) : (
+              ) : inputMode === "paste" ? (
                 <PasteInput onSubmit={handlePaste} placeholder="Paste CSV data here..." label="Paste CSV data" accept={[".csv", ".tsv"]} onFile={handleFile} />
+              ) : (
+                <UrlInput onFile={handleFile} accept={[".csv", ".tsv"]} placeholder="https://example.com/data.csv" label="Load CSV from URL" />
               )}
             </div>
           )}
