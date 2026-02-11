@@ -148,7 +148,7 @@ export async function exportQueryToJSON(db: duckdb.AsyncDuckDB, sql: string): Pr
     result.columns.forEach((col, i) => { obj[col] = row[i]; });
     return obj;
   });
-  return JSON.stringify(records, null, 2);
+  return JSON.stringify(records, bigIntReplacer, 2);
 }
 
 export function downloadBlob(data: string | ArrayBuffer | Uint8Array, filename: string, mimeType: string) {
@@ -160,6 +160,9 @@ export function downloadBlob(data: string | ArrayBuffer | Uint8Array, filename: 
   a.click();
   URL.revokeObjectURL(url);
 }
+
+export const bigIntReplacer = (_key: string, value: unknown) =>
+  typeof value === "bigint" ? Number(value) : value;
 
 export function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";

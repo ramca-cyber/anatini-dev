@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { useFileStore } from "@/contexts/FileStoreContext";
 import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
-import { registerFile, runQuery, downloadBlob, formatBytes, sanitizeTableName, warnLargeFile, type CsvParseOptions } from "@/lib/duckdb-helpers";
+import { registerFile, runQuery, downloadBlob, formatBytes, sanitizeTableName, warnLargeFile, bigIntReplacer, type CsvParseOptions } from "@/lib/duckdb-helpers";
 import { getSampleCSV } from "@/lib/sample-data";
 import { toast } from "@/hooks/use-toast";
 
@@ -98,12 +98,12 @@ export default function CsvToJsonPage() {
       let json: string;
       if (outputFormat === "arrays") {
         const arr = [result.columns, ...result.rows];
-        json = prettyPrint ? JSON.stringify(arr, null, indent === "tab" ? "\t" : indent) : JSON.stringify(arr);
+        json = prettyPrint ? JSON.stringify(arr, bigIntReplacer, indent === "tab" ? "\t" : indent) : JSON.stringify(arr, bigIntReplacer);
       } else if (outputFormat === "ndjson") {
         json = result.rows.map((row) => {
           const obj: Record<string, unknown> = {};
           result.columns.forEach((col, i) => { obj[col] = row[i]; });
-          return JSON.stringify(obj);
+          return JSON.stringify(obj, bigIntReplacer);
         }).join("\n");
       } else {
         const records = result.rows.map((row) => {
@@ -111,7 +111,7 @@ export default function CsvToJsonPage() {
           result.columns.forEach((col, i) => { obj[col] = row[i]; });
           return obj;
         });
-        json = prettyPrint ? JSON.stringify(records, null, indent === "tab" ? "\t" : indent) : JSON.stringify(records);
+        json = prettyPrint ? JSON.stringify(records, bigIntReplacer, indent === "tab" ? "\t" : indent) : JSON.stringify(records, bigIntReplacer);
       }
       setOutput(json);
       const outputSize = new Blob([json]).size;
