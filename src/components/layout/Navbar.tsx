@@ -51,6 +51,8 @@ const toolGroups = [
       { path: "/schema-generator", label: "Schema Generator" },
       { path: "/csv-to-sql", label: "CSV → SQL" },
       { path: "/dataset-diff", label: "Dataset Diff" },
+      { path: "/data-sampler", label: "Data Sampler" },
+      { path: "/deduplicator", label: "Deduplicator" },
     ],
   },
 ];

@@ -218,6 +218,26 @@ const seoData: Record<string, { whatIs: { title: string; content: string }; howT
       { question: "What is the 'created by' field?", answer: "It shows which software wrote the Parquet file. Common values: Apache Spark, Apache Arrow, Pandas, DuckDB. This helps diagnose compatibility issues." },
     ],
   },
+  "data-sampler": {
+    metaDescription: "Extract random or stratified samples from large CSV, Parquet, or JSON files. Free, offline browser tool powered by DuckDB-WASM.",
+    whatIs: { title: "What is Data Sampling?", content: "Data sampling extracts a representative subset from a larger dataset. Random sampling picks rows uniformly, while stratified sampling ensures proportional representation across groups (e.g., equal coverage of each category). Sampling is essential for testing, prototyping, and sharing manageable subsets of large files." },
+    howToUse: "Upload a CSV, JSON, or Parquet file. Choose between sampling by row count or percentage. Optionally select a column for stratified sampling to ensure proportional representation. Click 'Sample' and download the result.",
+    faqs: [
+      { question: "What is stratified sampling?", answer: "Stratified sampling ensures each group (defined by a column value) is proportionally represented in the sample. For example, if 30% of your data is 'Engineering', about 30% of the sample will be too." },
+      { question: "Can I get reproducible samples?", answer: "Yes — expand the 'Seed' option and enter a number. The same seed always produces the same sample from the same data." },
+      { question: "What's the maximum file size?", answer: "There's no hard limit, but files over 200MB may slow your browser. All processing runs locally via DuckDB-WASM." },
+    ],
+  },
+  "deduplicator": {
+    metaDescription: "Find and remove duplicate rows from CSV, Parquet, or JSON files. Choose uniqueness columns and keep strategy. Free, offline browser tool.",
+    whatIs: { title: "What is Deduplication?", content: "Deduplication identifies and removes duplicate rows from a dataset. You define which columns determine uniqueness — rows with identical values in those columns are considered duplicates. You can keep the first or last occurrence of each duplicate group." },
+    howToUse: "Upload a data file and select which columns define uniqueness (or use all columns). Choose whether to keep the first or last occurrence of duplicates. Click 'Find Duplicates' to see the count, preview removed rows, and download the cleaned file.",
+    faqs: [
+      { question: "What if I don't select any columns?", answer: "All columns are used to determine uniqueness — only rows that are completely identical across every column are considered duplicates." },
+      { question: "What does 'Keep First' vs 'Keep Last' mean?", answer: "'Keep First' retains the earliest occurrence of each duplicate group (by row order). 'Keep Last' retains the latest occurrence." },
+      { question: "Can I preview which rows are duplicates?", answer: "Yes — after running deduplication, expand the 'Preview duplicates' section to see which rows would be removed." },
+    ],
+  },
 };
 
 export function getToolSeo(toolId: string) {

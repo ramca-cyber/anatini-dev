@@ -8,6 +8,8 @@ const linksByFormat: Record<string, { label: string; route: string }[]> = {
     { label: "View Data", route: "/csv-viewer" },
     { label: "SQL Playground", route: "/sql-playground" },
     { label: "Profile Data", route: "/data-profiler" },
+    { label: "Sample Data", route: "/data-sampler" },
+    { label: "Deduplicate", route: "/deduplicator" },
   ],
   json: [
     { label: "Convert to CSV", route: "/json-to-csv" },
@@ -15,6 +17,8 @@ const linksByFormat: Record<string, { label: string; route: string }[]> = {
     { label: "Flatten JSON", route: "/json-flattener" },
     { label: "Format / Beautify", route: "/json-formatter" },
     { label: "SQL Playground", route: "/sql-playground" },
+    { label: "Sample Data", route: "/data-sampler" },
+    { label: "Deduplicate", route: "/deduplicator" },
   ],
   parquet: [
     { label: "Convert to CSV", route: "/parquet-to-csv" },
@@ -22,6 +26,8 @@ const linksByFormat: Record<string, { label: string; route: string }[]> = {
     { label: "View Data", route: "/parquet-viewer" },
     { label: "SQL Playground", route: "/sql-playground" },
     { label: "Profile Data", route: "/data-profiler" },
+    { label: "Sample Data", route: "/data-sampler" },
+    { label: "Deduplicate", route: "/deduplicator" },
   ],
   excel: [
     { label: "Convert to CSV", route: "/excel-to-csv" },
