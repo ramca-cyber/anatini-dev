@@ -1,116 +1,105 @@
 
 
-# End-to-End Website Audit
+# New Tool Recommendations
 
-## Issues Found
-
-### 1. CRITICAL: LoadingState overlay broken on 18 pages
-`LoadingState` was changed to use `absolute inset-0` positioning, but only `CsvViewerPage` has `relative` on its container div. All other pages are missing `relative`, causing the overlay to escape its intended bounds and cover the entire viewport or nearest positioned ancestor unpredictably.
-
-**Affected pages** (every page using `LoadingState` except CsvViewerPage):
-- CsvToParquetPage, ParquetToCsvPage, CsvToJsonPage, JsonToCsvPage
-- JsonToParquetPage, ParquetToJsonPage, ExcelToCsvPage, CsvToExcelPage
-- ParquetViewerPage, DiffPage, SqlPage, ProfilerPage
-- FlattenPage, SchemaPage, CsvToSqlPage
-- CsvInspectorPage, JsonInspectorPage, ParquetInspectorPage
-
-**Fix:** Add `relative` to the outermost content `<div>` on each page (the one that contains the `LoadingState` render).
-
-### 2. MEDIUM: Missing DuckDBGate on 3 pages
-Three pages use `useDuckDB()` but are not wrapped in `<DuckDBGate>`, meaning users see no loading indicator while DuckDB initializes and may interact with the UI before the engine is ready.
-
-- `DiffPage.tsx` -- no DuckDBGate
-- `SchemaPage.tsx` -- no DuckDBGate
-- `ProfilerPage.tsx` -- no DuckDBGate
-
-**Fix:** Wrap the content `<div>` in `<DuckDBGate>` on each page, matching the pattern used by all other DuckDB-dependent pages.
-
-### 3. MEDIUM: Inconsistent error rendering on 3 pages
-Three pages use inline error divs instead of the shared `<ErrorAlert>` component:
-
-- `DiffPage.tsx` line 326: inline `<div className="rounded-lg border border-destructive/50...">`
-- `FlattenPage.tsx` line 370: same inline pattern
-- `SchemaPage.tsx` line 199: same inline pattern
-
-**Fix:** Replace with `<ErrorAlert message={error} />` on each page, importing from `@/components/shared/ErrorAlert`.
-
-### 4. LOW: SqlPage has no CrossToolLinks
-The SQL Playground page does not render `<CrossToolLinks>` at the bottom. Since files can be loaded from multiple formats, this could link users to relevant next tools.
-
-**Fix:** Not strictly needed since SQL Playground is a multi-format destination, but for consistency, a generic link row could be added. Skipping for now -- this is a design decision.
+Based on DuckDB-WASM capabilities, the existing tool suite, and what works well as a fully static/offline browser app, here are the top tools to add -- ranked by user value and implementation feasibility.
 
 ---
 
-## Technical Changes
+## Tier 1: High Impact, Easy to Build (reuse existing patterns heavily)
 
-### Adding `relative` to 18 pages
-Each page's outermost content div (the one containing `{loading && <LoadingState />}`) needs `relative` added to its className. Example pattern:
+### 1. Data Sampler
+**Route:** `/data-sampler`  
+**What it does:** Extract a random or stratified sample from large CSV/Parquet/JSON files. Users pick sample size (N rows or percentage) and optional stratification column.  
+**Why:** Users working with large files (100K+ rows) frequently need a smaller representative subset for testing, sharing, or prototyping. No existing tool does this.  
+**DuckDB:** `SELECT * FROM data USING SAMPLE 10%` or `ORDER BY random() LIMIT 1000`  
+**Effort:** Low -- follows the standard converter page pattern (upload, configure, download).
 
-```tsx
-// Before:
-<div className="space-y-4">
+### 2. Column Selector and Reorder
+**Route:** `/column-editor`  
+**What it does:** Upload a file, see all columns listed. Drag to reorder, toggle to include/exclude, optionally rename. Export as CSV/Parquet/JSON.  
+**Why:** Extremely common data prep task. No tool currently lets you drop or reorder columns without writing SQL.  
+**DuckDB:** `SELECT col_a AS "New Name", col_c FROM data`  
+**Effort:** Low-medium -- needs a small drag-and-drop list UI (could use native HTML drag or a lightweight lib).
 
-// After:
-<div className="relative space-y-4">
-```
+### 3. Deduplicator
+**Route:** `/deduplicator`  
+**What it does:** Upload a file, choose which columns define uniqueness (or all columns). Shows duplicate count, lets user preview duplicates, then download deduplicated output.  
+**Why:** Duplicate detection is one of the most common data cleaning tasks. The profiler shows duplicate counts but cannot remove them.  
+**DuckDB:** `ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...)` to identify and filter duplicates.  
+**Effort:** Low -- standard upload/configure/download pattern.
 
-### Files to modify
+### 4. Data Merge / Join Tool
+**Route:** `/data-merge`  
+**What it does:** Upload two files, pick join type (inner, left, right, full outer, cross), select join key columns from each file. Preview result and download.  
+**Why:** Joining two datasets is a fundamental operation. The SQL Playground can do it but requires writing SQL manually. A visual tool lowers the barrier significantly.  
+**DuckDB:** Standard SQL JOINs across two registered tables.  
+**Effort:** Medium -- needs two-file upload (similar to Dataset Diff) plus a join configuration UI.
 
-| File | Changes |
-|------|---------|
-| `CsvToParquetPage.tsx` | Add `relative` to line 161 div |
-| `ParquetToCsvPage.tsx` | Add `relative` to line 148 div |
-| `CsvToJsonPage.tsx` | Add `relative` to line 155 div |
-| `JsonToCsvPage.tsx` | Add `relative` to line 147 div |
-| `JsonToParquetPage.tsx` | Add `relative` to line 177 div |
-| `ParquetToJsonPage.tsx` | Add `relative` to line 132 div |
-| `ExcelToCsvPage.tsx` | Add `relative` to line 130 div |
-| `CsvToExcelPage.tsx` | Add `relative` to line 106 div |
-| `ParquetViewerPage.tsx` | Add `relative` to line 139 div |
-| `DiffPage.tsx` | Add `relative` to line 237 div, wrap in `DuckDBGate`, replace inline error with `ErrorAlert` |
-| `SqlPage.tsx` | Add `relative` to the main grid's parent or the right-column div |
-| `ProfilerPage.tsx` | Add `relative`, wrap in `DuckDBGate` |
-| `FlattenPage.tsx` | Add `relative` to line 216 div, replace inline error with `ErrorAlert` |
-| `SchemaPage.tsx` | Add `relative` to line 178 div, wrap in `DuckDBGate`, replace inline error with `ErrorAlert` |
-| `CsvToSqlPage.tsx` | Add `relative` to line 244 div |
-| `CsvInspectorPage.tsx` | Add `relative` to line 298 div |
-| `JsonInspectorPage.tsx` | Add `relative` to outermost content div |
-| `ParquetInspectorPage.tsx` | Add `relative` to outermost content div |
+---
 
-### DuckDBGate wrapping (3 pages)
+## Tier 2: Medium Impact, Moderate Effort
 
-```tsx
-// DiffPage.tsx, SchemaPage.tsx, ProfilerPage.tsx
-// Before:
-<ToolPage ...>
-  <div className="relative space-y-6">
-    ...
-  </div>
-</ToolPage>
+### 5. Pivot Table Builder
+**Route:** `/pivot-table`  
+**What it does:** Upload a file, visually configure row fields, column fields, value fields, and aggregation function (sum, count, avg, min, max). Renders a pivot table. Export result.  
+**Why:** Pivot tables are the most-requested analytical feature for non-SQL users. DuckDB has native PIVOT support.  
+**DuckDB:** `PIVOT data ON category USING sum(amount) GROUP BY region`  
+**Effort:** Medium -- the configuration UI (drag fields into row/column/value zones) is the main work.
 
-// After:
-<ToolPage ...>
-  <DuckDBGate>
-    <div className="relative space-y-6">
-      ...
-    </div>
-  </DuckDBGate>
-</ToolPage>
-```
+### 6. Chart Builder
+**Route:** `/chart-builder`  
+**What it does:** Upload any data file, pick X and Y axes, chart type (bar, line, area, pie, scatter). Renders an interactive chart using Recharts (already installed). Export as PNG.  
+**Why:** Quick visualization without leaving the browser. Recharts is already a dependency so no new bundle cost.  
+**Effort:** Medium -- chart config UI plus canvas-to-PNG export.
 
-### ErrorAlert replacement (3 pages)
+### 7. SQL Formatter / Beautifier
+**Route:** `/sql-formatter`  
+**What it does:** Paste messy SQL, get it formatted with proper indentation, keyword casing, and line breaks. Options for dialect (Standard, PostgreSQL, MySQL, BigQuery) and indent style.  
+**Why:** Complements the SQL Playground and CSV-to-SQL tools. Pure client-side with the `sql-formatter` npm package (~15KB gzipped).  
+**No DuckDB needed** -- pure text transformation.  
+**Effort:** Low -- text-in, text-out with a config panel.
 
-```tsx
-// Before (DiffPage, FlattenPage, SchemaPage):
-{error && <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
+### 8. Markdown Table Generator
+**Route:** `/markdown-table`  
+**What it does:** Upload CSV/JSON/Parquet or paste data. Outputs a properly formatted Markdown table with alignment options. Copy to clipboard.  
+**Why:** Developers frequently need to paste data tables into GitHub issues, READMEs, and docs. Currently requires manual formatting.  
+**Effort:** Low -- simple string formatting from the existing data pipeline.
 
-// After:
-{error && <ErrorAlert message={error} />}
-```
+---
 
-## Summary
-- 18 pages need `relative` added (1-line change each)
-- 3 pages need `DuckDBGate` wrapping
-- 3 pages need `ErrorAlert` instead of inline error divs
-- Total: ~24 small, safe changes across 18 files
+## Tier 3: Nice-to-Have, Niche but Valuable
+
+### 9. YAML to JSON / JSON to YAML
+**Route:** `/yaml-json`  
+**What it does:** Bidirectional converter. Paste YAML, get JSON (and vice versa). Validate and format.  
+**Library:** `js-yaml` (~25KB gzipped), works entirely client-side.  
+**Why:** Extremely common developer task (Kubernetes configs, CI/CD pipelines, etc.). Fills a format gap in the converter matrix.  
+**Effort:** Low -- paste-based input/output, no DuckDB needed.
+
+### 10. Regex Row Filter
+**Route:** `/regex-filter`  
+**What it does:** Upload a data file, select a column, enter a regex pattern. Shows matching rows with match highlighting. Download filtered subset.  
+**DuckDB:** `SELECT * FROM data WHERE regexp_matches(column, pattern)`  
+**Why:** Power-user tool for finding specific patterns in data (emails, phone numbers, error codes).  
+**Effort:** Low-medium.
+
+---
+
+## Recommended Build Order
+
+| Priority | Tool | New Dependencies | DuckDB? |
+|----------|------|-----------------|---------|
+| 1 | Data Sampler | None | Yes |
+| 2 | Deduplicator | None | Yes |
+| 3 | SQL Formatter | sql-formatter | No |
+| 4 | Markdown Table Generator | None | No |
+| 5 | Column Selector/Reorder | None | Yes |
+| 6 | Data Merge/Join | None | Yes |
+| 7 | YAML/JSON Converter | js-yaml | No |
+| 8 | Pivot Table Builder | None | Yes |
+| 9 | Chart Builder | None (Recharts exists) | Yes |
+| 10 | Regex Row Filter | None | Yes |
+
+The first four tools can each be built in a single session following the existing page patterns. Tools 5-10 need slightly more custom UI work.
 
