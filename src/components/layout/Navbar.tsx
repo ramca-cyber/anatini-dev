@@ -57,6 +57,9 @@ const toolGroups = [
       { path: "/markdown-table", label: "Markdown Table" },
       { path: "/column-editor", label: "Column Editor" },
       { path: "/data-merge", label: "Data Merge" },
+      { path: "/pivot-table", label: "Pivot Table" },
+      { path: "/chart-builder", label: "Chart Builder" },
+      { path: "/yaml-json", label: "YAML ↔ JSON" },
     ],
   },
 ];

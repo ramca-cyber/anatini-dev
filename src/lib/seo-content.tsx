@@ -278,6 +278,36 @@ const seoData: Record<string, { whatIs: { title: string; content: string }; howT
       { question: "Can I merge files of different formats?", answer: "Yes — you can join a CSV with a Parquet file, or JSON with CSV. Any supported format combination works." },
     ],
   },
+  "pivot-table": {
+    metaDescription: "Build pivot tables from CSV, JSON, or Parquet files. Visual field mapping with sum, count, avg, min, max aggregation. Free, offline browser tool.",
+    whatIs: { title: "What is a Pivot Table?", content: "A pivot table reorganizes and summarizes data by grouping rows, spreading a column's distinct values across new columns, and aggregating values. It's the most powerful way to summarize large datasets without writing code." },
+    howToUse: "Upload a data file. Select row fields (GROUP BY), a pivot column (whose values become new columns), a value column, and an aggregation function. Click 'Build Pivot' to generate the table. Download the result as CSV.",
+    faqs: [
+      { question: "How many distinct pivot values are supported?", answer: "Up to 50 distinct values in the pivot column. Columns with higher cardinality should be filtered or grouped first." },
+      { question: "What aggregation functions are available?", answer: "Count, Sum, Average, Min, and Max. Choose based on whether your value column is numeric or categorical." },
+      { question: "Can I use multiple row fields?", answer: "Yes — add multiple row fields to create a multi-level grouping, similar to nested GROUP BY in SQL." },
+    ],
+  },
+  "chart-builder": {
+    metaDescription: "Create bar, line, area, pie, and scatter charts from CSV, JSON, or Parquet files. Export as PNG. Free, offline browser tool.",
+    whatIs: { title: "What is the Chart Builder?", content: "The Chart Builder creates interactive visualizations from your data files. Choose chart type, X/Y axes, and instantly see results. Built with Recharts, it supports bar, line, area, pie, and scatter charts with PNG export." },
+    howToUse: "Upload a data file, select the chart type, X axis column, and one or more Y axis columns. Click 'Build Chart' to render. Export as PNG for sharing or documentation.",
+    faqs: [
+      { question: "What chart types are available?", answer: "Bar, Line, Area, Pie, and Scatter charts. Multiple Y columns are supported for bar, line, and area charts." },
+      { question: "Can I export the chart?", answer: "Yes — click 'Export PNG' to download a high-resolution PNG image of your chart." },
+      { question: "How many data points can it handle?", answer: "Charts render up to 10,000 rows. For larger datasets, the tool automatically limits to the first N rows." },
+    ],
+  },
+  "yaml-json": {
+    metaDescription: "Convert YAML to JSON and JSON to YAML. Bidirectional converter with validation. Free, offline browser tool.",
+    whatIs: { title: "What is YAML/JSON Conversion?", content: "YAML and JSON are both popular data serialization formats. YAML is more human-readable with indentation-based structure, while JSON is the standard for APIs and web applications. Converting between them is a common developer task for configs, CI/CD pipelines, and Kubernetes manifests." },
+    howToUse: "Select the conversion direction (YAML → JSON or JSON → YAML). Paste your input, click Convert, and copy or download the result. Use the Swap button to reverse direction with the current output.",
+    faqs: [
+      { question: "Does it support all YAML features?", answer: "Yes — anchors, aliases, multi-line strings, and all standard YAML 1.2 features are supported via the js-yaml library." },
+      { question: "Is my data uploaded anywhere?", answer: "No — everything runs locally in your browser. No data is sent to any server." },
+      { question: "Can I convert YAML with comments?", answer: "Comments are parsed but not preserved in the JSON output, since JSON doesn't support comments." },
+    ],
+  },
 };
 
 export function getToolSeo(toolId: string) {
