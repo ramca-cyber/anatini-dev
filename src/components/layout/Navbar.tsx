@@ -53,6 +53,8 @@ const toolGroups = [
       { path: "/dataset-diff", label: "Dataset Diff" },
       { path: "/data-sampler", label: "Data Sampler" },
       { path: "/deduplicator", label: "Deduplicator" },
+      { path: "/sql-formatter", label: "SQL Formatter" },
+      { path: "/markdown-table", label: "Markdown Table" },
     ],
   },
 ];

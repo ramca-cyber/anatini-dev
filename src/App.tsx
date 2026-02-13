@@ -34,6 +34,8 @@ const JsonInspectorPage = lazy(() => import("./pages/JsonInspectorPage"));
 const ParquetInspectorPage = lazy(() => import("./pages/ParquetInspectorPage"));
 const DataSamplerPage = lazy(() => import("./pages/DataSamplerPage"));
 const DeduplicatorPage = lazy(() => import("./pages/DeduplicatorPage"));
+const SqlFormatterPage = lazy(() => import("./pages/SqlFormatterPage"));
+const MarkdownTablePage = lazy(() => import("./pages/MarkdownTablePage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const BlogIndex = lazy(() => import("./pages/blog/BlogIndex"));
 const HowToConvertCsvToParquet = lazy(() => import("./pages/blog/HowToConvertCsvToParquet"));
@@ -94,6 +96,8 @@ const App = () => (
                   <Route path="/csv-to-sql" element={<CsvToSqlPage />} />
                   <Route path="/data-sampler" element={<DataSamplerPage />} />
                   <Route path="/deduplicator" element={<DeduplicatorPage />} />
+                  <Route path="/sql-formatter" element={<SqlFormatterPage />} />
+                  <Route path="/markdown-table" element={<MarkdownTablePage />} />
 
                   {/* Legacy */}
                   <Route path="/dataset-diff" element={<DiffPage />} />
