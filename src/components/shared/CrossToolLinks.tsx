@@ -12,6 +12,8 @@ const linksByFormat: Record<string, { label: string; route: string }[]> = {
     { label: "Deduplicate", route: "/deduplicator" },
     { label: "Edit Columns", route: "/column-editor" },
     { label: "Merge Data", route: "/data-merge" },
+    { label: "Pivot Table", route: "/pivot-table" },
+    { label: "Chart Builder", route: "/chart-builder" },
   ],
   json: [
     { label: "Convert to CSV", route: "/json-to-csv" },
@@ -23,6 +25,8 @@ const linksByFormat: Record<string, { label: string; route: string }[]> = {
     { label: "Deduplicate", route: "/deduplicator" },
     { label: "Edit Columns", route: "/column-editor" },
     { label: "Merge Data", route: "/data-merge" },
+    { label: "Pivot Table", route: "/pivot-table" },
+    { label: "Chart Builder", route: "/chart-builder" },
   ],
   parquet: [
     { label: "Convert to CSV", route: "/parquet-to-csv" },
@@ -34,6 +38,8 @@ const linksByFormat: Record<string, { label: string; route: string }[]> = {
     { label: "Deduplicate", route: "/deduplicator" },
     { label: "Edit Columns", route: "/column-editor" },
     { label: "Merge Data", route: "/data-merge" },
+    { label: "Pivot Table", route: "/pivot-table" },
+    { label: "Chart Builder", route: "/chart-builder" },
   ],
   excel: [
     { label: "Convert to CSV", route: "/excel-to-csv" },

@@ -38,6 +38,9 @@ const SqlFormatterPage = lazy(() => import("./pages/SqlFormatterPage"));
 const MarkdownTablePage = lazy(() => import("./pages/MarkdownTablePage"));
 const ColumnEditorPage = lazy(() => import("./pages/ColumnEditorPage"));
 const DataMergePage = lazy(() => import("./pages/DataMergePage"));
+const PivotTablePage = lazy(() => import("./pages/PivotTablePage"));
+const ChartBuilderPage = lazy(() => import("./pages/ChartBuilderPage"));
+const YamlJsonPage = lazy(() => import("./pages/YamlJsonPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const BlogIndex = lazy(() => import("./pages/blog/BlogIndex"));
 const HowToConvertCsvToParquet = lazy(() => import("./pages/blog/HowToConvertCsvToParquet"));
@@ -102,6 +105,9 @@ const App = () => (
                   <Route path="/markdown-table" element={<MarkdownTablePage />} />
                   <Route path="/column-editor" element={<ColumnEditorPage />} />
                   <Route path="/data-merge" element={<DataMergePage />} />
+                  <Route path="/pivot-table" element={<PivotTablePage />} />
+                  <Route path="/chart-builder" element={<ChartBuilderPage />} />
+                  <Route path="/yaml-json" element={<YamlJsonPage />} />
 
                   {/* Legacy */}
                   <Route path="/dataset-diff" element={<DiffPage />} />
