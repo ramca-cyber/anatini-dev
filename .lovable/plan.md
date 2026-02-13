@@ -1,28 +1,45 @@
 
 
-## Fix: YAML/JSON Converter Broken Page
+## Chart Builder: Auto-Refresh and UX Improvements
 
-### Problem
-The `/yaml-json` page shows a blank screen due to a `SyntaxError: Unexpected token '{'` in the bundled `js-yaml` dependency chunk. All other 9 new tools load correctly.
-
-This is a CommonJS/ESM interop issue -- `js-yaml` uses CommonJS exports, and Vite's dependency pre-bundling is producing an invalid chunk.
+### Problems
+1. **No auto-refresh**: Changing chart type, X axis, Y columns, or row limit does NOT update the chart until "Build Chart" is clicked manually. This feels broken.
+2. **Multi-select not obvious**: Multiple Y columns can be selected, but there's no visual hint telling users this is possible.
 
 ### Solution
-Change the import style in `YamlJsonPage.tsx` to use a namespace import instead of a default import, which resolves the CJS/ESM interop issue:
 
-**File: `src/pages/YamlJsonPage.tsx`**
+**File: `src/pages/ChartBuilderPage.tsx`**
 
-Change line 9 from:
+1. **Auto-rebuild chart on config changes** — Add a `useEffect` that triggers `handleBuildChart()` whenever `chartType`, `xColumn`, `yColumns`, `limit`, or `tableName` change (and data has been loaded). This makes the chart reactive to all control changes.
+
+2. **Auto-build on first load** — After file is loaded and X/Y are auto-selected, immediately build the chart instead of showing an empty chart area.
+
+3. **Improve Y-column label** — Change "Y Axis / Values" to "Y Axis / Values (multi)" to signal that multiple selections are supported.
+
+4. **Keep "Build Chart" button** — Retain it as a manual refresh option, but it becomes less critical since changes auto-apply.
+
+### Technical Details
+
+Add a `useEffect` after the existing state declarations:
+
 ```typescript
-import yaml from "js-yaml";
+// Auto-rebuild when config changes
+useEffect(() => {
+  if (db && meta && xColumn && yColumns.length > 0 && tableName) {
+    handleBuildChart();
+  }
+}, [chartType, xColumn, yColumns, limit, tableName]);
 ```
-to:
+
+Wrap `handleBuildChart` in `useCallback` to make it safe as a dependency:
+
 ```typescript
-import * as yaml from "js-yaml";
+const handleBuildChart = useCallback(async () => {
+  if (!db || !meta || !xColumn || yColumns.length === 0) return;
+  // ... existing logic
+}, [db, meta, xColumn, yColumns, tableName, limit]);
 ```
 
-This is a one-line fix. The `yaml.load()` and `yaml.dump()` calls remain the same since both are named exports on the `js-yaml` module.
+Update the Y-axis label text from `"Y Axis / Values"` to `"Y Axis / Values (select multiple)"`.
 
-### Verification
-After the fix, navigate to `/yaml-json`, load a sample, and confirm the conversion works in both directions (YAML to JSON and JSON to YAML).
-
+These are minimal, focused changes to the existing `ChartBuilderPage.tsx` file only.
