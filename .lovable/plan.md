@@ -1,71 +1,55 @@
 
 
-## Remaining Fixes and Enhancements
+## Responsive Layout Fixes
 
-### Status: What's Done vs What's Left
+### Audit Results
 
-All high and medium priority items from the audit have been completed. Three low-priority items remain, plus a significant SEO gap discovered in the sitemap.
+Tested across 4 viewports: 320px (iPhone SE), 390px (iPhone 14), 768px (iPad), and 1920px (desktop).
 
----
+**Everything looks good except one issue:**
 
-### 1. Sitemap Missing 10 Tool Routes (HIGH - SEO Impact)
+### Issue: SQL Playground sidebar open by default on mobile
 
-`public/sitemap.xml` is missing these pages, meaning search engines may not discover them:
+On mobile, the sidebar (file drop zone, URL input, loaded tables) is visible by default, pushing the SQL editor far down the page. Users have to scroll past the entire sidebar before they can see or use the editor.
 
-- `/data-sampler`
-- `/deduplicator`
-- `/sql-formatter`
-- `/markdown-table`
-- `/column-editor`
-- `/data-merge`
-- `/pivot-table`
-- `/chart-builder`
-- `/yaml-json`
-- `/regex-filter`
+**Fix:** Default `sidebarOpen` to `false` on mobile devices. The toggle button already exists -- users can expand it when needed.
 
-**Fix:** Add all 10 missing URLs to `sitemap.xml` with `lastmod` of today's date and `priority` of 0.8.
+### What already works well
+- Homepage hero and tool grid adapt properly to all sizes
+- Mobile hamburger menu opens/closes correctly
+- Blog, About, and tool pages all render cleanly
+- Footer 2-column grid works well on mobile
+- Navbar collapses to hamburger on mobile
+- "100% Offline" badge hides on small screens as intended
 
 ---
-
-### 2. Fix Module-Level `tabCounter` in SQL Playground (LOW)
-
-`SqlPage.tsx` line 46 has `let tabCounter = 1` at module scope. When the user navigates away and back, the counter keeps incrementing but the tabs reset, producing labels like "Query 5" on a fresh visit.
-
-**Fix:** Use a `useRef` inside the component instead of a module-level variable, resetting naturally on unmount.
-
----
-
-### 3. SQL Playground Mobile Layout (LOW)
-
-On mobile, the 280px sidebar stacks above the editor, pushing it far down the page.
-
-**Fix:** On screens below `lg`, collapse the sidebar into a toggleable panel or make it horizontally scrollable so the editor is immediately visible.
-
----
-
-### 4. Mobile Menu Focus Trap (LOW)
-
-When the mobile nav is open, keyboard users can tab through background content behind the menu.
-
-**Fix:** Add focus trapping to the mobile menu overlay so Tab/Shift+Tab cycles only within the menu while it's open.
-
----
-
-### Summary
-
-| Item | Priority | Effort |
-|------|----------|--------|
-| Add 10 missing routes to sitemap.xml | High | 2 min |
-| Fix module-level tabCounter | Low | 3 min |
-| SQL Playground collapsible mobile sidebar | Low | 15 min |
-| Mobile menu focus trap | Low | 10 min |
 
 ### Technical Details
 
-**Sitemap additions** -- 10 new `<url>` entries in `public/sitemap.xml`.
+**File:** `src/pages/SqlPage.tsx`
 
-**tabCounter fix** -- Replace the module-level `let tabCounter = 1` with a `useRef(1)` inside the `SqlPage` component. Update `createTab` to accept a counter ref.
+Change `useState(true)` to use `isMobile` to determine the default:
 
-**Mobile sidebar** -- Add a state toggle and a button (e.g., "Show Tables") visible only on `< lg` screens. Wrap the sidebar content in a collapsible section.
+```typescript
+// Before
+const isMobile = useIsMobile();
+const [sidebarOpen, setSidebarOpen] = useState(true);
 
-**Focus trap** -- When `mobileOpen` is true in `Navbar.tsx`, attach a keydown listener that wraps focus from the last focusable element back to the first (and vice versa for Shift+Tab).
+// After  
+const isMobile = useIsMobile();
+const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
+```
+
+However, since `useIsMobile()` returns `false` on first render (before the effect runs), we also need a `useEffect` to close the sidebar when the initial mobile detection resolves:
+
+```typescript
+const isMobile = useIsMobile();
+const [sidebarOpen, setSidebarOpen] = useState(true);
+
+// Close sidebar by default on mobile
+useEffect(() => {
+  if (isMobile) setSidebarOpen(false);
+}, []); // only on mount
+```
+
+This is a single-line fix in one file.
