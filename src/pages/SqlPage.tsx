@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo } from "react";
+import { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
@@ -89,6 +89,13 @@ export default function SqlPage() {
   const { addFile } = useFileStore();
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const sidebarInitRef = useRef(false);
+  useEffect(() => {
+    if (isMobile && !sidebarInitRef.current) {
+      sidebarInitRef.current = true;
+      setSidebarOpen(false);
+    }
+  }, [isMobile]);
   const tabCounterRef = useRef(1);
   const [tables, setTables] = useState<LoadedTable[]>([]);
   const [tabs, setTabs] = useState<QueryTab[]>(() => [createTab(tabCounterRef)]);
