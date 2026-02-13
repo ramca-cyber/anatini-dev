@@ -13,6 +13,8 @@ const toolGrid = {
     { label: "CSV → Excel", path: "/csv-to-excel" },
     { label: "YAML → JSON", path: "/yaml-to-json" },
     { label: "JSON → YAML", path: "/json-to-yaml" },
+    { label: "XML → JSON", path: "/xml-to-json" },
+    { label: "JSON → XML", path: "/json-to-xml" },
   ],
   Viewers: [
     { label: "CSV Viewer", path: "/csv-viewer" },
@@ -40,6 +42,10 @@ const toolGrid = {
     { label: "Pivot Table", path: "/pivot-table" },
     { label: "Chart Builder", path: "/chart-builder" },
     { label: "Regex Filter", path: "/regex-filter" },
+    { label: "CSV Splitter", path: "/csv-splitter" },
+  ],
+  Utilities: [
+    { label: "Base64 Encoder/Decoder", path: "/base64" },
   ],
 };
 

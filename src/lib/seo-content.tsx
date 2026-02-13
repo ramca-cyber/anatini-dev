@@ -329,6 +329,46 @@ const seoData: Record<string, { whatIs: { title: string; content: string }; howT
       { question: "What does 'Invert match' do?", answer: "When enabled, rows that do NOT match the pattern are returned instead — useful for excluding specific patterns from your dataset." },
     ],
   },
+  "xml-to-json": {
+    metaDescription: "Convert XML files to JSON with attribute handling options. Free, offline browser tool using DOMParser.",
+    whatIs: { title: "What is XML to JSON Conversion?", content: "XML (Extensible Markup Language) is a widely-used format for data interchange, configuration files, and document markup. Converting XML to JSON makes the data accessible to JavaScript applications, REST APIs, and modern tooling that prefers JSON." },
+    howToUse: "Paste XML or load a sample. Choose how attributes are handled (@prefix or flatten). The tool auto-converts on input. Copy or download the JSON output.",
+    faqs: [
+      { question: "How are XML attributes handled?", answer: "By default, attributes are prefixed with @ (e.g., @id). You can also flatten them to remove the prefix." },
+      { question: "Does it handle namespaces?", answer: "Namespaces are preserved as-is in tag names. The browser's DOMParser handles all standard XML features." },
+      { question: "Is my data uploaded?", answer: "No — conversion runs entirely in your browser using the built-in DOMParser. No data leaves your machine." },
+    ],
+  },
+  "json-to-xml": {
+    metaDescription: "Convert JSON files to XML with customizable root element and indentation. Free, offline browser tool.",
+    whatIs: { title: "What is JSON to XML Conversion?", content: "Converting JSON to XML transforms JavaScript-native data structures into the widely-supported XML format. This is useful for integrating with SOAP APIs, legacy systems, and tools that require XML input." },
+    howToUse: "Paste JSON or load a sample. Set the root element name and array item element name. The tool auto-converts on input. Copy or download the XML output.",
+    faqs: [
+      { question: "What is the root element name?", answer: "When the JSON doesn't have a single top-level key, a root element wraps the output. Default is 'root' — customize it in the options." },
+      { question: "How are arrays converted?", answer: "Each array element becomes a child element. The tag name defaults to 'item' but can be customized." },
+      { question: "Is my data uploaded?", answer: "No — everything runs locally in your browser. No data is sent to any server." },
+    ],
+  },
+  "csv-splitter": {
+    metaDescription: "Split large CSV files by row count or column value into smaller files. Free, offline browser tool powered by DuckDB-WASM.",
+    whatIs: { title: "What is CSV Splitting?", content: "CSV splitting divides a large data file into smaller, more manageable pieces. Split by a fixed row count (e.g., every 1000 rows) or by column value (e.g., one file per unique city). This is essential for batch processing, email attachment limits, and tools with row limits." },
+    howToUse: "Upload a data file. Choose split mode: by row count or by column value. For row-based splitting, set the number of rows per part. For column-based, select which column to split by. Click 'Split' to see all parts, then download individually.",
+    faqs: [
+      { question: "What file formats are supported?", answer: "CSV, TSV, JSON/JSONL, and Parquet files are all supported as input. Output is always CSV." },
+      { question: "Can I download all parts at once?", answer: "Currently each part is downloaded individually. A zip download may be added in the future." },
+      { question: "Is there a limit on the number of parts?", answer: "No hard limit, but splitting into hundreds of parts may slow the browser. Column-based splitting with very high cardinality columns is not recommended." },
+    ],
+  },
+  "base64": {
+    metaDescription: "Encode text or files to Base64 and decode Base64 back to text. Free, offline browser tool. No uploads.",
+    whatIs: { title: "What is Base64?", content: "Base64 is a binary-to-text encoding scheme that represents binary data as ASCII characters. It's commonly used to embed images in HTML/CSS, encode API credentials, transmit binary data in JSON, and handle email attachments." },
+    howToUse: "Select Encode or Decode mode. Type or paste text to convert in real-time. Upload a file to encode its binary content as Base64. Copy or download the result.",
+    faqs: [
+      { question: "Can I encode binary files?", answer: "Yes — upload any file (images, PDFs, etc.) and the tool will encode its raw bytes to Base64." },
+      { question: "What's the maximum file size?", answer: "There's no hard limit, but very large files (50MB+) may slow your browser since everything runs in memory." },
+      { question: "Is my data uploaded?", answer: "No — all encoding and decoding happens locally in your browser. No data is sent anywhere." },
+    ],
+  },
 };
 
 export function getToolSeo(toolId: string) {

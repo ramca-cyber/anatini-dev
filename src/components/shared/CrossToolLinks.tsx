@@ -54,6 +54,12 @@ const linksByFormat: Record<string, { label: string; route: string }[]> = {
     { label: "JSON Formatter", route: "/json-formatter" },
     { label: "JSON Flattener", route: "/json-flattener" },
   ],
+  xml: [
+    { label: "XML → JSON", route: "/xml-to-json" },
+    { label: "JSON → XML", route: "/json-to-xml" },
+    { label: "JSON Formatter", route: "/json-formatter" },
+    { label: "JSON Flattener", route: "/json-flattener" },
+  ],
 };
 
 interface CrossToolLinksProps {

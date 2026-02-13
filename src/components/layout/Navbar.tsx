@@ -26,6 +26,8 @@ const toolGroups = [
       { path: "/csv-to-excel", label: "CSV → Excel" },
       { path: "/yaml-to-json", label: "YAML → JSON" },
       { path: "/json-to-yaml", label: "JSON → YAML" },
+      { path: "/xml-to-json", label: "XML → JSON" },
+      { path: "/json-to-xml", label: "JSON → XML" },
     ],
   },
   {
@@ -62,6 +64,13 @@ const toolGroups = [
       { path: "/pivot-table", label: "Pivot Table" },
       { path: "/chart-builder", label: "Chart Builder" },
       { path: "/regex-filter", label: "Regex Filter" },
+      { path: "/csv-splitter", label: "CSV Splitter" },
+    ],
+  },
+  {
+    label: "Utilities",
+    tools: [
+      { path: "/base64", label: "Base64 Encoder/Decoder" },
     ],
   },
 ];
