@@ -62,14 +62,16 @@ describe("Page rendering", () => {
 
   it("homepage displays correct tool count", () => {
     renderWithRoute("/", <Index />);
-    expect(screen.getByText(/41 Tools/)).toBeInTheDocument();
+    expect(screen.getByText(/43 Tools/)).toBeInTheDocument();
   });
 
-  it("homepage has all 41 tool cards", () => {
+  it("homepage has all 43 tool cards", () => {
     renderWithRoute("/", <Index />);
     // Check a tool from each category
     expect(screen.getByText("CSV → Parquet")).toBeInTheDocument();
-    expect(screen.getByText("CSV Viewer")).toBeInTheDocument();
+    expect(screen.getByText("Delimited Viewer")).toBeInTheDocument();
+    expect(screen.getByText("Excel Viewer")).toBeInTheDocument();
+    expect(screen.getByText("XML Formatter")).toBeInTheDocument();
     expect(screen.getByText("CSV Inspector")).toBeInTheDocument();
     expect(screen.getByText("SQL Playground")).toBeInTheDocument();
     expect(screen.getByText("YAML → JSON")).toBeInTheDocument();
@@ -112,18 +114,18 @@ describe("Page rendering", () => {
 describe("Homepage consistency", () => {
   it("hero badge, feature card, and meta all reference correct counts", () => {
     renderWithRoute("/", <Index />);
-    // Hero badge says "41 Tools"
-    expect(screen.getByText(/41 Tools/)).toBeInTheDocument();
-    // Feature card says "41+ tools"
-    expect(screen.getByText(/41\+ tools/)).toBeInTheDocument();
+    // Hero badge says "43 Tools"
+    expect(screen.getByText(/43 Tools/)).toBeInTheDocument();
+    // Feature card says "43+ tools"
+    expect(screen.getByText(/43\+ tools/)).toBeInTheDocument();
   });
 
   it("all tool categories have cards", () => {
     renderWithRoute("/", <Index />);
-    // 14 converters + 3 viewers + 3 inspectors + 18 analysis + 3 utilities = 41
+    // 14 converters + 5 viewers + 3 inspectors + 18 analysis + 3 utilities = 43
     const allLinks = screen.getAllByText("Open");
     // Each tool card has an "Open" text that appears on hover
-    expect(allLinks.length).toBe(41);
+    expect(allLinks.length).toBe(43);
   });
 
   it("privacy section is present", () => {

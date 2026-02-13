@@ -1,31 +1,14 @@
 
 
-## Add Sample Data to Base64 and Hash Generator Tools
+## 5 New Viewers — 3-Phase Plan
 
-Two of the new tools -- Base64 Encoder/Decoder and Hash Generator -- are missing "Load Sample" buttons. All other new tools already have them.
+### Phase 1: Excel Viewer + XML Formatter ✅ DONE
+- `/excel-viewer` — Multi-sheet browsing with DataTable, uses existing xlsx dep
+- `/xml-formatter` — Pretty-print, minify, validate XML with configurable indentation
 
-### Changes
+### Phase 2: YAML Formatter + Log Viewer
+- `/yaml-formatter` — Validate, format, syntax-highlighted YAML output
+- `/log-viewer` — Level filtering (ERROR/WARN/INFO/DEBUG), regex search, line numbers
 
-**1. `src/pages/Base64Page.tsx`**
-- Add a sample text string (e.g., a short multi-line snippet like a JSON config or a famous quote)
-- Add a "Load Sample" button in the toolbar that populates the input textarea with the sample text
-
-**2. `src/pages/HashGeneratorPage.tsx`**
-- Add a sample text string (e.g., "The quick brown fox jumps over the lazy dog" -- a classic hash test vector)
-- Add a "Load Sample" button in the toolbar that populates the input textarea with the sample text
-
-### Technical Detail
-
-Both pages follow the same pattern already used in YAML/TOML/XML converter pages:
-
-```typescript
-// Define sample constant
-const sampleText = `Hello, World!\nThis is sample text for hashing.`;
-
-// Add button in toolbar
-<Button variant="outline" size="sm" onClick={() => setInput(sampleText)}>
-  Load Sample
-</Button>
-```
-
-No new dependencies or files needed -- just two small additions to existing pages.
+### Phase 3: Hex Viewer
+- `/hex-viewer` — Binary file inspection with hex + ASCII columns, offset navigation

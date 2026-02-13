@@ -48,6 +48,7 @@ const linksByFormat: Record<string, { label: string; route: string }[]> = {
     { label: "Anonymize", route: "/data-anonymizer" },
   ],
   excel: [
+    { label: "View Data", route: "/excel-viewer" },
     { label: "Convert to CSV", route: "/excel-to-csv" },
     { label: "SQL Playground", route: "/sql-playground" },
   ],
@@ -60,6 +61,7 @@ const linksByFormat: Record<string, { label: string; route: string }[]> = {
   xml: [
     { label: "XML → JSON", route: "/xml-to-json" },
     { label: "JSON → XML", route: "/json-to-xml" },
+    { label: "Format XML", route: "/xml-formatter" },
     { label: "JSON Formatter", route: "/json-formatter" },
     { label: "JSON Flattener", route: "/json-flattener" },
   ],

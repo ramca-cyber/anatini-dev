@@ -54,6 +54,8 @@ const DataGeneratorPage = lazy(() => import("./pages/DataGeneratorPage"));
 const JsonSchemaValidatorPage = lazy(() => import("./pages/JsonSchemaValidatorPage"));
 const TomlToJsonPage = lazy(() => import("./pages/TomlToJsonPage"));
 const JsonToTomlPage = lazy(() => import("./pages/JsonToTomlPage"));
+const ExcelViewerPage = lazy(() => import("./pages/ExcelViewerPage"));
+const XmlFormatterPage = lazy(() => import("./pages/XmlFormatterPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const BlogIndex = lazy(() => import("./pages/blog/BlogIndex"));
 const HowToConvertCsvToParquet = lazy(() => import("./pages/blog/HowToConvertCsvToParquet"));
@@ -143,6 +145,10 @@ const App = () => (
                   {/* Converters - TOML */}
                   <Route path="/toml-to-json" element={<TomlToJsonPage />} />
                   <Route path="/json-to-toml" element={<JsonToTomlPage />} />
+
+                  {/* New Viewers */}
+                  <Route path="/excel-viewer" element={<ExcelViewerPage />} />
+                  <Route path="/xml-formatter" element={<XmlFormatterPage />} />
 
                   {/* Legacy */}
                   <Route path="/dataset-diff" element={<DiffPage />} />

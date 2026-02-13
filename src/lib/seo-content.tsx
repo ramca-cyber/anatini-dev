@@ -430,6 +430,27 @@ const seoData: Record<string, { whatIs: { title: string; content: string }; howT
       { question: "Are datetime values preserved?", answer: "If your JSON contains ISO 8601 date strings, they'll be output as TOML strings. TOML has native datetime support but the converter treats them as strings." },
     ],
   },
+  "excel-viewer": {
+    metaDescription: "View Excel (XLSX, XLS) files in your browser with multi-sheet navigation. Sortable tables, no uploads, no installs.",
+    whatIs: { title: "What is an Excel Viewer?", content: "An Excel viewer lets you open and browse spreadsheet files (.xlsx, .xls) directly in your browser without installing Excel or any other software. Navigate between sheets, sort columns, and explore your data — all offline." },
+    howToUse: "Drop an Excel file or load from URL. Switch between sheets using the tab bar. Data is displayed in a sortable, paginated table. Use the 'Try with sample data' button to explore the viewer.",
+    faqs: [
+      { question: "What Excel formats are supported?", answer: "Both .xlsx (modern) and .xls (legacy) formats are supported via the SheetJS library." },
+      { question: "Is my data uploaded?", answer: "No — all processing happens locally in your browser. Your files never leave your machine." },
+      { question: "Can I edit the data?", answer: "This is a read-only viewer. For conversions, use the Excel to CSV tool or SQL Playground." },
+      { question: "How many rows can it handle?", answer: "The viewer displays all rows with client-side pagination. Very large files (50MB+) may be slow due to browser memory." },
+    ],
+  },
+  "xml-formatter": {
+    metaDescription: "Format, minify, and validate XML documents in your browser. Pretty-print with configurable indentation. Free, offline.",
+    whatIs: { title: "What is an XML Formatter?", content: "An XML formatter takes raw or minified XML and displays it with proper indentation and line breaks for human readability. It can also minify XML (remove whitespace), validate syntax, and help you spot structural issues in your documents." },
+    howToUse: "Paste XML in the input area. The formatter auto-formats with your chosen indentation. Use Minify to compress, Validate to check syntax. Copy or download the result.",
+    faqs: [
+      { question: "Does it validate XML?", answer: "Yes — the formatter uses the browser's built-in DOMParser which performs well-formedness validation. Click Validate for explicit checking." },
+      { question: "Does it support namespaces?", answer: "Yes — XML namespaces are preserved during formatting. The browser's DOMParser handles namespace-aware parsing." },
+      { question: "Is my data uploaded?", answer: "No — everything runs locally in your browser. No data is sent to any server." },
+    ],
+  },
 };
 
 export function getToolSeo(toolId: string) {

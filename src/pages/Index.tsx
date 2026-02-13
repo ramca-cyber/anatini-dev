@@ -28,7 +28,9 @@ const converters = [
 const viewers = [
   { path: "/csv-viewer", title: "Delimited Viewer", description: "View CSV, TSV, DSV with search & stats.", icon: Eye },
   { path: "/parquet-viewer", title: "Parquet Viewer", description: "Data, schema, and metadata tabs.", icon: Eye },
+  { path: "/excel-viewer", title: "Excel Viewer", description: "Browse XLSX/XLS with multi-sheet tabs.", icon: Eye },
   { path: "/json-formatter", title: "JSON Formatter", description: "Format, minify, validate with tree view.", icon: Code },
+  { path: "/xml-formatter", title: "XML Formatter", description: "Format, minify, validate XML documents.", icon: Code },
 ];
 
 const inspectors = [
@@ -68,7 +70,7 @@ const features = [
   { icon: Zap, title: "WebAssembly Speed", description: "DuckDB compiled to WASM — analytical queries in milliseconds, not seconds." },
   { icon: Lock, title: "Zero Data Leaks", description: "No uploads. No servers. No tracking. Your files never leave your machine." },
   { icon: Globe, title: "No Install Needed", description: "Works in any modern browser. No extensions, no CLI, no accounts required." },
-  { icon: Shield, title: "Free Forever", description: "All 41+ tools, no paywalls. Open source philosophy, closed-source simplicity." },
+  { icon: Shield, title: "Free Forever", description: "All 43+ tools, no paywalls. Open source philosophy, closed-source simplicity." },
 ];
 
 const jsonLd = {
@@ -80,7 +82,7 @@ const jsonLd = {
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "Any",
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-  "featureList": "CSV to Parquet, Parquet to CSV, CSV to JSON, JSON to CSV, JSON to Parquet, Parquet to JSON, Excel to CSV, CSV to Excel, YAML to JSON, JSON to YAML, XML to JSON, JSON to XML, TOML to JSON, JSON to TOML, Delimited Viewer, Parquet Viewer, JSON Formatter, CSV Inspector, JSON Inspector, Parquet Inspector, SQL Playground, Data Profiler, JSON Flattener, Schema Generator, CSV to SQL, Dataset Diff, Data Sampler, Deduplicator, SQL Formatter, Markdown Table, Column Editor, Data Merge, Pivot Table, Chart Builder, Regex Filter, CSV Splitter, Base64 Encoder/Decoder, Data Anonymizer, Hash Generator, Data Generator, JSON Schema Validator",
+  "featureList": "CSV to Parquet, Parquet to CSV, CSV to JSON, JSON to CSV, JSON to Parquet, Parquet to JSON, Excel to CSV, CSV to Excel, YAML to JSON, JSON to YAML, XML to JSON, JSON to XML, TOML to JSON, JSON to TOML, Delimited Viewer, Parquet Viewer, Excel Viewer, JSON Formatter, XML Formatter, CSV Inspector, JSON Inspector, Parquet Inspector, SQL Playground, Data Profiler, JSON Flattener, Schema Generator, CSV to SQL, Dataset Diff, Data Sampler, Deduplicator, SQL Formatter, Markdown Table, Column Editor, Data Merge, Pivot Table, Chart Builder, Regex Filter, CSV Splitter, Base64 Encoder/Decoder, Data Anonymizer, Hash Generator, Data Generator, JSON Schema Validator",
 };
 
 function ToolCard({ path, title, description, icon: Icon }: { path: string; title: string; description: string; icon: React.ElementType }) {
@@ -106,7 +108,7 @@ export default function Index() {
     <>
       <PageMeta
         title="Anatini.dev — Free, Offline Data Tools for Developers"
-        description="41+ free, offline data tools powered by DuckDB-WASM. Convert CSV, Parquet, JSON, Excel, XML, TOML. Query with SQL. Profile datasets. All in your browser."
+        description="43+ free, offline data tools powered by DuckDB-WASM. Convert CSV, Parquet, JSON, Excel, XML, TOML. Query with SQL. Profile datasets. All in your browser."
       />
 
 
@@ -121,7 +123,7 @@ export default function Index() {
         <div className="container py-12 md:py-20 lg:py-28">
           <div className="mx-auto max-w-3xl">
             <div className="inline-block border-2 border-border bg-secondary px-3 py-1 text-xs font-bold uppercase tracking-widest mb-6">
-             41 Tools · 100% Offline · Zero Tracking
+             43 Tools · 100% Offline · Zero Tracking
             </div>
             <h1 className="text-4xl font-bold leading-[1.1] tracking-tight md:text-5xl lg:text-6xl">
               Data tools that run
