@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { DuckDBProvider } from "@/contexts/DuckDBContext";
 import { FileStoreProvider } from "@/contexts/FileStoreContext";
 import { Layout } from "@/components/layout/Layout";
+import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { Loader2 } from "lucide-react";
 
 // Lazy-loaded pages
@@ -68,6 +69,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <ErrorBoundary>
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route element={<Layout />}>
@@ -137,6 +139,7 @@ const App = () => (
                 </Route>
               </Routes>
             </Suspense>
+            </ErrorBoundary>
           </BrowserRouter>
         </FileStoreProvider>
       </DuckDBProvider>

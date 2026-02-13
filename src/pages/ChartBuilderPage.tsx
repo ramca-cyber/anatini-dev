@@ -150,7 +150,8 @@ export default function ChartBuilderPage() {
     ctx.scale(2, 2);
     const img = new window.Image();
     img.onload = () => {
-      ctx.fillStyle = "#ffffff";
+      const isDark = document.documentElement.classList.contains("dark");
+      ctx.fillStyle = isDark ? "#1a1a2e" : "#ffffff";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0);
       const pngUrl = canvas.toDataURL("image/png");

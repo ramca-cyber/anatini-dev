@@ -47,7 +47,10 @@ export function DropZone({ accept, onFile, label = "Drop a file here", maxSizeMB
       onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
       onDragLeave={() => setDragOver(false)}
       onDrop={handleDrop}
+      role="button"
+      tabIndex={0}
       onClick={() => inputRef.current?.click()}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); inputRef.current?.click(); } }}
       className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-6 md:p-10 transition-all ${
         dragOver
           ? "border-primary bg-primary/5 shadow-[0_0_30px_-5px_hsl(187_80%_55%/0.2)]"

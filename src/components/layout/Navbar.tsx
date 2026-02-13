@@ -77,7 +77,7 @@ export function Navbar() {
       <div className="container flex h-14 items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 font-semibold text-foreground">
-          <img src={logoImg} alt="SwiftDataTools logo" className="h-6 w-6" />
+          <img src={logoImg} alt="Anatini.dev logo" className="h-6 w-6" />
           <span className="text-lg tracking-tight">Anatini.dev</span>
         </Link>
 

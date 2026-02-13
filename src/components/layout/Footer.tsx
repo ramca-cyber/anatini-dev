@@ -29,6 +29,16 @@ const toolGrid = {
     { label: "Schema Generator", path: "/schema-generator" },
     { label: "CSV → SQL", path: "/csv-to-sql" },
     { label: "Dataset Diff", path: "/dataset-diff" },
+    { label: "Data Sampler", path: "/data-sampler" },
+    { label: "Deduplicator", path: "/deduplicator" },
+    { label: "SQL Formatter", path: "/sql-formatter" },
+    { label: "Markdown Table", path: "/markdown-table" },
+    { label: "Column Editor", path: "/column-editor" },
+    { label: "Data Merge", path: "/data-merge" },
+    { label: "Pivot Table", path: "/pivot-table" },
+    { label: "Chart Builder", path: "/chart-builder" },
+    { label: "YAML ↔ JSON", path: "/yaml-json" },
+    { label: "Regex Filter", path: "/regex-filter" },
   ],
 };
 
