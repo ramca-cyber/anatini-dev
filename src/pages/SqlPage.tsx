@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useMemo } from "react";
 import { ErrorAlert } from "@/components/shared/ErrorAlert";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
-import { Terminal, Play, Download, Plus, Copy, Table2, History, X, ChevronDown } from "lucide-react";
+import { Terminal, Play, Download, Plus, Copy, Table2, History, X, ChevronDown, Pencil, Trash2 } from "lucide-react";
 import { useFileStore } from "@/contexts/FileStoreContext";
 import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
 import { ToolPage } from "@/components/shared/ToolPage";
@@ -11,6 +11,7 @@ import { DataTable } from "@/components/shared/DataTable";
 import { SqlEditor } from "@/components/shared/SqlEditor";
 import { LoadingState } from "@/components/shared/FileInfo";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { registerFile, runQuery, exportToCSV, exportToParquet, exportQueryToJSON, downloadBlob, sanitizeTableName, warnLargeFile, type QueryResult } from "@/lib/duckdb-helpers";
@@ -65,6 +66,21 @@ function getSampleQueries(tables: LoadedTable[]): { label: string; sql: string }
   return queries;
 }
 
+/** Parse an Excel file into multiple CSV Files, one per sheet */
+async function excelToSheetFiles(file: File): Promise<{ name: string; file: File }[]> {
+  const { read, utils } = await import("xlsx");
+  const buf = await file.arrayBuffer();
+  const wb = read(buf);
+  const results: { name: string; file: File }[] = [];
+  for (const sheetName of wb.SheetNames) {
+    const csv = utils.sheet_to_csv(wb.Sheets[sheetName]);
+    const blob = new Blob([csv], { type: "text/csv" });
+    const csvFile = new File([blob], `${sanitizeTableName(file.name)}_${sanitizeTableName(sheetName)}.csv`, { type: "text/csv" });
+    results.push({ name: `${sanitizeTableName(file.name)}_${sanitizeTableName(sheetName)}`, file: csvFile });
+  }
+  return results;
+}
+
 export default function SqlPage() {
   const { db } = useDuckDB();
   const { addFile } = useFileStore();
@@ -75,6 +91,8 @@ export default function SqlPage() {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [showSamples, setShowSamples] = useState(false);
+  const [renamingTable, setRenamingTable] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
   const editorInsertRef = useRef<((text: string) => void) | null>(null);
 
   const activeTab = tabs.find(t => t.id === activeTabId) ?? tabs[0];
@@ -93,6 +111,34 @@ export default function SqlPage() {
 
   async function handleFile(f: File) {
     if (!db) return;
+    const ext = f.name.split(".").pop()?.toLowerCase();
+
+    // Excel: split into per-sheet CSV files
+    if (ext === "xlsx" || ext === "xls") {
+      warnLargeFile(f);
+      addFile(f);
+      updateTab(activeTab.id, { loading: true, error: null });
+      try {
+        const sheets = await excelToSheetFiles(f);
+        if (sheets.length === 0) throw new Error("No sheets found in Excel file");
+        let firstTable = "";
+        for (const sheet of sheets) {
+          const info = await registerFile(db, sheet.file, sheet.name);
+          const newTable: LoadedTable = { name: sheet.name, fileName: `${f.name} → ${sheet.name}`, ...info };
+          setTables(prev => [...prev.filter(t => t.name !== sheet.name), newTable]);
+          if (!firstTable) firstTable = sheet.name;
+        }
+        if (!activeTab.sql && firstTable) updateTab(activeTab.id, { sql: `SELECT * FROM "${firstTable}" LIMIT 100;` });
+        setShowDropZone(false);
+        toast({ title: `Loaded ${sheets.length} sheet(s) from Excel` });
+      } catch (e) {
+        updateTab(activeTab.id, { error: e instanceof Error ? e.message : "Failed to load Excel file" });
+      } finally {
+        updateTab(activeTab.id, { loading: false });
+      }
+      return;
+    }
+
     warnLargeFile(f);
     addFile(f);
     updateTab(activeTab.id, { loading: true, error: null });
@@ -126,6 +172,47 @@ export default function SqlPage() {
       updateTab(activeTab.id, { error: e instanceof Error ? e.message : "Query failed", result: null, loading: false });
     }
   }, [db, activeTab.id, activeTab.sql]);
+
+  async function handleRemoveTable(tableName: string) {
+    if (!db) return;
+    try {
+      const conn = await db.connect();
+      try {
+        await conn.query(`DROP TABLE IF EXISTS "${tableName}"`);
+      } finally {
+        await conn.close();
+      }
+      setTables(prev => prev.filter(t => t.name !== tableName));
+      toast({ title: `Removed table "${tableName}"` });
+    } catch (e) {
+      toast({ title: "Failed to remove table", description: e instanceof Error ? e.message : "Unknown error", variant: "destructive" });
+    }
+  }
+
+  async function handleRenameTable(oldName: string, newName: string) {
+    if (!db || !newName.trim() || newName === oldName) {
+      setRenamingTable(null);
+      return;
+    }
+    const safeName = sanitizeTableName(newName);
+    if (tables.some(t => t.name === safeName && t.name !== oldName)) {
+      toast({ title: "Table name already exists", variant: "destructive" });
+      return;
+    }
+    try {
+      const conn = await db.connect();
+      try {
+        await conn.query(`ALTER TABLE "${oldName}" RENAME TO "${safeName}"`);
+      } finally {
+        await conn.close();
+      }
+      setTables(prev => prev.map(t => t.name === oldName ? { ...t, name: safeName } : t));
+      setRenamingTable(null);
+      toast({ title: `Renamed "${oldName}" → "${safeName}"` });
+    } catch (e) {
+      toast({ title: "Rename failed", description: e instanceof Error ? e.message : "Unknown error", variant: "destructive" });
+    }
+  }
 
   async function handleExportCSV() {
     if (!db || !activeTab.sql.trim()) return;
@@ -220,22 +307,55 @@ export default function SqlPage() {
           {showDropZone && (
             <div className="space-y-2">
               <DropZone
-                accept={[".csv", ".parquet", ".json"]}
+                accept={[".csv", ".parquet", ".json", ".xlsx", ".xls"]}
                 onFile={handleFile}
-                label="Add a file"
+                label="Add a file (CSV, Parquet, JSON, Excel)"
                 sampleAction={tables.length === 0 ? { label: "⚗ Try with sample data", onClick: () => handleFile(getSampleCSV()) } : undefined}
               />
-              <UrlInput onFile={handleFile} accept={[".csv", ".parquet", ".json"]} placeholder="https://example.com/data.csv" label="Or load from URL" />
+              <UrlInput onFile={handleFile} accept={[".csv", ".parquet", ".json", ".xlsx", ".xls"]} placeholder="https://example.com/data.csv" label="Or load from URL" />
             </div>
           )}
 
           {tables.map((t) => (
             <div key={t.name} className="rounded-lg border border-border bg-card p-3 space-y-2">
               <div className="flex items-center gap-2">
-                <Table2 className="h-4 w-4 text-primary" />
-                <span className="font-mono text-sm font-medium">{t.name}</span>
-                <span className="ml-auto text-[10px] text-muted-foreground">{t.rowCount.toLocaleString()} rows</span>
+                <Table2 className="h-4 w-4 text-primary shrink-0" />
+                {renamingTable === t.name ? (
+                  <form
+                    className="flex-1 flex items-center gap-1"
+                    onSubmit={(e) => { e.preventDefault(); handleRenameTable(t.name, renameValue); }}
+                  >
+                    <Input
+                      value={renameValue}
+                      onChange={(e) => setRenameValue(e.target.value)}
+                      className="h-6 text-xs font-mono px-1"
+                      autoFocus
+                      onBlur={() => handleRenameTable(t.name, renameValue)}
+                      onKeyDown={(e) => { if (e.key === "Escape") setRenamingTable(null); }}
+                    />
+                  </form>
+                ) : (
+                  <>
+                    <span className="font-mono text-sm font-medium truncate">{t.name}</span>
+                    <span className="ml-auto text-[10px] text-muted-foreground shrink-0">{t.rowCount.toLocaleString()} rows</span>
+                    <button
+                      onClick={() => { setRenamingTable(t.name); setRenameValue(t.name); }}
+                      className="text-muted-foreground/50 hover:text-foreground transition-colors shrink-0"
+                      title="Rename table"
+                    >
+                      <Pencil className="h-3 w-3" />
+                    </button>
+                    <button
+                      onClick={() => handleRemoveTable(t.name)}
+                      className="text-muted-foreground/50 hover:text-destructive transition-colors shrink-0"
+                      title="Remove table"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </>
+                )}
               </div>
+              <div className="text-[10px] text-muted-foreground/60 truncate">{t.fileName}</div>
               <div className="space-y-0.5">
                 {t.columns.map((col, i) => (
                   <button
