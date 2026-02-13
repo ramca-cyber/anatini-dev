@@ -102,16 +102,13 @@ export default function CsvViewerPage() {
 
       const delimiter = getEffectiveDelimiter();
       if (delimiter) {
-        // Use DuckDB's read_csv with explicit delimiter
+        // Register file first, then create table with explicit delimiter
+        await db.registerFileHandle(f.name, f, 2, true);
         const conn = await db.connect();
         const escapedDelim = delimiter.replace(/'/g, "''");
-        await conn.query(`CREATE OR REPLACE TABLE "${tName}" AS SELECT * FROM read_csv('${f.name}', delim='${escapedDelim}', header=true, auto_detect=true)`);
-        
-        // Register file first so DuckDB can find it
-        await db.registerFileHandle(f.name, f, 2, true);
         await conn.query(`DROP TABLE IF EXISTS "${tName}"`);
         await conn.query(`CREATE TABLE "${tName}" AS SELECT * FROM read_csv('${f.name}', delim='${escapedDelim}', header=true, auto_detect=true)`);
-        
+
         const countRes = await conn.query(`SELECT COUNT(*) FROM "${tName}"`);
         const rowCount = Number(countRes.toArray()[0][0]);
         const schemaRes = await conn.query(`DESCRIBE "${tName}"`);
