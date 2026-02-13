@@ -1,36 +1,31 @@
 
-## Fix: JSON Schema Validator - Add `ajv-formats` Support
 
-### Problem
-The JSON Schema Validator shows `unknown format "email" ignored in schema` because the `ajv` library does not include format validation (e.g., "email", "uri", "date") by default. The `ajv-formats` package is required.
+## Add Sample Data to Base64 and Hash Generator Tools
 
-### Solution
-
-**1. Install `ajv-formats` dependency**
-Add `ajv-formats` to `package.json`.
-
-**2. Update `src/pages/JsonSchemaValidatorPage.tsx`**
-- Import `addFormats` from `ajv-formats`
-- Apply it to the Ajv instance: `addFormats(ajv)`
-- This enables validation of all standard JSON Schema string formats: email, uri, date, date-time, time, ipv4, ipv6, uuid, etc.
+Two of the new tools -- Base64 Encoder/Decoder and Hash Generator -- are missing "Load Sample" buttons. All other new tools already have them.
 
 ### Changes
 
-| File | Change |
-|---|---|
-| `package.json` | Add `ajv-formats` dependency |
-| `src/pages/JsonSchemaValidatorPage.tsx` | Import and apply `addFormats(ajv)` (2 lines changed) |
+**1. `src/pages/Base64Page.tsx`**
+- Add a sample text string (e.g., a short multi-line snippet like a JSON config or a famous quote)
+- Add a "Load Sample" button in the toolbar that populates the input textarea with the sample text
+
+**2. `src/pages/HashGeneratorPage.tsx`**
+- Add a sample text string (e.g., "The quick brown fox jumps over the lazy dog" -- a classic hash test vector)
+- Add a "Load Sample" button in the toolbar that populates the input textarea with the sample text
 
 ### Technical Detail
 
-```
-// Before
-import Ajv from "ajv";
-const ajv = new Ajv({ allErrors: true, verbose: true });
+Both pages follow the same pattern already used in YAML/TOML/XML converter pages:
 
-// After
-import Ajv from "ajv";
-import addFormats from "ajv-formats";
-const ajv = new Ajv({ allErrors: true, verbose: true });
-addFormats(ajv);
+```typescript
+// Define sample constant
+const sampleText = `Hello, World!\nThis is sample text for hashing.`;
+
+// Add button in toolbar
+<Button variant="outline" size="sm" onClick={() => setInput(sampleText)}>
+  Load Sample
+</Button>
 ```
+
+No new dependencies or files needed -- just two small additions to existing pages.
