@@ -41,6 +41,9 @@ const ALL_TOOL_IDS = [
   "data-anonymizer",
   "hash-generator",
   "data-generator",
+  "json-schema-validator",
+  "toml-to-json",
+  "json-to-toml",
 ];
 
 describe("SEO content coverage", () => {

@@ -21,6 +21,26 @@ import { Link } from "react-router-dom";
 
 const PAGE_SIZE = 200;
 
+type DelimiterOption = "auto" | "," | "\t" | ";" | "|" | "custom";
+const delimiterLabels: Record<string, string> = {
+  "auto": "Auto-detect",
+  ",": "Comma (,)",
+  "\t": "Tab (\\t)",
+  ";": "Semicolon (;)",
+  "|": "Pipe (|)",
+  "custom": "Custom",
+};
+
+function detectDelimiter(text: string): string {
+  const firstLines = text.split("\n").slice(0, 5).join("\n");
+  const counts: Record<string, number> = { ",": 0, "\t": 0, ";": 0, "|": 0 };
+  for (const ch of firstLines) {
+    if (ch in counts) counts[ch]++;
+  }
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  return sorted[0][1] > 0 ? sorted[0][0] : ",";
+}
+
 export default function CsvViewerPage() {
   const { db } = useDuckDB();
   const { addFile } = useFileStore();
@@ -38,6 +58,17 @@ export default function CsvViewerPage() {
   const [page, setPage] = useState(0);
   const [tableName, setTableName] = useState("");
   const [storedFileId, setStoredFileId] = useState<string | null>(null);
+
+  // Delimiter state
+  const [delimiterOption, setDelimiterOption] = useState<DelimiterOption>("auto");
+  const [customDelimiter, setCustomDelimiter] = useState("");
+  const [detectedDelimiter, setDetectedDelimiter] = useState<string | null>(null);
+
+  function getEffectiveDelimiter(): string | undefined {
+    if (delimiterOption === "auto") return undefined; // let DuckDB auto-detect
+    if (delimiterOption === "custom") return customDelimiter || undefined;
+    return delimiterOption;
+  }
 
   async function loadPage(tName: string, pageNum: number) {
     if (!db) return;
@@ -60,15 +91,52 @@ export default function CsvViewerPage() {
     setSearch("");
     setSearchCol("__all__");
     try {
+      // Auto-detect delimiter from first few KB
+      const slice = f.slice(0, 8192);
+      const text = await slice.text();
+      const detected = detectDelimiter(text);
+      setDetectedDelimiter(detected);
+
       const tName = sanitizeTableName(f.name);
       setTableName(tName);
-      const info = await registerFile(db, f, tName);
-      setMeta(info);
-      await loadPage(tName, 0);
+
+      const delimiter = getEffectiveDelimiter();
+      if (delimiter) {
+        // Use DuckDB's read_csv with explicit delimiter
+        const conn = await db.connect();
+        const escapedDelim = delimiter.replace(/'/g, "''");
+        await conn.query(`CREATE OR REPLACE TABLE "${tName}" AS SELECT * FROM read_csv('${f.name}', delim='${escapedDelim}', header=true, auto_detect=true)`);
+        
+        // Register file first so DuckDB can find it
+        await db.registerFileHandle(f.name, f, 2, true);
+        await conn.query(`DROP TABLE IF EXISTS "${tName}"`);
+        await conn.query(`CREATE TABLE "${tName}" AS SELECT * FROM read_csv('${f.name}', delim='${escapedDelim}', header=true, auto_detect=true)`);
+        
+        const countRes = await conn.query(`SELECT COUNT(*) FROM "${tName}"`);
+        const rowCount = Number(countRes.toArray()[0][0]);
+        const schemaRes = await conn.query(`DESCRIBE "${tName}"`);
+        const schemaRows = schemaRes.toArray();
+        const columns = schemaRows.map((r: any) => String(r[0]));
+        const types = schemaRows.map((r: any) => String(r[1]));
+        await conn.close();
+
+        setMeta({ columns, rowCount, types });
+        await loadPage(tName, 0);
+      } else {
+        const info = await registerFile(db, f, tName);
+        setMeta(info);
+        await loadPage(tName, 0);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load file");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function reloadWithDelimiter() {
+    if (file) {
+      await handleFile(file);
     }
   }
 
@@ -134,8 +202,10 @@ export default function CsvViewerPage() {
     });
   }
 
+  const delimiterDisplay = detectedDelimiter === "," ? "Comma" : detectedDelimiter === "\t" ? "Tab" : detectedDelimiter === ";" ? "Semicolon" : detectedDelimiter === "|" ? "Pipe" : detectedDelimiter ?? "—";
+
   return (
-    <ToolPage icon={Eye} title="CSV Viewer" description="View, search, filter, and sort CSV data with column statistics." metaDescription={getToolMetaDescription("csv-viewer")} seoContent={getToolSeo("csv-viewer")}>
+    <ToolPage icon={Eye} title="Delimited File Viewer" description="View, search, filter, and sort CSV, TSV, and other delimited data with column statistics." metaDescription={getToolMetaDescription("csv-viewer")} seoContent={getToolSeo("csv-viewer")}>
       <DuckDBGate>
       <div className="relative space-y-4">
         {!file && (
@@ -145,15 +215,40 @@ export default function CsvViewerPage() {
               value={inputMode}
               onChange={setInputMode}
             />
+
+            {/* Delimiter option before loading */}
+            <div className="flex items-center gap-3 border border-border bg-muted/30 px-4 py-3 flex-wrap">
+              <label className="text-xs text-muted-foreground font-bold">Delimiter</label>
+              <select
+                value={delimiterOption}
+                onChange={e => setDelimiterOption(e.target.value as DelimiterOption)}
+                className="border border-border bg-background px-2 py-1 text-xs"
+              >
+                {Object.entries(delimiterLabels).map(([val, label]) => (
+                  <option key={val} value={val}>{label}</option>
+                ))}
+              </select>
+              {delimiterOption === "custom" && (
+                <input
+                  type="text"
+                  value={customDelimiter}
+                  onChange={e => setCustomDelimiter(e.target.value.slice(0, 1))}
+                  placeholder="e.g. ~"
+                  maxLength={1}
+                  className="border border-border bg-background px-2 py-1 text-xs w-16 font-mono"
+                />
+              )}
+            </div>
+
             {inputMode === "file" ? (
               <DropZone
-                accept={[".csv", ".tsv"]}
+                accept={[".csv", ".tsv", ".dsv", ".txt"]}
                 onFile={handleFile}
-                label="Drop a CSV file"
+                label="Drop a CSV, TSV, or delimited file"
                 sampleAction={{ label: "⚗ Try with sample data", onClick: () => handleFile(getSampleCSV()) }}
               />
             ) : (
-              <UrlInput onFile={handleFile} accept={[".csv", ".tsv"]} placeholder="https://example.com/data.csv" label="Load CSV from URL" />
+              <UrlInput onFile={handleFile} accept={[".csv", ".tsv", ".dsv", ".txt"]} placeholder="https://example.com/data.csv" label="Load delimited file from URL" />
             )}
           </div>
         )}
@@ -161,13 +256,39 @@ export default function CsvViewerPage() {
         {file && meta && (
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
+                {detectedDelimiter && (
+                  <span className="inline-flex items-center gap-1 border border-border bg-secondary px-2 py-0.5 text-[10px] font-mono text-muted-foreground">
+                    Delimiter: {delimiterDisplay}
+                  </span>
+                )}
                 {storedFileId && <InspectLink fileId={storedFileId} format="csv" />}
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
+                {/* Delimiter override */}
+                <select
+                  value={delimiterOption}
+                  onChange={e => { setDelimiterOption(e.target.value as DelimiterOption); }}
+                  className="border border-border bg-background px-2 py-1 text-xs"
+                >
+                  {Object.entries(delimiterLabels).map(([val, label]) => (
+                    <option key={val} value={val}>{label}</option>
+                  ))}
+                </select>
+                {delimiterOption === "custom" && (
+                  <input
+                    type="text"
+                    value={customDelimiter}
+                    onChange={e => setCustomDelimiter(e.target.value.slice(0, 1))}
+                    placeholder="~"
+                    maxLength={1}
+                    className="border border-border bg-background px-2 py-1 text-xs w-12 font-mono"
+                  />
+                )}
+                <Button variant="outline" size="sm" onClick={reloadWithDelimiter}>Reload</Button>
                 <Link to="/sql-playground"><Button variant="outline" size="sm">Open in SQL Playground</Button></Link>
-                <Button variant="outline" size="sm" onClick={() => { setFile(null); setMeta(null); setData(null); setColStats(null); setStoredFileId(null); }}>New file</Button>
+                <Button variant="outline" size="sm" onClick={() => { setFile(null); setMeta(null); setData(null); setColStats(null); setStoredFileId(null); setDetectedDelimiter(null); }}>New file</Button>
               </div>
             </div>
 
@@ -202,7 +323,7 @@ export default function CsvViewerPage() {
           </div>
         )}
 
-        {loading && <LoadingState message="Loading CSV..." />}
+        {loading && <LoadingState message="Loading data..." />}
         {error && <ErrorAlert message={error} />}
 
         {data && (

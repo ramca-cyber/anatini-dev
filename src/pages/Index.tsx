@@ -5,6 +5,7 @@ import {
   FileJson, Table, Eye, Code, FileText, Zap, Lock, Globe, Shield,
   GitCompare, Search, Shuffle, Copy, AlignLeft, Columns3, Merge,
   TableProperties, RefreshCw, Filter, Scissors, Binary, ShieldOff, Hash, Wand2,
+  CheckCircle2,
 } from "lucide-react";
 
 const converters = [
@@ -20,10 +21,12 @@ const converters = [
   { path: "/json-to-yaml", title: "JSON → YAML", description: "Convert JSON documents to YAML.", icon: RefreshCw },
   { path: "/xml-to-json", title: "XML → JSON", description: "Convert XML documents to JSON.", icon: RefreshCw },
   { path: "/json-to-xml", title: "JSON → XML", description: "Convert JSON documents to XML.", icon: RefreshCw },
+  { path: "/toml-to-json", title: "TOML → JSON", description: "Convert TOML config files to JSON.", icon: RefreshCw },
+  { path: "/json-to-toml", title: "JSON → TOML", description: "Convert JSON to TOML config format.", icon: RefreshCw },
 ];
 
 const viewers = [
-  { path: "/csv-viewer", title: "CSV Viewer", description: "Search, filter, sort with column stats.", icon: Eye },
+  { path: "/csv-viewer", title: "Delimited Viewer", description: "View CSV, TSV, DSV with search & stats.", icon: Eye },
   { path: "/parquet-viewer", title: "Parquet Viewer", description: "Data, schema, and metadata tabs.", icon: Eye },
   { path: "/json-formatter", title: "JSON Formatter", description: "Format, minify, validate with tree view.", icon: Code },
 ];
@@ -58,13 +61,14 @@ const analysis = [
 const utilities = [
   { path: "/base64", title: "Base64 Encoder/Decoder", description: "Encode and decode Base64 text or files.", icon: Binary },
   { path: "/hash-generator", title: "Hash Generator", description: "SHA-256, SHA-384, SHA-512 from text or files.", icon: Hash },
+  { path: "/json-schema-validator", title: "JSON Schema Validator", description: "Validate JSON against schema definitions.", icon: CheckCircle2 },
 ];
 
 const features = [
   { icon: Zap, title: "WebAssembly Speed", description: "DuckDB compiled to WASM — analytical queries in milliseconds, not seconds." },
   { icon: Lock, title: "Zero Data Leaks", description: "No uploads. No servers. No tracking. Your files never leave your machine." },
   { icon: Globe, title: "No Install Needed", description: "Works in any modern browser. No extensions, no CLI, no accounts required." },
-  { icon: Shield, title: "Free Forever", description: "All 38+ tools, no paywalls. Open source philosophy, closed-source simplicity." },
+  { icon: Shield, title: "Free Forever", description: "All 41+ tools, no paywalls. Open source philosophy, closed-source simplicity." },
 ];
 
 const jsonLd = {
@@ -76,7 +80,7 @@ const jsonLd = {
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "Any",
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-  "featureList": "CSV to Parquet, Parquet to CSV, CSV to JSON, JSON to CSV, JSON to Parquet, Parquet to JSON, Excel to CSV, CSV to Excel, YAML to JSON, JSON to YAML, XML to JSON, JSON to XML, CSV Viewer, Parquet Viewer, JSON Formatter, CSV Inspector, JSON Inspector, Parquet Inspector, SQL Playground, Data Profiler, JSON Flattener, Schema Generator, CSV to SQL, Dataset Diff, Data Sampler, Deduplicator, SQL Formatter, Markdown Table, Column Editor, Data Merge, Pivot Table, Chart Builder, Regex Filter, CSV Splitter, Base64 Encoder/Decoder, Data Anonymizer, Hash Generator, Data Generator",
+  "featureList": "CSV to Parquet, Parquet to CSV, CSV to JSON, JSON to CSV, JSON to Parquet, Parquet to JSON, Excel to CSV, CSV to Excel, YAML to JSON, JSON to YAML, XML to JSON, JSON to XML, TOML to JSON, JSON to TOML, Delimited Viewer, Parquet Viewer, JSON Formatter, CSV Inspector, JSON Inspector, Parquet Inspector, SQL Playground, Data Profiler, JSON Flattener, Schema Generator, CSV to SQL, Dataset Diff, Data Sampler, Deduplicator, SQL Formatter, Markdown Table, Column Editor, Data Merge, Pivot Table, Chart Builder, Regex Filter, CSV Splitter, Base64 Encoder/Decoder, Data Anonymizer, Hash Generator, Data Generator, JSON Schema Validator",
 };
 
 function ToolCard({ path, title, description, icon: Icon }: { path: string; title: string; description: string; icon: React.ElementType }) {
@@ -102,7 +106,7 @@ export default function Index() {
     <>
       <PageMeta
         title="Anatini.dev — Free, Offline Data Tools for Developers"
-        description="38+ free, offline data tools powered by DuckDB-WASM. Convert CSV, Parquet, JSON, Excel, XML. Query with SQL. Profile datasets. All in your browser."
+        description="41+ free, offline data tools powered by DuckDB-WASM. Convert CSV, Parquet, JSON, Excel, XML, TOML. Query with SQL. Profile datasets. All in your browser."
       />
 
 
@@ -117,7 +121,7 @@ export default function Index() {
         <div className="container py-12 md:py-20 lg:py-28">
           <div className="mx-auto max-w-3xl">
             <div className="inline-block border-2 border-border bg-secondary px-3 py-1 text-xs font-bold uppercase tracking-widest mb-6">
-             38 Tools · 100% Offline · Zero Tracking
+             41 Tools · 100% Offline · Zero Tracking
             </div>
             <h1 className="text-4xl font-bold leading-[1.1] tracking-tight md:text-5xl lg:text-6xl">
               Data tools that run
