@@ -11,7 +11,8 @@ const toolGrid = {
     { label: "Parquet → JSON", path: "/parquet-to-json" },
     { label: "Excel → CSV", path: "/excel-to-csv" },
     { label: "CSV → Excel", path: "/csv-to-excel" },
-    { label: "YAML ↔ JSON", path: "/yaml-json" },
+    { label: "YAML → JSON", path: "/yaml-to-json" },
+    { label: "JSON → YAML", path: "/json-to-yaml" },
   ],
   Viewers: [
     { label: "CSV Viewer", path: "/csv-viewer" },

@@ -41,7 +41,8 @@ const ColumnEditorPage = lazy(() => import("./pages/ColumnEditorPage"));
 const DataMergePage = lazy(() => import("./pages/DataMergePage"));
 const PivotTablePage = lazy(() => import("./pages/PivotTablePage"));
 const ChartBuilderPage = lazy(() => import("./pages/ChartBuilderPage"));
-const YamlJsonPage = lazy(() => import("./pages/YamlJsonPage"));
+const YamlToJsonPage = lazy(() => import("./pages/YamlToJsonPage"));
+const JsonToYamlPage = lazy(() => import("./pages/JsonToYamlPage"));
 const RegexFilterPage = lazy(() => import("./pages/RegexFilterPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const BlogIndex = lazy(() => import("./pages/blog/BlogIndex"));
@@ -110,7 +111,9 @@ const App = () => (
                   <Route path="/data-merge" element={<DataMergePage />} />
                   <Route path="/pivot-table" element={<PivotTablePage />} />
                   <Route path="/chart-builder" element={<ChartBuilderPage />} />
-                  <Route path="/yaml-json" element={<YamlJsonPage />} />
+                  <Route path="/yaml-to-json" element={<YamlToJsonPage />} />
+                  <Route path="/json-to-yaml" element={<JsonToYamlPage />} />
+                  <Route path="/yaml-json" element={<Navigate to="/yaml-to-json" replace />} />
                   <Route path="/regex-filter" element={<RegexFilterPage />} />
 
                   {/* Legacy */}

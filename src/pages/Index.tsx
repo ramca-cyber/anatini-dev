@@ -16,7 +16,8 @@ const converters = [
   { path: "/parquet-to-json", title: "Parquet → JSON", description: "Export Parquet to JSON/NDJSON.", icon: Braces },
   { path: "/excel-to-csv", title: "Excel → CSV", description: "Multi-sheet export to CSV.", icon: FileText },
   { path: "/csv-to-excel", title: "CSV → Excel", description: "Combine CSVs into a workbook.", icon: FileText },
-  { path: "/yaml-json", title: "YAML ↔ JSON", description: "Bidirectional YAML/JSON converter.", icon: RefreshCw },
+  { path: "/yaml-to-json", title: "YAML → JSON", description: "Convert YAML documents to JSON.", icon: RefreshCw },
+  { path: "/json-to-yaml", title: "JSON → YAML", description: "Convert JSON documents to YAML.", icon: RefreshCw },
 ];
 
 const viewers = [
@@ -106,7 +107,7 @@ export default function Index() {
         <div className="container py-12 md:py-20 lg:py-28">
           <div className="mx-auto max-w-3xl">
             <div className="inline-block border-2 border-border bg-secondary px-3 py-1 text-xs font-bold uppercase tracking-widest mb-6">
-             28 Tools · 100% Offline · Zero Tracking
+             30 Tools · 100% Offline · Zero Tracking
             </div>
             <h1 className="text-4xl font-bold leading-[1.1] tracking-tight md:text-5xl lg:text-6xl">
               Data tools that run
