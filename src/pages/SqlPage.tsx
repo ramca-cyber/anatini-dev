@@ -7,12 +7,12 @@ import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { UrlInput } from "@/components/shared/UrlInput";
-import { ToggleButton } from "@/components/shared/ToggleButton";
 import { DataTable } from "@/components/shared/DataTable";
 import { SqlEditor } from "@/components/shared/SqlEditor";
 import { LoadingState } from "@/components/shared/FileInfo";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { registerFile, runQuery, exportToCSV, exportToParquet, exportQueryToJSON, downloadBlob, sanitizeTableName, warnLargeFile, type QueryResult } from "@/lib/duckdb-helpers";
 import { getSampleCSV } from "@/lib/sample-data";
 import { toast } from "@/hooks/use-toast";
@@ -32,7 +32,22 @@ interface HistoryEntry {
   durationMs: number;
 }
 
+interface QueryTab {
+  id: string;
+  label: string;
+  sql: string;
+  result: QueryResult | null;
+  error: string | null;
+  loading: boolean;
+}
+
 const MAX_HISTORY = 20;
+let tabCounter = 1;
+
+function createTab(initialSql = ""): QueryTab {
+  const id = `tab-${tabCounter++}`;
+  return { id, label: `Query ${tabCounter - 1}`, sql: initialSql, result: null, error: null, loading: false };
+}
 
 function getSampleQueries(tables: LoadedTable[]): { label: string; sql: string }[] {
   if (tables.length === 0) return [];
@@ -54,15 +69,19 @@ export default function SqlPage() {
   const { db } = useDuckDB();
   const { addFile } = useFileStore();
   const [tables, setTables] = useState<LoadedTable[]>([]);
-  const [sql, setSql] = useState("");
-  const [result, setResult] = useState<QueryResult | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [tabs, setTabs] = useState<QueryTab[]>(() => [createTab()]);
+  const [activeTabId, setActiveTabId] = useState(() => tabs[0]?.id ?? "");
   const [showDropZone, setShowDropZone] = useState(true);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [showSamples, setShowSamples] = useState(false);
   const editorInsertRef = useRef<((text: string) => void) | null>(null);
+
+  const activeTab = tabs.find(t => t.id === activeTabId) ?? tabs[0];
+
+  function updateTab(id: string, patch: Partial<QueryTab>) {
+    setTabs(prev => prev.map(t => t.id === id ? { ...t, ...patch } : t));
+  }
 
   useAutoLoadFile(handleFile, !!db);
 
@@ -70,59 +89,55 @@ export default function SqlPage() {
     if (!db) return;
     warnLargeFile(f);
     addFile(f);
-    setLoading(true);
-    setError(null);
+    updateTab(activeTab.id, { loading: true, error: null });
     try {
       const tableName = sanitizeTableName(f.name);
       const info = await registerFile(db, f, tableName);
       const newTable: LoadedTable = { name: tableName, fileName: f.name, ...info };
       setTables((prev) => [...prev.filter((t) => t.name !== tableName), newTable]);
-      if (!sql) setSql(`SELECT * FROM "${tableName}" LIMIT 100;`);
+      if (!activeTab.sql) updateTab(activeTab.id, { sql: `SELECT * FROM "${tableName}" LIMIT 100;` });
       setShowDropZone(false);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load file");
+      updateTab(activeTab.id, { error: e instanceof Error ? e.message : "Failed to load file" });
     } finally {
-      setLoading(false);
+      updateTab(activeTab.id, { loading: false });
     }
   }
 
-  const handleRun = useCallback(async () => {
-    if (!db || !sql.trim()) return;
-    setLoading(true);
-    setError(null);
+  const handleRun = useCallback(async (selectedText?: string) => {
+    if (!db) return;
+    const queryText = selectedText?.trim() || activeTab.sql.trim();
+    if (!queryText) return;
+    updateTab(activeTab.id, { loading: true, error: null });
     const start = performance.now();
     try {
-      const res = await runQuery(db, sql);
+      const res = await runQuery(db, queryText);
       const durationMs = Math.round(performance.now() - start);
-      setResult(res);
-      const entry: HistoryEntry = { sql: sql.trim(), timestamp: new Date().toISOString(), rowCount: res.rowCount, durationMs };
-      const updated = [entry, ...history.filter(h => h.sql !== sql.trim()).slice(0, MAX_HISTORY - 1)];
-      setHistory(updated);
+      updateTab(activeTab.id, { result: res, loading: false });
+      const entry: HistoryEntry = { sql: queryText, timestamp: new Date().toISOString(), rowCount: res.rowCount, durationMs };
+      setHistory(prev => [entry, ...prev.filter(h => h.sql !== queryText).slice(0, MAX_HISTORY - 1)]);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Query failed");
-      setResult(null);
-    } finally {
-      setLoading(false);
+      updateTab(activeTab.id, { error: e instanceof Error ? e.message : "Query failed", result: null, loading: false });
     }
-  }, [db, sql, history]);
+  }, [db, activeTab.id, activeTab.sql]);
 
   async function handleExportCSV() {
-    if (!db || !sql.trim()) return;
+    if (!db || !activeTab.sql.trim()) return;
     try {
-      const csv = await exportToCSV(db, sql);
+      const csv = await exportToCSV(db, activeTab.sql);
       downloadBlob(csv, "query_result.csv", "text/csv");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Export failed");
+      updateTab(activeTab.id, { error: e instanceof Error ? e.message : "Export failed" });
     }
   }
 
   async function handleExportParquet() {
-    if (!db || !result) return;
+    if (!db || !activeTab.result) return;
     try {
       const conn = await db.connect();
       try {
-        await conn.query(`CREATE OR REPLACE TABLE __export_tmp AS ${sql}`);
-      } catch (innerErr) {
+        await conn.query(`CREATE OR REPLACE TABLE __export_tmp AS ${activeTab.sql}`);
+      } catch {
         await conn.close();
         toast({ title: "Parquet export failed", description: "Parquet export only works with SELECT queries.", variant: "destructive" });
         return;
@@ -135,24 +150,24 @@ export default function SqlPage() {
         await conn.close();
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Parquet export failed");
+      updateTab(activeTab.id, { error: e instanceof Error ? e.message : "Parquet export failed" });
     }
   }
 
   async function handleExportJSON() {
-    if (!db || !sql.trim()) return;
+    if (!db || !activeTab.sql.trim()) return;
     try {
-      const json = await exportQueryToJSON(db, sql);
+      const json = await exportQueryToJSON(db, activeTab.sql);
       downloadBlob(json, "query_result.json", "application/json");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "JSON export failed");
+      updateTab(activeTab.id, { error: e instanceof Error ? e.message : "JSON export failed" });
     }
   }
 
   function handleCopy() {
-    if (!result) return;
-    const header = result.columns.join("\t");
-    const rows = result.rows.map((r) => r.map((v) => (typeof v === "bigint" ? v.toString() : v) ?? "").join("\t")).join("\n");
+    if (!activeTab.result) return;
+    const header = activeTab.result.columns.join("\t");
+    const rows = activeTab.result.rows.map((r) => r.map((v) => (typeof v === "bigint" ? v.toString() : v) ?? "").join("\t")).join("\n");
     navigator.clipboard.writeText(header + "\n" + rows);
     toast({ title: "Copied to clipboard" });
   }
@@ -161,7 +176,23 @@ export default function SqlPage() {
     if (editorInsertRef.current) {
       editorInsertRef.current(`"${col}"`);
     } else {
-      setSql((prev) => prev + `"${col}" `);
+      updateTab(activeTab.id, { sql: activeTab.sql + `"${col}" ` });
+    }
+  }
+
+  function addTab() {
+    const t = createTab();
+    setTabs(prev => [...prev, t]);
+    setActiveTabId(t.id);
+  }
+
+  function closeTab(id: string) {
+    if (tabs.length <= 1) return;
+    const idx = tabs.findIndex(t => t.id === id);
+    const next = tabs.filter(t => t.id !== id);
+    setTabs(next);
+    if (activeTabId === id) {
+      setActiveTabId(next[Math.min(idx, next.length - 1)].id);
     }
   }
 
@@ -217,104 +248,147 @@ export default function SqlPage() {
         </div>
 
         {/* Main */}
-        <div className="space-y-4">
-          <SqlEditor value={sql} onChange={setSql} onRun={handleRun} onInsertRef={editorInsertRef} />
-
-          <div className="flex items-center gap-2 flex-wrap">
-            <Button onClick={handleRun} disabled={loading || !sql.trim()}>
-              <Play className="h-4 w-4 mr-1" /> Run
-            </Button>
-            {/* Sample queries dropdown */}
-            {sampleQueries.length > 0 && (
-              <div className="relative">
-                <Button variant="outline" size="sm" onClick={() => setShowSamples(!showSamples)}>
-                  Sample Queries <ChevronDown className="h-3 w-3 ml-1" />
-                </Button>
-                {showSamples && (
-                  <div className="absolute top-full left-0 mt-1 z-10 border-2 border-border bg-card rounded-md shadow-lg min-w-[250px]">
-                    {sampleQueries.map((q, i) => (
-                      <button key={i} onClick={() => { setSql(q.sql); setShowSamples(false); }}
-                        className="w-full text-left px-3 py-2 text-xs hover:bg-muted/30 transition-colors border-b border-border/50 last:border-0">
-                        <div className="font-medium">{q.label}</div>
-                        <div className="font-mono text-muted-foreground truncate">{q.sql}</div>
-                      </button>
-                    ))}
-                  </div>
+        <div className="space-y-2">
+          {/* Tab bar */}
+          <div className="flex items-center gap-1 border-b border-border pb-1 overflow-x-auto">
+            {tabs.map(tab => (
+              <div
+                key={tab.id}
+                className={`group flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-t-md cursor-pointer transition-colors ${
+                  tab.id === activeTabId
+                    ? "bg-card border border-border border-b-transparent text-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+                }`}
+                onClick={() => setActiveTabId(tab.id)}
+              >
+                <span>{tab.label}</span>
+                {tabs.length > 1 && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); closeTab(tab.id); }}
+                    className="opacity-0 group-hover:opacity-100 hover:text-destructive transition-opacity ml-1"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
                 )}
               </div>
-            )}
-            <Button
-              variant={showHistory ? "secondary" : "outline"}
-              size="sm"
-              onClick={() => setShowHistory(!showHistory)}
-              className="relative"
-            >
-              <History className="h-4 w-4 mr-1" /> History
-              {history.length > 0 && (
-                <span className="ml-1 rounded-full bg-primary/20 px-1.5 text-[10px] font-medium text-primary">
-                  {history.length}
-                </span>
-              )}
+            ))}
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={addTab}>
+              <Plus className="h-3.5 w-3.5" />
             </Button>
-            {result && (
-              <>
-                <Button variant="outline" size="sm" onClick={handleExportCSV}>
-                  <Download className="h-4 w-4 mr-1" /> CSV
-                </Button>
-                <Button variant="outline" size="sm" onClick={handleExportParquet}>
-                  <Download className="h-4 w-4 mr-1" /> Parquet
-                </Button>
-                <Button variant="outline" size="sm" onClick={handleExportJSON}>
-                  <Download className="h-4 w-4 mr-1" /> JSON
-                </Button>
-                <Button variant="outline" size="sm" onClick={handleCopy}>
-                  <Copy className="h-4 w-4 mr-1" /> Copy
-                </Button>
-                <span className="ml-auto text-xs text-muted-foreground">
-                  {result.rowCount.toLocaleString()} rows
-                </span>
-              </>
-            )}
           </div>
 
-          {/* History panel */}
-          {showHistory && (
-            <div className="rounded-lg border border-border bg-card">
-              <div className="flex items-center justify-between border-b border-border px-4 py-2">
-                <h4 className="text-sm font-medium text-muted-foreground">Query History</h4>
-                <Button variant="ghost" size="sm" onClick={() => setShowHistory(false)}>
-                  <X className="h-4 w-4" />
-                </Button>
+          {/* Resizable editor + results */}
+          <ResizablePanelGroup direction="vertical" className="min-h-[500px] rounded-lg border border-border">
+            <ResizablePanel defaultSize={40} minSize={20}>
+              <div className="h-full">
+                <SqlEditor
+                  value={activeTab.sql}
+                  onChange={(v) => updateTab(activeTab.id, { sql: v })}
+                  onRun={handleRun}
+                  onInsertRef={editorInsertRef}
+                />
               </div>
-              {history.length === 0 ? (
-                <div className="p-4 text-sm text-muted-foreground">No queries yet</div>
-              ) : (
-                <div className="max-h-[240px] overflow-auto divide-y divide-border/50">
-                  {history.map((h, i) => (
-                    <button
-                      key={i}
-                      onClick={() => { setSql(h.sql); setShowHistory(false); }}
-                      className="w-full text-left px-4 py-2.5 hover:bg-muted/30 transition-colors"
-                    >
-                      <div className="font-mono text-xs text-foreground truncate">{h.sql}</div>
-                      <div className="flex gap-3 mt-1 text-[10px] text-muted-foreground">
-                        <span>{h.rowCount} rows</span>
-                        <span>{h.durationMs}ms</span>
-                        <span>{new Date(h.timestamp).toLocaleTimeString()}</span>
-                      </div>
-                    </button>
-                  ))}
+            </ResizablePanel>
+            <ResizableHandle withHandle />
+            <ResizablePanel defaultSize={60} minSize={20}>
+              <div className="h-full overflow-auto p-3 space-y-3">
+                {/* Toolbar */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Button size="sm" onClick={() => handleRun()} disabled={activeTab.loading || !activeTab.sql.trim()}>
+                    <Play className="h-4 w-4 mr-1" /> Run
+                  </Button>
+                  {sampleQueries.length > 0 && (
+                    <div className="relative">
+                      <Button variant="outline" size="sm" onClick={() => setShowSamples(!showSamples)}>
+                        Samples <ChevronDown className="h-3 w-3 ml-1" />
+                      </Button>
+                      {showSamples && (
+                        <div className="absolute top-full left-0 mt-1 z-10 border-2 border-border bg-card rounded-md shadow-lg min-w-[250px]">
+                          {sampleQueries.map((q, i) => (
+                            <button key={i} onClick={() => { updateTab(activeTab.id, { sql: q.sql }); setShowSamples(false); }}
+                              className="w-full text-left px-3 py-2 text-xs hover:bg-muted/30 transition-colors border-b border-border/50 last:border-0">
+                              <div className="font-medium">{q.label}</div>
+                              <div className="font-mono text-muted-foreground truncate">{q.sql}</div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  <Button
+                    variant={showHistory ? "secondary" : "outline"}
+                    size="sm"
+                    onClick={() => setShowHistory(!showHistory)}
+                  >
+                    <History className="h-4 w-4 mr-1" /> History
+                    {history.length > 0 && (
+                      <span className="ml-1 rounded-full bg-primary/20 px-1.5 text-[10px] font-medium text-primary">
+                        {history.length}
+                      </span>
+                    )}
+                  </Button>
+                  {activeTab.result && (
+                    <>
+                      <Button variant="outline" size="sm" onClick={handleExportCSV}>
+                        <Download className="h-4 w-4 mr-1" /> CSV
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={handleExportParquet}>
+                        <Download className="h-4 w-4 mr-1" /> Parquet
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={handleExportJSON}>
+                        <Download className="h-4 w-4 mr-1" /> JSON
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={handleCopy}>
+                        <Copy className="h-4 w-4 mr-1" /> Copy
+                      </Button>
+                      <span className="ml-auto text-xs text-muted-foreground">
+                        {activeTab.result.rowCount.toLocaleString()} rows
+                      </span>
+                    </>
+                  )}
                 </div>
-              )}
-            </div>
-          )}
 
-          {loading && <LoadingState message="Running query..." />}
-          {error && <ErrorAlert message={error} />}
+                {/* History panel */}
+                {showHistory && (
+                  <div className="rounded-lg border border-border bg-card">
+                    <div className="flex items-center justify-between border-b border-border px-4 py-2">
+                      <h4 className="text-sm font-medium text-muted-foreground">Query History</h4>
+                      <Button variant="ghost" size="sm" onClick={() => setShowHistory(false)}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    {history.length === 0 ? (
+                      <div className="p-4 text-sm text-muted-foreground">No queries yet</div>
+                    ) : (
+                      <div className="max-h-[200px] overflow-auto divide-y divide-border/50">
+                        {history.map((h, i) => (
+                          <button
+                            key={i}
+                            onClick={() => { updateTab(activeTab.id, { sql: h.sql }); setShowHistory(false); }}
+                            className="w-full text-left px-4 py-2.5 hover:bg-muted/30 transition-colors"
+                          >
+                            <div className="font-mono text-xs text-foreground truncate">{h.sql}</div>
+                            <div className="flex gap-3 mt-1 text-[10px] text-muted-foreground">
+                              <span>{h.rowCount} rows</span>
+                              <span>{h.durationMs}ms</span>
+                              <span>{new Date(h.timestamp).toLocaleTimeString()}</span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
 
-          {result && (
-            <DataTable columns={result.columns} rows={result.rows} types={result.types} className="max-h-[500px]" />
-          )}
+                {activeTab.loading && <LoadingState message="Running query..." />}
+                {activeTab.error && <ErrorAlert message={activeTab.error} />}
+
+                {activeTab.result && (
+                  <DataTable columns={activeTab.result.columns} rows={activeTab.result.rows} types={activeTab.result.types} className="max-h-[400px]" />
+                )}
+              </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
         </div>
       </div>
     </ToolPage>
