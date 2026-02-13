@@ -44,6 +44,10 @@ const ChartBuilderPage = lazy(() => import("./pages/ChartBuilderPage"));
 const YamlToJsonPage = lazy(() => import("./pages/YamlToJsonPage"));
 const JsonToYamlPage = lazy(() => import("./pages/JsonToYamlPage"));
 const RegexFilterPage = lazy(() => import("./pages/RegexFilterPage"));
+const XmlToJsonPage = lazy(() => import("./pages/XmlToJsonPage"));
+const JsonToXmlPage = lazy(() => import("./pages/JsonToXmlPage"));
+const CsvSplitterPage = lazy(() => import("./pages/CsvSplitterPage"));
+const Base64Page = lazy(() => import("./pages/Base64Page"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const BlogIndex = lazy(() => import("./pages/blog/BlogIndex"));
 const HowToConvertCsvToParquet = lazy(() => import("./pages/blog/HowToConvertCsvToParquet"));
@@ -115,6 +119,14 @@ const App = () => (
                   <Route path="/json-to-yaml" element={<JsonToYamlPage />} />
                   <Route path="/yaml-json" element={<Navigate to="/yaml-to-json" replace />} />
                   <Route path="/regex-filter" element={<RegexFilterPage />} />
+                  <Route path="/csv-splitter" element={<CsvSplitterPage />} />
+
+                  {/* Converters - XML */}
+                  <Route path="/xml-to-json" element={<XmlToJsonPage />} />
+                  <Route path="/json-to-xml" element={<JsonToXmlPage />} />
+
+                  {/* Utilities */}
+                  <Route path="/base64" element={<Base64Page />} />
 
                   {/* Legacy */}
                   <Route path="/dataset-diff" element={<DiffPage />} />

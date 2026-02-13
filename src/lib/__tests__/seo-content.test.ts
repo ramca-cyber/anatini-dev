@@ -34,6 +34,10 @@ const ALL_TOOL_IDS = [
   "yaml-to-json",
   "json-to-yaml",
   "regex-filter",
+  "xml-to-json",
+  "json-to-xml",
+  "csv-splitter",
+  "base64",
 ];
 
 describe("SEO content coverage", () => {
