@@ -6,7 +6,7 @@ import { ToolPage } from "@/components/shared/ToolPage";
 import { ToggleButton } from "@/components/shared/ToggleButton";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
-import yaml from "js-yaml";
+import * as yaml from "js-yaml";
 
 type Direction = "yaml-to-json" | "json-to-yaml";
 
