@@ -1,103 +1,71 @@
 
-## End-to-End Website Audit: Anatini.dev
 
-### Overall Assessment
-The site is well-built with strong fundamentals: clean architecture, consistent UI patterns, good SEO infrastructure, and solid privacy-first messaging. Below are the issues and improvement opportunities found across all areas.
+## Remaining Fixes and Enhancements
 
----
+### Status: What's Done vs What's Left
 
-### 1. Content Inconsistencies
-
-**Stale tool count in `index.html`**
-- `index.html` meta tags say "15+ tools" (lines 7, 14) while the homepage hero badge says "28 Tools" and the `Index.tsx` PageMeta says "28+"
-- Fix: Update `index.html` meta description and OG tags to match "28+"
-
-**Footer is missing 10+ tools**
-- The footer "Analysis & SQL" section only lists 6 tools (SQL Playground through Dataset Diff), omitting: Data Sampler, Deduplicator, SQL Formatter, Markdown Table, Column Editor, Data Merge, Pivot Table, Chart Builder, YAML/JSON, Regex Filter
-- Fix: Add the missing tools to the footer grid, or restructure into a more compact listing
-
-**Hero "Free Forever" feature card says "All 15+ tools"**
-- `Index.tsx` line 56: `"All 15+ tools, no paywalls."` should say "All 28+ tools"
+All high and medium priority items from the audit have been completed. Three low-priority items remain, plus a significant SEO gap discovered in the sitemap.
 
 ---
 
-### 2. SEO Issues
+### 1. Sitemap Missing 10 Tool Routes (HIGH - SEO Impact)
 
-**Mismatched canonical on SPA navigation**
-- `PageMeta` updates the canonical via DOM manipulation, but crawlers reading the initial HTML will always see `https://anatini.dev/` as the canonical for every page since the `<link rel="canonical">` in `index.html` is hardcoded to `/`
-- Impact: Search engines may not properly canonicalize tool pages
-- Fix: This is inherent to client-side rendering; consider prerendering or SSR for SEO-critical pages, or at minimum ensure the `index.html` canonical is generic
+`public/sitemap.xml` is missing these pages, meaning search engines may not discover them:
 
-**`index.html` JSON-LD `featureList` is outdated**
-- `Index.tsx` line 68 lists only 5 tools in `featureList`; should list more or be generalized
+- `/data-sampler`
+- `/deduplicator`
+- `/sql-formatter`
+- `/markdown-table`
+- `/column-editor`
+- `/data-merge`
+- `/pivot-table`
+- `/chart-builder`
+- `/yaml-json`
+- `/regex-filter`
 
-**NotFound page lacks PageMeta**
-- `NotFound.tsx` doesn't set a page title or meta description via `PageMeta`
-
----
-
-### 3. Accessibility Issues
-
-**Navbar logo alt text mismatch**
-- `Navbar.tsx` line 80: `alt="SwiftDataTools logo"` -- should be "Anatini.dev logo"
-
-**DropZone missing keyboard accessibility**
-- The drop zone div uses `onClick` but has no `role="button"`, `tabIndex`, or `onKeyDown` handler for keyboard users
-
-**Mobile menu not trapped**
-- When the mobile nav is open, focus is not trapped, meaning keyboard users can tab through background content
+**Fix:** Add all 10 missing URLs to `sitemap.xml` with `lastmod` of today's date and `priority` of 0.8.
 
 ---
 
-### 4. Functional Issues
+### 2. Fix Module-Level `tabCounter` in SQL Playground (LOW)
 
-**SQL Playground: `tabCounter` uses module-level `let`**
-- `SqlPage.tsx` line 47: `let tabCounter = 1` is at module scope. If the component unmounts and remounts (e.g., navigating away and back), the counter continues incrementing but the tabs reset to "Query 1" via `createTab()`. This is minor but can cause confusing tab labels like "Query 5" on a fresh page visit.
+`SqlPage.tsx` line 46 has `let tabCounter = 1` at module scope. When the user navigates away and back, the counter keeps incrementing but the tabs reset, producing labels like "Query 5" on a fresh visit.
 
-**SQL Playground: `handleRun` uses stale `activeTab` reference**
-- `handleRun` (line 159) captures `activeTab.id` and `activeTab.sql` via `useCallback` deps, but `activeTab` is derived from state on every render. The deps `[db, activeTab.id, activeTab.sql]` cause `handleRun` to be recreated on every keystroke (since `activeTab.sql` changes). This is fine functionally but causes unnecessary re-renders of the SqlEditor.
-
-**Chart Builder: PNG export has white background hardcoded**
-- `ChartBuilderPage.tsx` line 155: `ctx.fillStyle = "#ffffff"` -- in dark mode, the exported PNG will have a jarring white background instead of matching the theme
+**Fix:** Use a `useRef` inside the component instead of a module-level variable, resetting naturally on unmount.
 
 ---
 
-### 5. Performance Opportunities
+### 3. SQL Playground Mobile Layout (LOW)
 
-**DuckDB initialized eagerly on every page**
-- `DuckDBProvider` wraps the entire app, meaning DuckDB WASM (~4MB) is downloaded and initialized even for pages that don't need it (About, Blog, Home)
-- Fix: Lazy-initialize DuckDB only when a tool page is visited (e.g., init on first `useDuckDB()` call that needs `db`)
+On mobile, the 280px sidebar stacks above the editor, pushing it far down the page.
 
-**No ErrorBoundary used anywhere**
-- `ErrorBoundary` component exists at `src/components/shared/ErrorBoundary.tsx` but is never imported or used in the app
-- Fix: Wrap routes or tool pages in `ErrorBoundary` to gracefully catch runtime crashes
+**Fix:** On screens below `lg`, collapse the sidebar into a toggleable panel or make it horizontally scrollable so the editor is immediately visible.
 
 ---
 
-### 6. Mobile / Responsive Issues
+### 4. Mobile Menu Focus Trap (LOW)
 
-**SQL Playground sidebar stacks awkwardly on mobile**
-- The `lg:grid-cols-[280px_1fr]` layout means on mobile, the entire sidebar (drop zone, URL input, tables) appears above the editor, pushing the editor far down the page
-- Consider: Collapsible sidebar on mobile, or tabs for sidebar vs editor
+When the mobile nav is open, keyboard users can tab through background content behind the menu.
 
----
-
-### 7. Recommended Fix Priority
-
-| Priority | Issue | Effort |
-|----------|-------|--------|
-| High | Update stale tool counts ("15+" to "28+") in index.html, hero, JSON-LD | 5 min |
-| High | Add missing tools to footer | 10 min |
-| High | Fix navbar logo alt text | 1 min |
-| Medium | Wrap routes in ErrorBoundary | 5 min |
-| Medium | Fix Chart Builder dark-mode PNG export | 5 min |
-| Medium | Add PageMeta to NotFound page | 2 min |
-| Medium | Lazy-load DuckDB only on tool pages | 30 min |
-| Low | Add keyboard accessibility to DropZone | 10 min |
-| Low | Collapsible sidebar on mobile for SQL Playground | 20 min |
-| Low | Fix module-level tabCounter in SqlPage | 5 min |
+**Fix:** Add focus trapping to the mobile menu overlay so Tab/Shift+Tab cycles only within the menu while it's open.
 
 ---
 
-### Recommended Next Step
-Fix the high-priority items first: update all stale "15+" references to "28+", sync the footer tool list, fix the logo alt text, and wrap routes in ErrorBoundary.
+### Summary
+
+| Item | Priority | Effort |
+|------|----------|--------|
+| Add 10 missing routes to sitemap.xml | High | 2 min |
+| Fix module-level tabCounter | Low | 3 min |
+| SQL Playground collapsible mobile sidebar | Low | 15 min |
+| Mobile menu focus trap | Low | 10 min |
+
+### Technical Details
+
+**Sitemap additions** -- 10 new `<url>` entries in `public/sitemap.xml`.
+
+**tabCounter fix** -- Replace the module-level `let tabCounter = 1` with a `useRef(1)` inside the `SqlPage` component. Update `createTab` to accept a counter ref.
+
+**Mobile sidebar** -- Add a state toggle and a button (e.g., "Show Tables") visible only on `< lg` screens. Wrap the sidebar content in a collapsible section.
+
+**Focus trap** -- When `mobileOpen` is true in `Navbar.tsx`, attach a keydown listener that wraps focus from the last focusable element back to the first (and vice versa for Shift+Tab).
