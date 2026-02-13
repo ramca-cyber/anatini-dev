@@ -62,10 +62,10 @@ describe("Page rendering", () => {
 
   it("homepage displays correct tool count", () => {
     renderWithRoute("/", <Index />);
-    expect(screen.getByText(/35 Tools/)).toBeInTheDocument();
+    expect(screen.getByText(/38 Tools/)).toBeInTheDocument();
   });
 
-  it("homepage has all 35 tool cards", () => {
+  it("homepage has all 38 tool cards", () => {
     renderWithRoute("/", <Index />);
     // Check a tool from each category
     expect(screen.getByText("CSV → Parquet")).toBeInTheDocument();
@@ -112,18 +112,18 @@ describe("Page rendering", () => {
 describe("Homepage consistency", () => {
   it("hero badge, feature card, and meta all reference correct counts", () => {
     renderWithRoute("/", <Index />);
-    // Hero badge says "35 Tools"
-    expect(screen.getByText(/35 Tools/)).toBeInTheDocument();
-    // Feature card says "35+ tools"
-    expect(screen.getByText(/35\+ tools/)).toBeInTheDocument();
+    // Hero badge says "38 Tools"
+    expect(screen.getByText(/38 Tools/)).toBeInTheDocument();
+    // Feature card says "38+ tools"
+    expect(screen.getByText(/38\+ tools/)).toBeInTheDocument();
   });
 
   it("all tool categories have cards", () => {
     renderWithRoute("/", <Index />);
-    // 12 converters + 3 viewers + 3 inspectors + 16 analysis + 1 utilities = 35
+    // 12 converters + 3 viewers + 3 inspectors + 18 analysis + 2 utilities = 38
     const allLinks = screen.getAllByText("Open");
     // Each tool card has an "Open" text that appears on hover
-    expect(allLinks.length).toBe(35);
+    expect(allLinks.length).toBe(38);
   });
 
   it("privacy section is present", () => {

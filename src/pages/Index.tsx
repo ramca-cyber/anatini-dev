@@ -4,7 +4,7 @@ import {
   ArrowRight, FileSpreadsheet, Braces, Terminal, BarChart3, Database,
   FileJson, Table, Eye, Code, FileText, Zap, Lock, Globe, Shield,
   GitCompare, Search, Shuffle, Copy, AlignLeft, Columns3, Merge,
-  TableProperties, RefreshCw, Filter, Scissors, Binary,
+  TableProperties, RefreshCw, Filter, Scissors, Binary, ShieldOff, Hash, Wand2,
 } from "lucide-react";
 
 const converters = [
@@ -51,17 +51,20 @@ const analysis = [
   { path: "/chart-builder", title: "Chart Builder", description: "Bar, line, area, pie, scatter charts.", icon: BarChart3 },
   { path: "/regex-filter", title: "Regex Filter", description: "Filter rows by regex pattern.", icon: Filter },
   { path: "/csv-splitter", title: "CSV Splitter", description: "Split files by row count or column.", icon: Scissors },
+  { path: "/data-anonymizer", title: "Data Anonymizer", description: "Mask, redact, or fake sensitive columns.", icon: ShieldOff },
+  { path: "/data-generator", title: "Data Generator", description: "Generate realistic sample datasets.", icon: Wand2 },
 ];
 
 const utilities = [
   { path: "/base64", title: "Base64 Encoder/Decoder", description: "Encode and decode Base64 text or files.", icon: Binary },
+  { path: "/hash-generator", title: "Hash Generator", description: "SHA-256, SHA-384, SHA-512 from text or files.", icon: Hash },
 ];
 
 const features = [
   { icon: Zap, title: "WebAssembly Speed", description: "DuckDB compiled to WASM — analytical queries in milliseconds, not seconds." },
   { icon: Lock, title: "Zero Data Leaks", description: "No uploads. No servers. No tracking. Your files never leave your machine." },
   { icon: Globe, title: "No Install Needed", description: "Works in any modern browser. No extensions, no CLI, no accounts required." },
-  { icon: Shield, title: "Free Forever", description: "All 35+ tools, no paywalls. Open source philosophy, closed-source simplicity." },
+  { icon: Shield, title: "Free Forever", description: "All 38+ tools, no paywalls. Open source philosophy, closed-source simplicity." },
 ];
 
 const jsonLd = {
@@ -73,7 +76,7 @@ const jsonLd = {
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "Any",
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-  "featureList": "CSV to Parquet, Parquet to CSV, CSV to JSON, JSON to CSV, JSON to Parquet, Parquet to JSON, Excel to CSV, CSV to Excel, YAML to JSON, JSON to YAML, XML to JSON, JSON to XML, CSV Viewer, Parquet Viewer, JSON Formatter, CSV Inspector, JSON Inspector, Parquet Inspector, SQL Playground, Data Profiler, JSON Flattener, Schema Generator, CSV to SQL, Dataset Diff, Data Sampler, Deduplicator, SQL Formatter, Markdown Table, Column Editor, Data Merge, Pivot Table, Chart Builder, Regex Filter, CSV Splitter, Base64 Encoder/Decoder",
+  "featureList": "CSV to Parquet, Parquet to CSV, CSV to JSON, JSON to CSV, JSON to Parquet, Parquet to JSON, Excel to CSV, CSV to Excel, YAML to JSON, JSON to YAML, XML to JSON, JSON to XML, CSV Viewer, Parquet Viewer, JSON Formatter, CSV Inspector, JSON Inspector, Parquet Inspector, SQL Playground, Data Profiler, JSON Flattener, Schema Generator, CSV to SQL, Dataset Diff, Data Sampler, Deduplicator, SQL Formatter, Markdown Table, Column Editor, Data Merge, Pivot Table, Chart Builder, Regex Filter, CSV Splitter, Base64 Encoder/Decoder, Data Anonymizer, Hash Generator, Data Generator",
 };
 
 function ToolCard({ path, title, description, icon: Icon }: { path: string; title: string; description: string; icon: React.ElementType }) {
@@ -99,7 +102,7 @@ export default function Index() {
     <>
       <PageMeta
         title="Anatini.dev — Free, Offline Data Tools for Developers"
-        description="35+ free, offline data tools powered by DuckDB-WASM. Convert CSV, Parquet, JSON, Excel, XML. Query with SQL. Profile datasets. All in your browser."
+        description="38+ free, offline data tools powered by DuckDB-WASM. Convert CSV, Parquet, JSON, Excel, XML. Query with SQL. Profile datasets. All in your browser."
       />
 
 
@@ -114,7 +117,7 @@ export default function Index() {
         <div className="container py-12 md:py-20 lg:py-28">
           <div className="mx-auto max-w-3xl">
             <div className="inline-block border-2 border-border bg-secondary px-3 py-1 text-xs font-bold uppercase tracking-widest mb-6">
-             35 Tools · 100% Offline · Zero Tracking
+             38 Tools · 100% Offline · Zero Tracking
             </div>
             <h1 className="text-4xl font-bold leading-[1.1] tracking-tight md:text-5xl lg:text-6xl">
               Data tools that run

@@ -36,6 +36,9 @@
   <url><loc>https://anatini.dev/json-to-xml</loc><lastmod>2026-02-13</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://anatini.dev/csv-splitter</loc><lastmod>2026-02-13</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://anatini.dev/base64</loc><lastmod>2026-02-13</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://anatini.dev/data-anonymizer</loc><lastmod>2026-02-13</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://anatini.dev/hash-generator</loc><lastmod>2026-02-13</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://anatini.dev/data-generator</loc><lastmod>2026-02-13</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://anatini.dev/about</loc><lastmod>2026-02-11</lastmod><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://anatini.dev/blog</loc><lastmod>2026-02-11</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
   <url><loc>https://anatini.dev/blog/how-to-convert-csv-to-parquet</loc><lastmod>2026-02-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>

@@ -43,9 +43,12 @@ const toolGrid = {
     { label: "Chart Builder", path: "/chart-builder" },
     { label: "Regex Filter", path: "/regex-filter" },
     { label: "CSV Splitter", path: "/csv-splitter" },
+    { label: "Data Anonymizer", path: "/data-anonymizer" },
+    { label: "Data Generator", path: "/data-generator" },
   ],
   Utilities: [
     { label: "Base64 Encoder/Decoder", path: "/base64" },
+    { label: "Hash Generator", path: "/hash-generator" },
   ],
 };
 
