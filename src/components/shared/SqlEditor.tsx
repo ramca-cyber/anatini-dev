@@ -8,7 +8,7 @@ import { basicSetup } from "codemirror";
 interface SqlEditorProps {
   value: string;
   onChange: (value: string) => void;
-  onRun: () => void;
+  onRun: (selectedText?: string) => void;
   onInsertRef?: MutableRefObject<((text: string) => void) | null>;
 }
 
@@ -41,8 +41,10 @@ export function SqlEditor({ value, onChange, onRun, onInsertRef }: SqlEditorProp
     const runKeymap = keymap.of([
       {
         key: "Mod-Enter",
-        run: () => {
-          onRunRef.current();
+        run: (view) => {
+          const { from, to } = view.state.selection.main;
+          const selected = from !== to ? view.state.sliceDoc(from, to) : undefined;
+          onRunRef.current(selected);
           return true;
         },
       },
@@ -55,7 +57,7 @@ export function SqlEditor({ value, onChange, onRun, onInsertRef }: SqlEditorProp
         sql(),
         oneDark,
         runKeymap,
-        cmPlaceholder("-- Write SQL here (Ctrl+Enter to run)"),
+        cmPlaceholder("-- Write SQL here (Ctrl+Enter to run, select text to run partial)"),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
             onChangeRef.current(update.state.doc.toString());
@@ -77,11 +79,15 @@ export function SqlEditor({ value, onChange, onRun, onInsertRef }: SqlEditorProp
             borderRight: "1px solid hsl(220 18% 18%)",
           },
           ".cm-scroller": {
-            minHeight: "160px",
+            minHeight: "120px",
+            height: "100%",
           },
           "&.cm-focused": {
             outline: "none",
             boxShadow: "0 0 0 1px hsl(187 80% 55%)",
+          },
+          "&.cm-editor": {
+            height: "100%",
           },
         }),
       ],
@@ -113,5 +119,5 @@ export function SqlEditor({ value, onChange, onRun, onInsertRef }: SqlEditorProp
     }
   }, [value]);
 
-  return <div ref={containerRef} />;
+  return <div ref={containerRef} className="h-full" />;
 }
