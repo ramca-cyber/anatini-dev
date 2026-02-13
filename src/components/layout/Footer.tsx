@@ -15,9 +15,11 @@ const toolGrid = {
     { label: "JSON → YAML", path: "/json-to-yaml" },
     { label: "XML → JSON", path: "/xml-to-json" },
     { label: "JSON → XML", path: "/json-to-xml" },
+    { label: "TOML → JSON", path: "/toml-to-json" },
+    { label: "JSON → TOML", path: "/json-to-toml" },
   ],
   Viewers: [
-    { label: "CSV Viewer", path: "/csv-viewer" },
+    { label: "Delimited Viewer", path: "/csv-viewer" },
     { label: "Parquet Viewer", path: "/parquet-viewer" },
     { label: "JSON Formatter", path: "/json-formatter" },
   ],
@@ -49,6 +51,7 @@ const toolGrid = {
   Utilities: [
     { label: "Base64 Encoder/Decoder", path: "/base64" },
     { label: "Hash Generator", path: "/hash-generator" },
+    { label: "JSON Schema Validator", path: "/json-schema-validator" },
   ],
 };
 

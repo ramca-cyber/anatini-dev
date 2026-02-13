@@ -28,12 +28,14 @@ const toolGroups = [
       { path: "/json-to-yaml", label: "JSON → YAML" },
       { path: "/xml-to-json", label: "XML → JSON" },
       { path: "/json-to-xml", label: "JSON → XML" },
+      { path: "/toml-to-json", label: "TOML → JSON" },
+      { path: "/json-to-toml", label: "JSON → TOML" },
     ],
   },
   {
     label: "Viewers & Formatters",
     tools: [
-      { path: "/csv-viewer", label: "CSV Viewer" },
+      { path: "/csv-viewer", label: "Delimited Viewer" },
       { path: "/parquet-viewer", label: "Parquet Viewer" },
       { path: "/json-formatter", label: "JSON Formatter" },
     ],
@@ -74,6 +76,7 @@ const toolGroups = [
     tools: [
       { path: "/base64", label: "Base64 Encoder/Decoder" },
       { path: "/hash-generator", label: "Hash Generator" },
+      { path: "/json-schema-validator", label: "JSON Schema Validator" },
     ],
   },
 ];

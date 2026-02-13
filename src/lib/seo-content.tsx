@@ -97,13 +97,14 @@ const seoData: Record<string, { whatIs: { title: string; content: string }; howT
     ],
   },
   "csv-viewer": {
-    metaDescription: "View CSV files in a sortable, searchable table with column statistics. Free, offline browser tool. No uploads required.",
-    whatIs: { title: "What is a CSV Viewer?", content: "A CSV viewer displays comma-separated data in a structured table format, making it easy to browse, search, and understand your data without opening a spreadsheet application. This viewer runs entirely in your browser with no uploads required." },
-    howToUse: "Upload a CSV file to instantly see it in a sortable, searchable table. Click any column header to sort and view quick statistics (count, distinct values, min, max). Use the search bar to filter rows. Click 'Open in SQL Playground' to query the data with SQL.",
+    metaDescription: "View CSV, TSV, and delimited files in a sortable, searchable table with column statistics. Auto-detect or set custom delimiters. Free, offline.",
+    whatIs: { title: "What is a Delimited File Viewer?", content: "A delimited file viewer displays comma-separated (CSV), tab-separated (TSV), or custom-delimited data in a structured table format. It auto-detects the delimiter and lets you override it manually. Search, sort, and explore data without opening a spreadsheet." },
+    howToUse: "Upload a CSV, TSV, DSV, or TXT file. The viewer auto-detects the delimiter (comma, tab, semicolon, pipe) and displays data in a sortable, searchable table. Override the delimiter if needed. Click column headers for statistics.",
     faqs: [
-      { question: "How many rows can it handle?", answer: "The viewer loads up to 500 rows for preview. The underlying DuckDB engine can handle millions of rows for search and statistics." },
+      { question: "What delimiters are supported?", answer: "Auto-detection supports comma, tab, semicolon, and pipe. You can also set a custom single-character delimiter manually." },
+      { question: "Can I view TSV and DSV files?", answer: "Yes — upload .tsv, .dsv, or .txt files. The viewer auto-detects tabs and other delimiters." },
+      { question: "How many rows can it handle?", answer: "The viewer loads up to 200 rows per page. The underlying DuckDB engine can handle millions of rows for search and statistics." },
       { question: "Can I edit the data?", answer: "This is a read-only viewer. For transformations, use the SQL Playground or other conversion tools." },
-      { question: "What delimiters are auto-detected?", answer: "DuckDB auto-detects commas, tabs, semicolons, and pipe delimiters." },
     ],
   },
   "parquet-viewer": {
@@ -397,6 +398,36 @@ const seoData: Record<string, { whatIs: { title: string; content: string }; howT
       { question: "Is the data truly random?", answer: "It uses a seeded pseudo-random number generator. The same seed always produces the same data, which is useful for reproducible testing." },
       { question: "What column types are available?", answer: "Name, Email, Integer, Float, Date, UUID, Boolean, City, Company, and Phone number." },
       { question: "Can I generate more than 10,000 rows?", answer: "The limit is 10,000 rows to keep the browser responsive. For larger datasets, generate multiple batches or use a CLI tool." },
+    ],
+  },
+  "json-schema-validator": {
+    metaDescription: "Validate JSON documents against JSON Schema definitions. See errors with paths. Free, offline browser tool using Ajv.",
+    whatIs: { title: "What is JSON Schema Validation?", content: "JSON Schema is a vocabulary for annotating and validating JSON documents. It defines the structure, types, and constraints that a JSON document must conform to. Validation checks a document against a schema and reports any violations with specific paths." },
+    howToUse: "Paste a JSON Schema on the left and a JSON document on the right. Click 'Validate' to check conformance. Errors show the exact path and violation message. Load a sample to get started.",
+    faqs: [
+      { question: "Which JSON Schema drafts are supported?", answer: "The validator uses Ajv which supports JSON Schema drafts 4, 6, 7, and 2019-09 by default." },
+      { question: "Does it show all errors at once?", answer: "Yes — all validation errors are displayed with their instance paths, not just the first one." },
+      { question: "Is my data uploaded?", answer: "No — validation runs entirely in your browser using the Ajv library. No data leaves your machine." },
+    ],
+  },
+  "toml-to-json": {
+    metaDescription: "Convert TOML configuration files to JSON format. Free, offline browser tool with auto-conversion.",
+    whatIs: { title: "What is TOML to JSON Conversion?", content: "TOML (Tom's Obvious, Minimal Language) is a configuration file format designed to be easy to read. Converting TOML to JSON lets you use config data in APIs, web applications, and tooling that expects JSON." },
+    howToUse: "Paste your TOML input, choose an indentation level, and the conversion happens automatically. Copy or download the resulting JSON.",
+    faqs: [
+      { question: "Does it support all TOML features?", answer: "Yes — tables, arrays of tables, inline tables, multi-line strings, datetime values, and all TOML 1.0 features are supported via the smol-toml library." },
+      { question: "Is my data uploaded?", answer: "No — everything runs locally in your browser. No data is sent to any server." },
+      { question: "Can I convert TOML with comments?", answer: "Comments are parsed but not preserved in JSON output, since JSON doesn't support comments." },
+    ],
+  },
+  "json-to-toml": {
+    metaDescription: "Convert JSON documents to TOML configuration format. Free, offline browser tool.",
+    whatIs: { title: "What is JSON to TOML Conversion?", content: "Converting JSON to TOML produces a human-readable configuration format from JSON data. TOML is popular for config files in Rust, Python, and DevOps tooling. Not all JSON structures can be represented in TOML — the root must be an object." },
+    howToUse: "Paste your JSON input and the conversion happens automatically. Copy or download the resulting TOML file.",
+    faqs: [
+      { question: "Can any JSON be converted to TOML?", answer: "TOML requires a top-level object (table). Primitive values or arrays at the root level cannot be represented. Nested objects and arrays of tables are fully supported." },
+      { question: "Is my data uploaded?", answer: "No — everything runs locally in your browser. No data is sent to any server." },
+      { question: "Are datetime values preserved?", answer: "If your JSON contains ISO 8601 date strings, they'll be output as TOML strings. TOML has native datetime support but the converter treats them as strings." },
     ],
   },
 };
