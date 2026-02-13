@@ -44,6 +44,10 @@ const ALL_TOOL_IDS = [
   "json-schema-validator",
   "toml-to-json",
   "json-to-toml",
+  "excel-viewer",
+  "xml-formatter",
+  "yaml-formatter",
+  "log-viewer",
 ];
 
 describe("SEO content coverage", () => {

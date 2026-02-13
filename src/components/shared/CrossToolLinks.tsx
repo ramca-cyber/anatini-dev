@@ -55,6 +55,7 @@ const linksByFormat: Record<string, { label: string; route: string }[]> = {
   yaml: [
     { label: "YAML → JSON", route: "/yaml-to-json" },
     { label: "JSON → YAML", route: "/json-to-yaml" },
+    { label: "Format YAML", route: "/yaml-formatter" },
     { label: "JSON Formatter", route: "/json-formatter" },
     { label: "JSON Flattener", route: "/json-flattener" },
   ],

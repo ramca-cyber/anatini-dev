@@ -441,6 +441,26 @@ const seoData: Record<string, { whatIs: { title: string; content: string }; howT
       { question: "How many rows can it handle?", answer: "The viewer displays all rows with client-side pagination. Very large files (50MB+) may be slow due to browser memory." },
     ],
   },
+  "yaml-formatter": {
+    metaDescription: "Format, minify, and validate YAML documents in your browser. Pretty-print with configurable indentation. Free, offline.",
+    whatIs: { title: "What is a YAML Formatter?", content: "A YAML formatter takes raw or messy YAML and displays it with consistent indentation and structure. It can also minify YAML (compact representation), validate syntax, and help you spot structural issues in configuration files." },
+    howToUse: "Paste YAML in the input area. The formatter auto-formats with your chosen indentation. Use Minify to compact, Validate to check syntax. Copy or download the result.",
+    faqs: [
+      { question: "Does it validate YAML?", answer: "Yes — the formatter uses the js-yaml library for parsing and validation. Click Validate for explicit checking with detailed error messages." },
+      { question: "Does it support multi-document YAML?", answer: "Currently the formatter processes single YAML documents. Multi-document streams (separated by ---) may not be fully preserved." },
+      { question: "Is my data uploaded?", answer: "No — everything runs locally in your browser. No data is sent to any server." },
+    ],
+  },
+  "log-viewer": {
+    metaDescription: "View and filter log files with level detection, regex search, and line numbers. Free, offline browser tool.",
+    whatIs: { title: "What is a Log Viewer?", content: "A log viewer helps you read, filter, and search through log files. It auto-detects log levels (ERROR, WARN, INFO, DEBUG, TRACE), provides regex-based filtering, and displays line numbers for easy reference." },
+    howToUse: "Drop a log file, paste log text, or click Upload. Toggle log levels to show/hide entries. Use the regex filter to search for specific patterns. Export filtered results.",
+    faqs: [
+      { question: "What log formats are supported?", answer: "The viewer auto-detects common patterns like [ERROR], ERROR:, and level=error in any text-based log format." },
+      { question: "Can I filter by multiple criteria?", answer: "Yes — combine level toggles with regex patterns to narrow down exactly the log entries you need." },
+      { question: "Is my data uploaded?", answer: "No — everything runs locally in your browser. No data is sent to any server." },
+    ],
+  },
   "xml-formatter": {
     metaDescription: "Format, minify, and validate XML documents in your browser. Pretty-print with configurable indentation. Free, offline.",
     whatIs: { title: "What is an XML Formatter?", content: "An XML formatter takes raw or minified XML and displays it with proper indentation and line breaks for human readability. It can also minify XML (remove whitespace), validate syntax, and help you spot structural issues in your documents." },

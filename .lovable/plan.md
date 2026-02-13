@@ -6,7 +6,7 @@
 - `/excel-viewer` — Multi-sheet browsing with DataTable, uses existing xlsx dep
 - `/xml-formatter` — Pretty-print, minify, validate XML with configurable indentation
 
-### Phase 2: YAML Formatter + Log Viewer
+### Phase 2: YAML Formatter + Log Viewer ✅ DONE
 - `/yaml-formatter` — Validate, format, syntax-highlighted YAML output
 - `/log-viewer` — Level filtering (ERROR/WARN/INFO/DEBUG), regex search, line numbers
 
