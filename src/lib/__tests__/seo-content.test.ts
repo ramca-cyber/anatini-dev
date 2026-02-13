@@ -38,6 +38,9 @@ const ALL_TOOL_IDS = [
   "json-to-xml",
   "csv-splitter",
   "base64",
+  "data-anonymizer",
+  "hash-generator",
+  "data-generator",
 ];
 
 describe("SEO content coverage", () => {

@@ -15,6 +15,7 @@ const linksByFormat: Record<string, { label: string; route: string }[]> = {
     { label: "Pivot Table", route: "/pivot-table" },
     { label: "Chart Builder", route: "/chart-builder" },
     { label: "Regex Filter", route: "/regex-filter" },
+    { label: "Anonymize", route: "/data-anonymizer" },
   ],
   json: [
     { label: "Convert to CSV", route: "/json-to-csv" },
@@ -29,6 +30,7 @@ const linksByFormat: Record<string, { label: string; route: string }[]> = {
     { label: "Pivot Table", route: "/pivot-table" },
     { label: "Chart Builder", route: "/chart-builder" },
     { label: "Regex Filter", route: "/regex-filter" },
+    { label: "Anonymize", route: "/data-anonymizer" },
   ],
   parquet: [
     { label: "Convert to CSV", route: "/parquet-to-csv" },
@@ -43,6 +45,7 @@ const linksByFormat: Record<string, { label: string; route: string }[]> = {
     { label: "Pivot Table", route: "/pivot-table" },
     { label: "Chart Builder", route: "/chart-builder" },
     { label: "Regex Filter", route: "/regex-filter" },
+    { label: "Anonymize", route: "/data-anonymizer" },
   ],
   excel: [
     { label: "Convert to CSV", route: "/excel-to-csv" },

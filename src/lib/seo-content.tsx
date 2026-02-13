@@ -369,6 +369,36 @@ const seoData: Record<string, { whatIs: { title: string; content: string }; howT
       { question: "Is my data uploaded?", answer: "No — all encoding and decoding happens locally in your browser. No data is sent anywhere." },
     ],
   },
+  "data-anonymizer": {
+    metaDescription: "Mask, redact, hash, or fake sensitive columns in CSV, JSON, or Parquet files. Free, offline data anonymizer.",
+    whatIs: { title: "What is Data Anonymization?", content: "Data anonymization replaces sensitive or personally identifiable information (PII) with fake, hashed, or redacted values. This lets you share datasets safely for testing, demos, or analytics without exposing real names, emails, or other private data." },
+    howToUse: "Upload a data file. Select which columns to anonymize and choose a masking strategy for each: redact, hash, fake name, fake email, random number, or shuffle. Click 'Anonymize' to preview the result, then download the anonymized CSV.",
+    faqs: [
+      { question: "Is the anonymization deterministic?", answer: "Hash, fake name, and fake email strategies are deterministic — the same input always produces the same output. Shuffle and random number are not." },
+      { question: "What masking strategies are available?", answer: "Redact (replace with ***), Hash (SHA-based hex), Fake Name, Fake Email, Random Number, and Shuffle (randomly reorder values within the column)." },
+      { question: "Is my data uploaded?", answer: "No — all processing runs locally in your browser. No data is sent to any server." },
+    ],
+  },
+  "hash-generator": {
+    metaDescription: "Generate SHA-256, SHA-384, SHA-512 hashes from text or files. Free, offline browser tool using Web Crypto API.",
+    whatIs: { title: "What is a Hash Generator?", content: "A hash generator computes a fixed-length cryptographic digest from input data. Hashes are one-way functions — you can't reverse them to get the original data. They're used for data integrity verification, password storage, digital signatures, and deduplication." },
+    howToUse: "Type or paste text for instant hashing, or upload a file to hash its binary content. Select your algorithm (SHA-256, SHA-384, SHA-512). Copy the hex output.",
+    faqs: [
+      { question: "Which algorithm should I use?", answer: "SHA-256 is the most common and sufficient for most use cases. SHA-384 and SHA-512 provide longer hashes for higher security requirements." },
+      { question: "Can I hash large files?", answer: "Yes — files are read as ArrayBuffers and hashed using the Web Crypto API. Very large files (100MB+) may take a moment." },
+      { question: "Is MD5 supported?", answer: "MD5 is not included because it's cryptographically broken. Use SHA-256 or higher for security-sensitive hashing." },
+    ],
+  },
+  "data-generator": {
+    metaDescription: "Generate realistic sample datasets with configurable columns, types, and row counts. Names, emails, dates, UUIDs. Free, offline.",
+    whatIs: { title: "What is a Data Generator?", content: "A data generator creates synthetic datasets with realistic-looking values. Configure column names and types (name, email, integer, date, UUID, etc.), set the row count, and generate instantly. Useful for testing, prototyping, demos, and populating development databases." },
+    howToUse: "Define your columns with names and types. Set the row count (up to 10,000) and an optional seed for reproducibility. Click 'Generate' to create the data. Download as CSV or JSON.",
+    faqs: [
+      { question: "Is the data truly random?", answer: "It uses a seeded pseudo-random number generator. The same seed always produces the same data, which is useful for reproducible testing." },
+      { question: "What column types are available?", answer: "Name, Email, Integer, Float, Date, UUID, Boolean, City, Company, and Phone number." },
+      { question: "Can I generate more than 10,000 rows?", answer: "The limit is 10,000 rows to keep the browser responsive. For larger datasets, generate multiple batches or use a CLI tool." },
+    ],
+  },
 };
 
 export function getToolSeo(toolId: string) {

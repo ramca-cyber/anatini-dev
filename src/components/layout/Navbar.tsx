@@ -65,12 +65,15 @@ const toolGroups = [
       { path: "/chart-builder", label: "Chart Builder" },
       { path: "/regex-filter", label: "Regex Filter" },
       { path: "/csv-splitter", label: "CSV Splitter" },
+      { path: "/data-anonymizer", label: "Data Anonymizer" },
+      { path: "/data-generator", label: "Data Generator" },
     ],
   },
   {
     label: "Utilities",
     tools: [
       { path: "/base64", label: "Base64 Encoder/Decoder" },
+      { path: "/hash-generator", label: "Hash Generator" },
     ],
   },
 ];

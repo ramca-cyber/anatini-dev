@@ -48,6 +48,9 @@ const XmlToJsonPage = lazy(() => import("./pages/XmlToJsonPage"));
 const JsonToXmlPage = lazy(() => import("./pages/JsonToXmlPage"));
 const CsvSplitterPage = lazy(() => import("./pages/CsvSplitterPage"));
 const Base64Page = lazy(() => import("./pages/Base64Page"));
+const DataAnonymizerPage = lazy(() => import("./pages/DataAnonymizerPage"));
+const HashGeneratorPage = lazy(() => import("./pages/HashGeneratorPage"));
+const DataGeneratorPage = lazy(() => import("./pages/DataGeneratorPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const BlogIndex = lazy(() => import("./pages/blog/BlogIndex"));
 const HowToConvertCsvToParquet = lazy(() => import("./pages/blog/HowToConvertCsvToParquet"));
@@ -125,8 +128,13 @@ const App = () => (
                   <Route path="/xml-to-json" element={<XmlToJsonPage />} />
                   <Route path="/json-to-xml" element={<JsonToXmlPage />} />
 
+                  {/* Analysis - continued */}
+                  <Route path="/data-anonymizer" element={<DataAnonymizerPage />} />
+                  <Route path="/data-generator" element={<DataGeneratorPage />} />
+
                   {/* Utilities */}
                   <Route path="/base64" element={<Base64Page />} />
+                  <Route path="/hash-generator" element={<HashGeneratorPage />} />
 
                   {/* Legacy */}
                   <Route path="/dataset-diff" element={<DiffPage />} />
