@@ -1,5 +1,6 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { ErrorAlert } from "@/components/shared/ErrorAlert";
+import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { ArrowRight, Copy, Download } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
@@ -25,6 +26,7 @@ export default function YamlToJsonPage() {
     }
   }, [input, indent]);
 
+  useEffect(() => { convert(); }, [convert]);
   function handleCopy() {
     if (!output) return;
     navigator.clipboard.writeText(output);
@@ -116,6 +118,7 @@ features:
         </div>
 
         {error && <ErrorAlert message={error} />}
+        <CrossToolLinks format="yaml" excludeRoute="/yaml-to-json" />
       </div>
     </ToolPage>
   );

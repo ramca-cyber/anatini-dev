@@ -48,6 +48,12 @@ const linksByFormat: Record<string, { label: string; route: string }[]> = {
     { label: "Convert to CSV", route: "/excel-to-csv" },
     { label: "SQL Playground", route: "/sql-playground" },
   ],
+  yaml: [
+    { label: "YAML → JSON", route: "/yaml-to-json" },
+    { label: "JSON → YAML", route: "/json-to-yaml" },
+    { label: "JSON Formatter", route: "/json-formatter" },
+    { label: "JSON Flattener", route: "/json-flattener" },
+  ],
 };
 
 interface CrossToolLinksProps {
