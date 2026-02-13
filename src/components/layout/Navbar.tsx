@@ -60,6 +60,7 @@ const toolGroups = [
       { path: "/pivot-table", label: "Pivot Table" },
       { path: "/chart-builder", label: "Chart Builder" },
       { path: "/yaml-json", label: "YAML ↔ JSON" },
+      { path: "/regex-filter", label: "Regex Filter" },
     ],
   },
 ];
