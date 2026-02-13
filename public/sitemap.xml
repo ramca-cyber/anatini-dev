@@ -29,7 +29,8 @@
   <url><loc>https://anatini.dev/data-merge</loc><lastmod>2026-02-13</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://anatini.dev/pivot-table</loc><lastmod>2026-02-13</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://anatini.dev/chart-builder</loc><lastmod>2026-02-13</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://anatini.dev/yaml-json</loc><lastmod>2026-02-13</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://anatini.dev/yaml-to-json</loc><lastmod>2026-02-13</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://anatini.dev/json-to-yaml</loc><lastmod>2026-02-13</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://anatini.dev/regex-filter</loc><lastmod>2026-02-13</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://anatini.dev/about</loc><lastmod>2026-02-11</lastmod><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://anatini.dev/blog</loc><lastmod>2026-02-11</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>

@@ -66,7 +66,7 @@ const jsonLd = {
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "Any",
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-  "featureList": "CSV to Parquet, Parquet to CSV, CSV to JSON, JSON to CSV, JSON to Parquet, Parquet to JSON, Excel to CSV, CSV to Excel, CSV Viewer, Parquet Viewer, JSON Formatter, CSV Inspector, JSON Inspector, Parquet Inspector, SQL Playground, Data Profiler, JSON Flattener, Schema Generator, CSV to SQL, Dataset Diff, Data Sampler, Deduplicator, SQL Formatter, Markdown Table, Column Editor, Data Merge, Pivot Table, Chart Builder, YAML/JSON Converter, Regex Filter",
+  "featureList": "CSV to Parquet, Parquet to CSV, CSV to JSON, JSON to CSV, JSON to Parquet, Parquet to JSON, Excel to CSV, CSV to Excel, YAML to JSON, JSON to YAML, CSV Viewer, Parquet Viewer, JSON Formatter, CSV Inspector, JSON Inspector, Parquet Inspector, SQL Playground, Data Profiler, JSON Flattener, Schema Generator, CSV to SQL, Dataset Diff, Data Sampler, Deduplicator, SQL Formatter, Markdown Table, Column Editor, Data Merge, Pivot Table, Chart Builder, Regex Filter",
 };
 
 function ToolCard({ path, title, description, icon: Icon }: { path: string; title: string; description: string; icon: React.ElementType }) {
