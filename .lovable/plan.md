@@ -1,33 +1,28 @@
-# Tool Expansion Plan — COMPLETED ✅
 
-All 10 planned tools have been implemented and integrated. The suite now has **28 tools**.
 
----
+## Fix: YAML/JSON Converter Broken Page
 
-## Completed Tools
+### Problem
+The `/yaml-json` page shows a blank screen due to a `SyntaxError: Unexpected token '{'` in the bundled `js-yaml` dependency chunk. All other 9 new tools load correctly.
 
-| # | Tool | Route | Status |
-|---|------|-------|--------|
-| 1 | Data Sampler | `/data-sampler` | ✅ Done |
-| 2 | Deduplicator | `/deduplicator` | ✅ Done |
-| 3 | SQL Formatter | `/sql-formatter` | ✅ Done |
-| 4 | Markdown Table Generator | `/markdown-table` | ✅ Done |
-| 5 | Column Selector/Reorder | `/column-editor` | ✅ Done |
-| 6 | Data Merge/Join | `/data-merge` | ✅ Done |
-| 7 | Pivot Table Builder | `/pivot-table` | ✅ Done |
-| 8 | Chart Builder | `/chart-builder` | ✅ Done |
-| 9 | YAML ↔ JSON Converter | `/yaml-json` | ✅ Done |
-| 10 | Regex Row Filter | `/regex-filter` | ✅ Done |
+This is a CommonJS/ESM interop issue -- `js-yaml` uses CommonJS exports, and Vite's dependency pre-bundling is producing an invalid chunk.
 
-## Dependencies Added
+### Solution
+Change the import style in `YamlJsonPage.tsx` to use a namespace import instead of a default import, which resolves the CJS/ESM interop issue:
 
-- `sql-formatter` — SQL Formatter tool
-- `js-yaml` + `@types/js-yaml` — YAML/JSON converter
+**File: `src/pages/YamlJsonPage.tsx`**
 
-## Integration Checklist (all done)
+Change line 9 from:
+```typescript
+import yaml from "js-yaml";
+```
+to:
+```typescript
+import * as yaml from "js-yaml";
+```
 
-- [x] Routes registered in `App.tsx`
-- [x] Navigation links in `Navbar.tsx`
-- [x] Tool cards on `Index.tsx` homepage
-- [x] SEO metadata in `seo-content.tsx`
-- [x] Cross-tool links in `CrossToolLinks.tsx`
+This is a one-line fix. The `yaml.load()` and `yaml.dump()` calls remain the same since both are named exports on the `js-yaml` module.
+
+### Verification
+After the fix, navigate to `/yaml-json`, load a sample, and confirm the conversion works in both directions (YAML to JSON and JSON to YAML).
+
