@@ -1,16 +1,19 @@
-import { createContext, useContext, useEffect, useState, useRef, type ReactNode } from "react";
+import { createContext, useContext, useCallback, useState, useRef, type ReactNode } from "react";
 import * as duckdb from "@duckdb/duckdb-wasm";
 
 interface DuckDBContextValue {
   db: duckdb.AsyncDuckDB | null;
   loading: boolean;
   error: string | null;
+  /** Call to trigger lazy initialization. No-op if already initialized or in progress. */
+  requestInit: () => void;
 }
 
 const DuckDBContext = createContext<DuckDBContextValue>({
   db: null,
-  loading: true,
+  loading: false,
   error: null,
+  requestInit: () => {},
 });
 
 export function useDuckDB() {
@@ -19,15 +22,16 @@ export function useDuckDB() {
 
 export function DuckDBProvider({ children }: { children: ReactNode }) {
   const [db, setDb] = useState<duckdb.AsyncDuckDB | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const initRef = useRef(false);
 
-  useEffect(() => {
+  const requestInit = useCallback(() => {
     if (initRef.current) return;
     initRef.current = true;
+    setLoading(true);
 
-    async function init() {
+    (async () => {
       try {
         const JSDELIVR_BUNDLES = duckdb.getJsDelivrBundles();
         const bundle = await duckdb.selectBundle(JSDELIVR_BUNDLES);
@@ -49,13 +53,11 @@ export function DuckDBProvider({ children }: { children: ReactNode }) {
       } finally {
         setLoading(false);
       }
-    }
-
-    init();
+    })();
   }, []);
 
   return (
-    <DuckDBContext.Provider value={{ db, loading, error }}>
+    <DuckDBContext.Provider value={{ db, loading, error, requestInit }}>
       {children}
     </DuckDBContext.Provider>
   );
