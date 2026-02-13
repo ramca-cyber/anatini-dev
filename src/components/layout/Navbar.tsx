@@ -24,6 +24,7 @@ const toolGroups = [
       { path: "/parquet-to-json", label: "Parquet → JSON" },
       { path: "/excel-to-csv", label: "Excel → CSV" },
       { path: "/csv-to-excel", label: "CSV → Excel" },
+      { path: "/yaml-json", label: "YAML ↔ JSON" },
     ],
   },
   {
@@ -59,7 +60,6 @@ const toolGroups = [
       { path: "/data-merge", label: "Data Merge" },
       { path: "/pivot-table", label: "Pivot Table" },
       { path: "/chart-builder", label: "Chart Builder" },
-      { path: "/yaml-json", label: "YAML ↔ JSON" },
       { path: "/regex-filter", label: "Regex Filter" },
     ],
   },

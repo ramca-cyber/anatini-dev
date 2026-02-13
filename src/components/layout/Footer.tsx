@@ -11,6 +11,7 @@ const toolGrid = {
     { label: "Parquet → JSON", path: "/parquet-to-json" },
     { label: "Excel → CSV", path: "/excel-to-csv" },
     { label: "CSV → Excel", path: "/csv-to-excel" },
+    { label: "YAML ↔ JSON", path: "/yaml-json" },
   ],
   Viewers: [
     { label: "CSV Viewer", path: "/csv-viewer" },
@@ -37,7 +38,6 @@ const toolGrid = {
     { label: "Data Merge", path: "/data-merge" },
     { label: "Pivot Table", path: "/pivot-table" },
     { label: "Chart Builder", path: "/chart-builder" },
-    { label: "YAML ↔ JSON", path: "/yaml-json" },
     { label: "Regex Filter", path: "/regex-filter" },
   ],
 };
