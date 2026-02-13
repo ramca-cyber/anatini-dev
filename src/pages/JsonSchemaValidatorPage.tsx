@@ -6,8 +6,10 @@ import { ToolPage } from "@/components/shared/ToolPage";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import Ajv from "ajv";
+import addFormats from "ajv-formats";
 
 const ajv = new Ajv({ allErrors: true, verbose: true });
+addFormats(ajv);
 
 const sampleSchema = `{
   "type": "object",
