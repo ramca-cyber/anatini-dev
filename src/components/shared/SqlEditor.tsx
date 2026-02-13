@@ -10,9 +10,10 @@ interface SqlEditorProps {
   onChange: (value: string) => void;
   onRun: (selectedText?: string) => void;
   onInsertRef?: MutableRefObject<((text: string) => void) | null>;
+  schema?: Record<string, string[]>;
 }
 
-export function SqlEditor({ value, onChange, onRun, onInsertRef }: SqlEditorProps) {
+export function SqlEditor({ value, onChange, onRun, onInsertRef, schema }: SqlEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const onRunRef = useRef(onRun);
@@ -54,7 +55,7 @@ export function SqlEditor({ value, onChange, onRun, onInsertRef }: SqlEditorProp
       doc: value,
       extensions: [
         basicSetup,
-        sql(),
+        sql({ schema: schema, upperCaseKeywords: true }),
         oneDark,
         runKeymap,
         cmPlaceholder("-- Write SQL here (Ctrl+Enter to run, select text to run partial)"),
@@ -105,7 +106,7 @@ export function SqlEditor({ value, onChange, onRun, onInsertRef }: SqlEditorProp
       viewRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [schema]);
 
   // Sync external value changes
   useEffect(() => {
