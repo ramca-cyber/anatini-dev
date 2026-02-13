@@ -258,6 +258,26 @@ const seoData: Record<string, { whatIs: { title: string; content: string }; howT
       { question: "Can I use this for GitHub READMEs?", answer: "Yes — the output is standard GitHub Flavored Markdown (GFM) table syntax, compatible with GitHub, GitLab, Notion, and most Markdown renderers." },
     ],
   },
+  "column-editor": {
+    metaDescription: "Select, reorder, and rename columns in CSV, JSON, or Parquet files. Export cleaned data. Free, offline browser tool.",
+    whatIs: { title: "What is a Column Editor?", content: "A column editor lets you visually manage the columns in your dataset — include or exclude columns, drag to reorder them, and rename with aliases. It's essential for data preparation before importing into databases, sharing, or analysis." },
+    howToUse: "Upload a data file to see all columns listed. Toggle the eye icon to include/exclude columns. Drag rows to reorder. Type in the rename field to add aliases. Click 'Apply Changes' to preview, then download the result.",
+    faqs: [
+      { question: "What file formats are supported?", answer: "CSV, TSV, JSON/JSONL, and Parquet files are all supported." },
+      { question: "Can I rename columns?", answer: "Yes — type a new name in the 'Rename' field next to any column. The original column name is preserved until you export." },
+      { question: "Does reordering change the original file?", answer: "No — your original file is never modified. Changes only apply to the exported output." },
+    ],
+  },
+  "data-merge": {
+    metaDescription: "Join two datasets with inner, left, right, full outer, or cross joins. Visual merge tool. Free, offline browser tool powered by DuckDB-WASM.",
+    whatIs: { title: "What is Data Merging?", content: "Data merging (joining) combines rows from two datasets based on matching key columns. It's a fundamental operation in data analysis — equivalent to SQL JOINs but with a visual interface. Supports inner, left, right, full outer, and cross joins." },
+    howToUse: "Upload two data files (left and right datasets). Select the join type and key columns to match on. The tool auto-detects common columns. Click 'Merge' to see the result. Download the merged data as CSV.",
+    faqs: [
+      { question: "What join types are supported?", answer: "Inner (only matching rows), Left (all left + matching right), Right (all right + matching left), Full Outer (all rows from both), and Cross (every combination)." },
+      { question: "What happens with duplicate column names?", answer: "Columns from the right dataset that have the same name as left columns are automatically suffixed with '_right' to avoid ambiguity." },
+      { question: "Can I merge files of different formats?", answer: "Yes — you can join a CSV with a Parquet file, or JSON with CSV. Any supported format combination works." },
+    ],
+  },
 };
 
 export function getToolSeo(toolId: string) {

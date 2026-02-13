@@ -3,7 +3,7 @@ import { PageMeta } from "@/components/shared/PageMeta";
 import {
   ArrowRight, FileSpreadsheet, Braces, Terminal, BarChart3, Database,
   FileJson, Table, Eye, Code, FileText, Zap, Lock, Globe, Shield,
-  GitCompare, Search, Shuffle, Copy, AlignLeft,
+  GitCompare, Search, Shuffle, Copy, AlignLeft, Columns3, Merge,
 } from "lucide-react";
 
 const converters = [
@@ -40,6 +40,8 @@ const analysis = [
   { path: "/deduplicator", title: "Deduplicator", description: "Find and remove duplicate rows.", icon: Copy },
   { path: "/sql-formatter", title: "SQL Formatter", description: "Beautify and minify SQL queries.", icon: Code },
   { path: "/markdown-table", title: "Markdown Table", description: "Convert data to Markdown tables.", icon: AlignLeft },
+  { path: "/column-editor", title: "Column Editor", description: "Select, reorder, rename columns.", icon: Columns3 },
+  { path: "/data-merge", title: "Data Merge", description: "Join two datasets visually.", icon: Merge },
 ];
 
 const features = [
@@ -84,7 +86,7 @@ export default function Index() {
     <>
       <PageMeta
         title="Anatini.dev — Free, Offline Data Tools for Developers"
-        description="22+ free, offline data tools powered by DuckDB-WASM. Convert CSV, Parquet, JSON, Excel. Query with SQL. Profile datasets. All in your browser."
+        description="24+ free, offline data tools powered by DuckDB-WASM. Convert CSV, Parquet, JSON, Excel. Query with SQL. Profile datasets. All in your browser."
       />
 
 
@@ -99,7 +101,7 @@ export default function Index() {
         <div className="container py-12 md:py-20 lg:py-28">
           <div className="mx-auto max-w-3xl">
             <div className="inline-block border-2 border-border bg-secondary px-3 py-1 text-xs font-bold uppercase tracking-widest mb-6">
-             22 Tools · 100% Offline · Zero Tracking
+             24 Tools · 100% Offline · Zero Tracking
             </div>
             <h1 className="text-4xl font-bold leading-[1.1] tracking-tight md:text-5xl lg:text-6xl">
               Data tools that run

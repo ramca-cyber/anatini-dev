@@ -36,6 +36,8 @@ const DataSamplerPage = lazy(() => import("./pages/DataSamplerPage"));
 const DeduplicatorPage = lazy(() => import("./pages/DeduplicatorPage"));
 const SqlFormatterPage = lazy(() => import("./pages/SqlFormatterPage"));
 const MarkdownTablePage = lazy(() => import("./pages/MarkdownTablePage"));
+const ColumnEditorPage = lazy(() => import("./pages/ColumnEditorPage"));
+const DataMergePage = lazy(() => import("./pages/DataMergePage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const BlogIndex = lazy(() => import("./pages/blog/BlogIndex"));
 const HowToConvertCsvToParquet = lazy(() => import("./pages/blog/HowToConvertCsvToParquet"));
@@ -98,6 +100,8 @@ const App = () => (
                   <Route path="/deduplicator" element={<DeduplicatorPage />} />
                   <Route path="/sql-formatter" element={<SqlFormatterPage />} />
                   <Route path="/markdown-table" element={<MarkdownTablePage />} />
+                  <Route path="/column-editor" element={<ColumnEditorPage />} />
+                  <Route path="/data-merge" element={<DataMergePage />} />
 
                   {/* Legacy */}
                   <Route path="/dataset-diff" element={<DiffPage />} />

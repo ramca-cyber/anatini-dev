@@ -10,6 +10,8 @@ const linksByFormat: Record<string, { label: string; route: string }[]> = {
     { label: "Profile Data", route: "/data-profiler" },
     { label: "Sample Data", route: "/data-sampler" },
     { label: "Deduplicate", route: "/deduplicator" },
+    { label: "Edit Columns", route: "/column-editor" },
+    { label: "Merge Data", route: "/data-merge" },
   ],
   json: [
     { label: "Convert to CSV", route: "/json-to-csv" },
@@ -19,6 +21,8 @@ const linksByFormat: Record<string, { label: string; route: string }[]> = {
     { label: "SQL Playground", route: "/sql-playground" },
     { label: "Sample Data", route: "/data-sampler" },
     { label: "Deduplicate", route: "/deduplicator" },
+    { label: "Edit Columns", route: "/column-editor" },
+    { label: "Merge Data", route: "/data-merge" },
   ],
   parquet: [
     { label: "Convert to CSV", route: "/parquet-to-csv" },
@@ -28,6 +32,8 @@ const linksByFormat: Record<string, { label: string; route: string }[]> = {
     { label: "Profile Data", route: "/data-profiler" },
     { label: "Sample Data", route: "/data-sampler" },
     { label: "Deduplicate", route: "/deduplicator" },
+    { label: "Edit Columns", route: "/column-editor" },
+    { label: "Merge Data", route: "/data-merge" },
   ],
   excel: [
     { label: "Convert to CSV", route: "/excel-to-csv" },
