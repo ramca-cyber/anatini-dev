@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { ErrorAlert } from "@/components/shared/ErrorAlert";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { BarChart3, Download, ChevronDown, ChevronUp, Image } from "lucide-react";
@@ -106,7 +106,7 @@ export default function ChartBuilderPage() {
 
   useAutoLoadFile(handleFile, !!db);
 
-  async function handleBuildChart() {
+  const handleBuildChart = useCallback(async () => {
     if (!db || !meta || !xColumn || yColumns.length === 0) return;
     setLoading(true);
     setError(null);
@@ -128,7 +128,14 @@ export default function ChartBuilderPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [db, meta, xColumn, yColumns, tableName, limit]);
+
+  // Auto-rebuild chart when config changes
+  useEffect(() => {
+    if (db && meta && xColumn && yColumns.length > 0 && tableName) {
+      handleBuildChart();
+    }
+  }, [chartType, xColumn, yColumns, limit, tableName, handleBuildChart]);
 
   async function handleExportPng() {
     if (!chartRef.current) return;
@@ -212,7 +219,7 @@ export default function ChartBuilderPage() {
                   </div>
 
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs text-muted-foreground font-bold">Y Axis / Values</label>
+                    <label className="text-xs text-muted-foreground font-bold">Y Axis / Values (select multiple)</label>
                     <div className="flex flex-wrap gap-1">
                       {meta.columns.filter(c => c !== xColumn).map(c => (
                         <button
