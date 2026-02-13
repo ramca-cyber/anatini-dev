@@ -54,7 +54,7 @@ const features = [
   { icon: Zap, title: "WebAssembly Speed", description: "DuckDB compiled to WASM — analytical queries in milliseconds, not seconds." },
   { icon: Lock, title: "Zero Data Leaks", description: "No uploads. No servers. No tracking. Your files never leave your machine." },
   { icon: Globe, title: "No Install Needed", description: "Works in any modern browser. No extensions, no CLI, no accounts required." },
-  { icon: Shield, title: "Free Forever", description: "All 28+ tools, no paywalls. Open source philosophy, closed-source simplicity." },
+  { icon: Shield, title: "Free Forever", description: "All 30+ tools, no paywalls. Open source philosophy, closed-source simplicity." },
 ];
 
 const jsonLd = {
@@ -92,7 +92,7 @@ export default function Index() {
     <>
       <PageMeta
         title="Anatini.dev — Free, Offline Data Tools for Developers"
-        description="28+ free, offline data tools powered by DuckDB-WASM. Convert CSV, Parquet, JSON, Excel. Query with SQL. Profile datasets. All in your browser."
+        description="30+ free, offline data tools powered by DuckDB-WASM. Convert CSV, Parquet, JSON, Excel. Query with SQL. Profile datasets. All in your browser."
       />
 
 
@@ -107,7 +107,7 @@ export default function Index() {
         <div className="container py-12 md:py-20 lg:py-28">
           <div className="mx-auto max-w-3xl">
             <div className="inline-block border-2 border-border bg-secondary px-3 py-1 text-xs font-bold uppercase tracking-widest mb-6">
-             30 Tools · 100% Offline · Zero Tracking
+             31 Tools · 100% Offline · Zero Tracking
             </div>
             <h1 className="text-4xl font-bold leading-[1.1] tracking-tight md:text-5xl lg:text-6xl">
               Data tools that run
