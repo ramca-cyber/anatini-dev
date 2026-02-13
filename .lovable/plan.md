@@ -1,55 +1,25 @@
 
 
-## Responsive Layout Fixes
+## Fix: Move YAML ↔ JSON to Converters Category
 
-### Audit Results
+### The Issue
 
-Tested across 4 viewports: 320px (iPhone SE), 390px (iPhone 14), 768px (iPad), and 1920px (desktop).
+YAML ↔ JSON (`/yaml-json`) is a bidirectional format converter currently miscategorized under "Analysis & SQL" in all three navigation locations. It should be under "Converters."
 
-**Everything looks good except one issue:**
+No tools have been incorrectly combined — all converter pairs (CSV/Parquet, CSV/JSON, JSON/Parquet, Excel/CSV) are properly split into separate bidirectional tools.
 
-### Issue: SQL Playground sidebar open by default on mobile
+### Changes
 
-On mobile, the sidebar (file drop zone, URL input, loaded tables) is visible by default, pushing the SQL editor far down the page. Users have to scroll past the entire sidebar before they can see or use the editor.
+Three files need the same update — move the YAML ↔ JSON entry from "Analysis & SQL" to "Converters":
 
-**Fix:** Default `sidebarOpen` to `false` on mobile devices. The toggle button already exists -- users can expand it when needed.
+1. **`src/pages/Index.tsx`** — Move the `yaml-json` entry from the `analysis` array to the `converters` array
+2. **`src/components/layout/Navbar.tsx`** — Move it from the "Analysis & SQL" group to "Converters" in `toolGroups`
+3. **`src/components/layout/Footer.tsx`** — Move it from the "Analysis & SQL" section to "Converters" in `toolGrid`
 
-### What already works well
-- Homepage hero and tool grid adapt properly to all sizes
-- Mobile hamburger menu opens/closes correctly
-- Blog, About, and tool pages all render cleanly
-- Footer 2-column grid works well on mobile
-- Navbar collapses to hamburger on mobile
-- "100% Offline" badge hides on small screens as intended
+Also update the homepage hero badge from "28 Tools" to "28+ Tools" if it isn't already accurate after this recategorization (tool count stays the same, just moving between categories).
 
----
+### Result
 
-### Technical Details
-
-**File:** `src/pages/SqlPage.tsx`
-
-Change `useState(true)` to use `isMobile` to determine the default:
-
-```typescript
-// Before
-const isMobile = useIsMobile();
-const [sidebarOpen, setSidebarOpen] = useState(true);
-
-// After  
-const isMobile = useIsMobile();
-const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
-```
-
-However, since `useIsMobile()` returns `false` on first render (before the effect runs), we also need a `useEffect` to close the sidebar when the initial mobile detection resolves:
-
-```typescript
-const isMobile = useIsMobile();
-const [sidebarOpen, setSidebarOpen] = useState(true);
-
-// Close sidebar by default on mobile
-useEffect(() => {
-  if (isMobile) setSidebarOpen(false);
-}, []); // only on mount
-```
-
-This is a single-line fix in one file.
+- Converters: 9 tools (was 8)
+- Analysis & SQL: 15 tools (was 16)
+- Viewers and Inspectors: unchanged
