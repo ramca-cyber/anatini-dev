@@ -16,6 +16,7 @@ const converters = [
   { path: "/parquet-to-json", title: "Parquet → JSON", description: "Export Parquet to JSON/NDJSON.", icon: Braces },
   { path: "/excel-to-csv", title: "Excel → CSV", description: "Multi-sheet export to CSV.", icon: FileText },
   { path: "/csv-to-excel", title: "CSV → Excel", description: "Combine CSVs into a workbook.", icon: FileText },
+  { path: "/yaml-json", title: "YAML ↔ JSON", description: "Bidirectional YAML/JSON converter.", icon: RefreshCw },
 ];
 
 const viewers = [
@@ -45,7 +46,6 @@ const analysis = [
   { path: "/data-merge", title: "Data Merge", description: "Join two datasets visually.", icon: Merge },
   { path: "/pivot-table", title: "Pivot Table", description: "Build pivot tables with aggregation.", icon: TableProperties },
   { path: "/chart-builder", title: "Chart Builder", description: "Bar, line, area, pie, scatter charts.", icon: BarChart3 },
-  { path: "/yaml-json", title: "YAML ↔ JSON", description: "Bidirectional YAML/JSON converter.", icon: RefreshCw },
   { path: "/regex-filter", title: "Regex Filter", description: "Filter rows by regex pattern.", icon: Filter },
 ];
 
