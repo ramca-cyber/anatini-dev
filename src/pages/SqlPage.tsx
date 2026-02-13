@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useMemo } from "react";
 import { ErrorAlert } from "@/components/shared/ErrorAlert";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { Terminal, Play, Download, Plus, Copy, Table2, History, X, ChevronDown } from "lucide-react";
@@ -78,6 +78,12 @@ export default function SqlPage() {
   const editorInsertRef = useRef<((text: string) => void) | null>(null);
 
   const activeTab = tabs.find(t => t.id === activeTabId) ?? tabs[0];
+
+  const editorSchema = useMemo(() => {
+    const s: Record<string, string[]> = {};
+    for (const t of tables) s[t.name] = t.columns;
+    return s;
+  }, [tables]);
 
   function updateTab(id: string, patch: Partial<QueryTab>) {
     setTabs(prev => prev.map(t => t.id === id ? { ...t, ...patch } : t));
@@ -286,6 +292,7 @@ export default function SqlPage() {
                   onChange={(v) => updateTab(activeTab.id, { sql: v })}
                   onRun={handleRun}
                   onInsertRef={editorInsertRef}
+                  schema={editorSchema}
                 />
               </div>
             </ResizablePanel>
