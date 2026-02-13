@@ -47,6 +47,7 @@ export default function About() {
             </div>
             <ul className="space-y-1.5 text-muted-foreground">
               <li><span className="font-mono text-sm text-foreground">DuckDB-WASM</span> — In-browser analytical SQL engine</li>
+              <li><span className="font-mono text-sm text-foreground">SheetJS</span> — Excel file parsing and generation</li>
               <li><span className="font-mono text-sm text-foreground">React + TypeScript</span> — UI framework</li>
               <li><span className="font-mono text-sm text-foreground">Tailwind CSS</span> — Styling</li>
               <li><span className="font-mono text-sm text-foreground">Vite</span> — Build tool</li>
