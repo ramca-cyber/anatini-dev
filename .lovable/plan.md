@@ -1,25 +1,50 @@
 
 
-## Fix: Move YAML ↔ JSON to Converters Category
+## Enhancements: Sitemap, SEO & Cross-Tool Links Cleanup
 
-### The Issue
+After reviewing the full codebase, the tools and pages are well-built. Here are the concrete gaps worth fixing:
 
-YAML ↔ JSON (`/yaml-json`) is a bidirectional format converter currently miscategorized under "Analysis & SQL" in all three navigation locations. It should be under "Converters."
+---
 
-No tools have been incorrectly combined — all converter pairs (CSV/Parquet, CSV/JSON, JSON/Parquet, Excel/CSV) are properly split into separate bidirectional tools.
+### 1. Sitemap is stale after YAML split
 
-### Changes
+The sitemap (`public/sitemap.xml`) still lists `/yaml-json` instead of the two new routes `/yaml-to-json` and `/json-to-yaml`. Search engines will crawl a redirect instead of the real pages.
 
-Three files need the same update — move the YAML ↔ JSON entry from "Analysis & SQL" to "Converters":
+**Fix:** Replace the single `/yaml-json` entry with two entries for `/yaml-to-json` and `/json-to-yaml`.
 
-1. **`src/pages/Index.tsx`** — Move the `yaml-json` entry from the `analysis` array to the `converters` array
-2. **`src/components/layout/Navbar.tsx`** — Move it from the "Analysis & SQL" group to "Converters" in `toolGroups`
-3. **`src/components/layout/Footer.tsx`** — Move it from the "Analysis & SQL" section to "Converters" in `toolGrid`
+---
 
-Also update the homepage hero badge from "28 Tools" to "28+ Tools" if it isn't already accurate after this recategorization (tool count stays the same, just moving between categories).
+### 2. Homepage JSON-LD featureList is outdated
 
-### Result
+The `jsonLd` object in `src/pages/Index.tsx` still says `"YAML/JSON Converter"` (singular). It should list the two separate tools.
 
-- Converters: 9 tools (was 8)
-- Analysis & SQL: 15 tools (was 16)
-- Viewers and Inspectors: unchanged
+**Fix:** Update the `featureList` string to include `"YAML to JSON, JSON to YAML"` instead of `"YAML/JSON Converter"`.
+
+---
+
+### 3. YAML converters missing CrossToolLinks
+
+Every other converter has a `<CrossToolLinks>` component that lets users continue to related tools. The new YAML pages have no cross-linking at all.
+
+**Fix:** Add a `yaml` format entry to `CrossToolLinks.tsx` with links like "Convert to JSON" and "Convert to YAML". Then render `<CrossToolLinks>` in both YAML pages.
+
+---
+
+### 4. YAML converters: auto-convert on input change
+
+Other text-based tools (JSON Formatter, SQL Formatter) convert automatically as the user types or pastes. The YAML tools require clicking a "Convert" button, which is an extra step.
+
+**Fix:** Add a `useEffect` that calls `convert()` whenever `input` or `indent` changes (debounced or immediate since `js-yaml` is fast). Remove the explicit "Convert" button or keep it as a fallback.
+
+---
+
+### Summary of files changed
+
+| File | Change |
+|------|--------|
+| `public/sitemap.xml` | Replace `/yaml-json` with `/yaml-to-json` and `/json-to-yaml` |
+| `src/pages/Index.tsx` | Update `featureList` in JSON-LD |
+| `src/components/shared/CrossToolLinks.tsx` | Add `yaml` format with relevant links |
+| `src/pages/YamlToJsonPage.tsx` | Add CrossToolLinks, auto-convert on input change |
+| `src/pages/JsonToYamlPage.tsx` | Add CrossToolLinks, auto-convert on input change |
+
