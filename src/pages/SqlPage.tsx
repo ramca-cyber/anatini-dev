@@ -1,4 +1,7 @@
 import { useState, useCallback, useRef, useMemo } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { ErrorAlert } from "@/components/shared/ErrorAlert";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { Terminal, Play, Download, Plus, Copy, Table2, History, X, ChevronDown, Pencil, Trash2 } from "lucide-react";
@@ -43,11 +46,10 @@ interface QueryTab {
 }
 
 const MAX_HISTORY = 20;
-let tabCounter = 1;
 
-function createTab(initialSql = ""): QueryTab {
+function createTab(counterRef: React.MutableRefObject<number>, initialSql = ""): QueryTab {
   const id = `tab-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-  const label = `Query ${tabCounter++}`;
+  const label = `Query ${counterRef.current++}`;
   return { id, label, sql: initialSql, result: null, error: null, loading: false };
 }
 
@@ -85,8 +87,11 @@ async function excelToSheetFiles(file: File): Promise<{ name: string; file: File
 export default function SqlPage() {
   const { db } = useDuckDB();
   const { addFile } = useFileStore();
+  const isMobile = useIsMobile();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const tabCounterRef = useRef(1);
   const [tables, setTables] = useState<LoadedTable[]>([]);
-  const [tabs, setTabs] = useState<QueryTab[]>(() => [createTab()]);
+  const [tabs, setTabs] = useState<QueryTab[]>(() => [createTab(tabCounterRef)]);
   const [activeTabId, setActiveTabId] = useState(() => tabs[0]?.id ?? "");
   const [showDropZone, setShowDropZone] = useState(true);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
@@ -275,7 +280,7 @@ export default function SqlPage() {
   }
 
   function addTab() {
-    const t = createTab();
+    const t = createTab(tabCounterRef);
     setTabs(prev => [...prev, t]);
     setActiveTabId(t.id);
   }
@@ -296,82 +301,89 @@ export default function SqlPage() {
     <ToolPage icon={Terminal} title="SQL Playground" description="Run SQL queries against local files using DuckDB."
       pageTitle="SQL Playground — Query Files Offline | Anatini.dev" metaDescription={getToolMetaDescription("sql-playground")} seoContent={getToolSeo("sql-playground")}>
       <div className="relative grid gap-6 lg:grid-cols-[280px_1fr]">
-        {/* Sidebar */}
+        {/* Sidebar — collapsible on mobile */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-medium text-muted-foreground">Tables</h3>
-            <Button variant="ghost" size="sm" onClick={() => setShowDropZone(true)}>
-              <Plus className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="sm" onClick={() => setShowDropZone(true)}>
+                <Plus className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="sm" className="lg:hidden" onClick={() => setSidebarOpen(!sidebarOpen)}>
+                {sidebarOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
+              </Button>
+            </div>
           </div>
 
-          {showDropZone && (
-            <div className="space-y-2">
-              <DropZone
-                accept={[".csv", ".parquet", ".json", ".xlsx", ".xls"]}
-                onFile={handleFile}
-                label="Add a file (CSV, Parquet, JSON, Excel)"
-                sampleAction={tables.length === 0 ? { label: "⚗ Try with sample data", onClick: () => handleFile(getSampleCSV()) } : undefined}
-              />
-              <UrlInput onFile={handleFile} accept={[".csv", ".parquet", ".json", ".xlsx", ".xls"]} placeholder="https://example.com/data.csv" label="Or load from URL" />
-            </div>
-          )}
+          <div className={`space-y-4 ${!sidebarOpen ? "hidden lg:block" : ""}`}>
+            {showDropZone && (
+              <div className="space-y-2">
+                <DropZone
+                  accept={[".csv", ".parquet", ".json", ".xlsx", ".xls"]}
+                  onFile={handleFile}
+                  label="Add a file (CSV, Parquet, JSON, Excel)"
+                  sampleAction={tables.length === 0 ? { label: "⚗ Try with sample data", onClick: () => handleFile(getSampleCSV()) } : undefined}
+                />
+                <UrlInput onFile={handleFile} accept={[".csv", ".parquet", ".json", ".xlsx", ".xls"]} placeholder="https://example.com/data.csv" label="Or load from URL" />
+              </div>
+            )}
 
-          {tables.map((t) => (
-            <div key={t.name} className="rounded-lg border border-border bg-card p-3 space-y-2">
-              <div className="flex items-center gap-2">
-                <Table2 className="h-4 w-4 text-primary shrink-0" />
-                {renamingTable === t.name ? (
-                  <form
-                    className="flex-1 flex items-center gap-1"
-                    onSubmit={(e) => { e.preventDefault(); handleRenameTable(t.name, renameValue); }}
-                  >
-                    <Input
-                      value={renameValue}
-                      onChange={(e) => setRenameValue(e.target.value)}
-                      className="h-6 text-xs font-mono px-1"
-                      autoFocus
-                      onBlur={() => handleRenameTable(t.name, renameValue)}
-                      onKeyDown={(e) => { if (e.key === "Escape") setRenamingTable(null); }}
-                    />
-                  </form>
-                ) : (
-                  <>
-                    <span className="font-mono text-sm font-medium truncate">{t.name}</span>
-                    <span className="ml-auto text-[10px] text-muted-foreground shrink-0">{t.rowCount.toLocaleString()} rows</span>
-                    <button
-                      onClick={() => { setRenamingTable(t.name); setRenameValue(t.name); }}
-                      className="text-muted-foreground/50 hover:text-foreground transition-colors shrink-0"
-                      title="Rename table"
+            {tables.map((t) => (
+              <div key={t.name} className="rounded-lg border border-border bg-card p-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <Table2 className="h-4 w-4 text-primary shrink-0" />
+                  {renamingTable === t.name ? (
+                    <form
+                      className="flex-1 flex items-center gap-1"
+                      onSubmit={(e) => { e.preventDefault(); handleRenameTable(t.name, renameValue); }}
                     >
-                      <Pencil className="h-3 w-3" />
-                    </button>
+                      <Input
+                        value={renameValue}
+                        onChange={(e) => setRenameValue(e.target.value)}
+                        className="h-6 text-xs font-mono px-1"
+                        autoFocus
+                        onBlur={() => handleRenameTable(t.name, renameValue)}
+                        onKeyDown={(e) => { if (e.key === "Escape") setRenamingTable(null); }}
+                      />
+                    </form>
+                  ) : (
+                    <>
+                      <span className="font-mono text-sm font-medium truncate">{t.name}</span>
+                      <span className="ml-auto text-[10px] text-muted-foreground shrink-0">{t.rowCount.toLocaleString()} rows</span>
+                      <button
+                        onClick={() => { setRenamingTable(t.name); setRenameValue(t.name); }}
+                        className="text-muted-foreground/50 hover:text-foreground transition-colors shrink-0"
+                        title="Rename table"
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </button>
+                      <button
+                        onClick={() => handleRemoveTable(t.name)}
+                        className="text-muted-foreground/50 hover:text-destructive transition-colors shrink-0"
+                        title="Remove table"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </>
+                  )}
+                </div>
+                <div className="text-[10px] text-muted-foreground/60 truncate">{t.fileName}</div>
+                <div className="space-y-0.5">
+                  {t.columns.map((col, i) => (
                     <button
-                      onClick={() => handleRemoveTable(t.name)}
-                      className="text-muted-foreground/50 hover:text-destructive transition-colors shrink-0"
-                      title="Remove table"
+                      key={col}
+                      onClick={() => insertColumn(col)}
+                      className="w-full flex items-center justify-between text-xs hover:bg-muted/30 rounded px-1 py-0.5 transition-colors cursor-pointer"
+                      title={`Click to insert "${col}"`}
                     >
-                      <Trash2 className="h-3 w-3" />
+                      <span className="font-mono text-muted-foreground hover:text-primary transition-colors">{col}</span>
+                      <span className="font-mono text-[10px] text-muted-foreground/60">{t.types[i]}</span>
                     </button>
-                  </>
-                )}
+                  ))}
+                </div>
               </div>
-              <div className="text-[10px] text-muted-foreground/60 truncate">{t.fileName}</div>
-              <div className="space-y-0.5">
-                {t.columns.map((col, i) => (
-                  <button
-                    key={col}
-                    onClick={() => insertColumn(col)}
-                    className="w-full flex items-center justify-between text-xs hover:bg-muted/30 rounded px-1 py-0.5 transition-colors cursor-pointer"
-                    title={`Click to insert "${col}"`}
-                  >
-                    <span className="font-mono text-muted-foreground hover:text-primary transition-colors">{col}</span>
-                    <span className="font-mono text-[10px] text-muted-foreground/60">{t.types[i]}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
         {/* Main */}

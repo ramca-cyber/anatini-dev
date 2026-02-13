@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://anatini.dev/</loc><lastmod>2026-02-11</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://anatini.dev/</loc><lastmod>2026-02-13</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>
   <url><loc>https://anatini.dev/csv-to-parquet</loc><lastmod>2026-02-11</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://anatini.dev/parquet-to-csv</loc><lastmod>2026-02-11</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://anatini.dev/csv-to-json</loc><lastmod>2026-02-11</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
@@ -15,12 +15,22 @@
   <url><loc>https://anatini.dev/csv-inspector</loc><lastmod>2026-02-11</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://anatini.dev/json-inspector</loc><lastmod>2026-02-11</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://anatini.dev/parquet-inspector</loc><lastmod>2026-02-11</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://anatini.dev/sql-playground</loc><lastmod>2026-02-11</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://anatini.dev/sql-playground</loc><lastmod>2026-02-13</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>
   <url><loc>https://anatini.dev/data-profiler</loc><lastmod>2026-02-11</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://anatini.dev/json-flattener</loc><lastmod>2026-02-11</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://anatini.dev/schema-generator</loc><lastmod>2026-02-11</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://anatini.dev/csv-to-sql</loc><lastmod>2026-02-11</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://anatini.dev/dataset-diff</loc><lastmod>2026-02-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://anatini.dev/data-sampler</loc><lastmod>2026-02-13</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://anatini.dev/deduplicator</loc><lastmod>2026-02-13</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://anatini.dev/sql-formatter</loc><lastmod>2026-02-13</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://anatini.dev/markdown-table</loc><lastmod>2026-02-13</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://anatini.dev/column-editor</loc><lastmod>2026-02-13</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://anatini.dev/data-merge</loc><lastmod>2026-02-13</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://anatini.dev/pivot-table</loc><lastmod>2026-02-13</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://anatini.dev/chart-builder</loc><lastmod>2026-02-13</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://anatini.dev/yaml-json</loc><lastmod>2026-02-13</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://anatini.dev/regex-filter</loc><lastmod>2026-02-13</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://anatini.dev/about</loc><lastmod>2026-02-11</lastmod><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://anatini.dev/blog</loc><lastmod>2026-02-11</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
   <url><loc>https://anatini.dev/blog/how-to-convert-csv-to-parquet</loc><lastmod>2026-02-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
