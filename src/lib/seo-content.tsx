@@ -238,6 +238,26 @@ const seoData: Record<string, { whatIs: { title: string; content: string }; howT
       { question: "Can I preview which rows are duplicates?", answer: "Yes — after running deduplication, expand the 'Preview duplicates' section to see which rows would be removed." },
     ],
   },
+  "sql-formatter": {
+    metaDescription: "Format, beautify, and minify SQL with dialect-aware formatting for PostgreSQL, MySQL, BigQuery, SQLite. Free, offline browser tool.",
+    whatIs: { title: "What is a SQL Formatter?", content: "A SQL formatter takes messy or minified SQL queries and reformats them with proper indentation, keyword casing, and line breaks. It supports multiple SQL dialects and helps improve readability, code reviews, and documentation." },
+    howToUse: "Paste your SQL in the input area. Choose your dialect (Standard SQL, PostgreSQL, MySQL, BigQuery, SQLite, SQL Server), keyword casing, and indentation. Click Format to beautify or Minify to compress. Copy or download the result.",
+    faqs: [
+      { question: "Which SQL dialects are supported?", answer: "Standard SQL, PostgreSQL, MySQL, BigQuery, SQLite, and SQL Server (T-SQL). Each dialect has specific keyword and syntax awareness." },
+      { question: "Does formatting change my query's behavior?", answer: "No — formatting only changes whitespace and keyword casing. The query logic is preserved exactly." },
+      { question: "Can I format stored procedures or DDL?", answer: "Yes — the formatter handles CREATE TABLE, ALTER, INSERT, and procedural SQL. Complex PL/pgSQL may have limited support." },
+    ],
+  },
+  "markdown-table": {
+    metaDescription: "Convert CSV, JSON, or Parquet files into formatted Markdown tables. Copy for GitHub, docs, and READMEs. Free, offline browser tool.",
+    whatIs: { title: "What is a Markdown Table?", content: "Markdown tables are a lightweight syntax for displaying tabular data in plain text. They're widely used in GitHub READMEs, documentation, issue trackers, and static site generators. Each column is separated by pipes (|) with a header separator row." },
+    howToUse: "Upload a CSV, JSON, or Parquet file, or paste CSV data directly. Choose alignment (left, center, right) and max rows. The tool generates a properly formatted Markdown table you can copy to clipboard or download as a .md file.",
+    faqs: [
+      { question: "What file formats are supported?", answer: "CSV, JSON/JSONL, and Parquet files. You can also paste CSV data directly." },
+      { question: "Is there a row limit?", answer: "You can generate tables up to 1,000 rows. For larger datasets, consider using a subset — very large Markdown tables are hard to read anyway." },
+      { question: "Can I use this for GitHub READMEs?", answer: "Yes — the output is standard GitHub Flavored Markdown (GFM) table syntax, compatible with GitHub, GitLab, Notion, and most Markdown renderers." },
+    ],
+  },
 };
 
 export function getToolSeo(toolId: string) {
