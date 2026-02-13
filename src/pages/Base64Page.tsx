@@ -90,6 +90,7 @@ export default function Base64Page() {
               value={mode}
               onChange={(v) => { setMode(v as Mode); setInput(""); setOutput(""); setError(null); setFileName(null); }}
             />
+            <Button variant="outline" size="sm" onClick={() => setInput(`{\n  "name": "Ada Lovelace",\n  "born": 1815,\n  "known_for": "First computer program",\n  "quote": "The Analytical Engine weaves algebraic patterns, just as the Jacquard loom weaves flowers and leaves."\n}`)}>Load Sample</Button>
             <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
               Upload File
             </Button>
