@@ -76,6 +76,7 @@ export default function HashGeneratorPage() {
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border border-border bg-muted/30 px-4 py-3">
           <div className="flex items-center gap-4 flex-wrap">
+            <Button variant="outline" size="sm" onClick={() => { setMode("text"); setInput("The quick brown fox jumps over the lazy dog"); }}>Load Sample</Button>
             <div className="flex items-center gap-2">
               <label className="text-xs text-muted-foreground font-bold">Input</label>
               <ToggleButton
