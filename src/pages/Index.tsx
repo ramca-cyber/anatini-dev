@@ -53,7 +53,7 @@ const features = [
   { icon: Zap, title: "WebAssembly Speed", description: "DuckDB compiled to WASM — analytical queries in milliseconds, not seconds." },
   { icon: Lock, title: "Zero Data Leaks", description: "No uploads. No servers. No tracking. Your files never leave your machine." },
   { icon: Globe, title: "No Install Needed", description: "Works in any modern browser. No extensions, no CLI, no accounts required." },
-  { icon: Shield, title: "Free Forever", description: "All 15+ tools, no paywalls. Open source philosophy, closed-source simplicity." },
+  { icon: Shield, title: "Free Forever", description: "All 28+ tools, no paywalls. Open source philosophy, closed-source simplicity." },
 ];
 
 const jsonLd = {
@@ -65,7 +65,7 @@ const jsonLd = {
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "Any",
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-  "featureList": "CSV to Parquet, JSON Formatter, SQL Playground, Data Profiler, Schema Generator",
+  "featureList": "CSV to Parquet, Parquet to CSV, CSV to JSON, JSON to CSV, JSON to Parquet, Parquet to JSON, Excel to CSV, CSV to Excel, CSV Viewer, Parquet Viewer, JSON Formatter, CSV Inspector, JSON Inspector, Parquet Inspector, SQL Playground, Data Profiler, JSON Flattener, Schema Generator, CSV to SQL, Dataset Diff, Data Sampler, Deduplicator, SQL Formatter, Markdown Table, Column Editor, Data Merge, Pivot Table, Chart Builder, YAML/JSON Converter, Regex Filter",
 };
 
 function ToolCard({ path, title, description, icon: Icon }: { path: string; title: string; description: string; icon: React.ElementType }) {

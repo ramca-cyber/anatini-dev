@@ -46,8 +46,9 @@ const MAX_HISTORY = 20;
 let tabCounter = 1;
 
 function createTab(initialSql = ""): QueryTab {
-  const id = `tab-${tabCounter++}`;
-  return { id, label: `Query ${tabCounter - 1}`, sql: initialSql, result: null, error: null, loading: false };
+  const id = `tab-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+  const label = `Query ${tabCounter++}`;
+  return { id, label, sql: initialSql, result: null, error: null, loading: false };
 }
 
 function getSampleQueries(tables: LoadedTable[]): { label: string; sql: string }[] {
