@@ -65,7 +65,7 @@ describe("Page rendering", () => {
     expect(screen.getByText(/46 Tools/)).toBeInTheDocument();
   });
 
-  it("homepage has all 45 tool cards", () => {
+  it("homepage has all 46 tool cards", () => {
     renderWithRoute("/", <Index />);
     // Check a tool from each category
     expect(screen.getByText("CSV → Parquet")).toBeInTheDocument();

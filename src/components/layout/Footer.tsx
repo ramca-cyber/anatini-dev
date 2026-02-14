@@ -18,10 +18,15 @@ const toolGrid = {
     { label: "TOML → JSON", path: "/toml-to-json" },
     { label: "JSON → TOML", path: "/json-to-toml" },
   ],
-  Viewers: [
+  "Viewers & Formatters": [
     { label: "Delimited Viewer", path: "/csv-viewer" },
     { label: "Parquet Viewer", path: "/parquet-viewer" },
+    { label: "Excel Viewer", path: "/excel-viewer" },
     { label: "JSON Formatter", path: "/json-formatter" },
+    { label: "XML Formatter", path: "/xml-formatter" },
+    { label: "YAML Formatter", path: "/yaml-formatter" },
+    { label: "Log Viewer", path: "/log-viewer" },
+    { label: "Hex Viewer", path: "/hex-viewer" },
   ],
   Inspectors: [
     { label: "CSV Inspector", path: "/csv-inspector" },
