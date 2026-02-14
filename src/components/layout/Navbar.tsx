@@ -37,7 +37,12 @@ const toolGroups = [
     tools: [
       { path: "/csv-viewer", label: "Delimited Viewer" },
       { path: "/parquet-viewer", label: "Parquet Viewer" },
+      { path: "/excel-viewer", label: "Excel Viewer" },
       { path: "/json-formatter", label: "JSON Formatter" },
+      { path: "/xml-formatter", label: "XML Formatter" },
+      { path: "/yaml-formatter", label: "YAML Formatter" },
+      { path: "/log-viewer", label: "Log Viewer" },
+      { path: "/hex-viewer", label: "Hex Viewer" },
     ],
   },
   {

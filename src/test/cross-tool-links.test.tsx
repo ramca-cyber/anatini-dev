@@ -61,6 +61,7 @@ describe("CrossToolLinks", () => {
       "/csv-to-json", "/csv-to-parquet", "/csv-to-sql", "/csv-viewer",
       "/sql-playground", "/data-profiler", "/data-sampler", "/deduplicator",
       "/column-editor", "/data-merge", "/pivot-table", "/chart-builder", "/regex-filter",
+      "/data-anonymizer",
     ];
     links.forEach((link) => {
       expect(validRoutes).toContain(link.getAttribute("href"));
