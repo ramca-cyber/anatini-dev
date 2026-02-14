@@ -1,7 +1,8 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useMemo } from "react";
+import { highlightJson } from "@/components/shared/SyntaxHighlight";
 import { ErrorAlert } from "@/components/shared/ErrorAlert";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
-import { CheckCircle2, XCircle, ArrowRight, Copy, Download } from "lucide-react";
+import { CheckCircle2, XCircle, Copy } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
@@ -43,6 +44,16 @@ export default function JsonSchemaValidatorPage() {
   const [document, setDocument] = useState("");
   const [result, setResult] = useState<ValidationResult | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
+
+  const schemaValid = useMemo(() => {
+    if (!schema.trim()) return null;
+    try { JSON.parse(schema); return true; } catch { return false; }
+  }, [schema]);
+
+  const docValid = useMemo(() => {
+    if (!document.trim()) return null;
+    try { JSON.parse(document); return true; } catch { return false; }
+  }, [document]);
 
   const validate = useCallback(() => {
     setParseError(null);
@@ -99,7 +110,11 @@ export default function JsonSchemaValidatorPage() {
         <div className="grid gap-4 lg:grid-cols-2">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">JSON Schema</label>
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">JSON Schema</label>
+                {schemaValid === true && <CheckCircle2 className="h-3.5 w-3.5 text-primary" />}
+                {schemaValid === false && <XCircle className="h-3.5 w-3.5 text-destructive" />}
+              </div>
               <div className="flex items-center gap-2">
                 <Button variant="ghost" size="sm" onClick={() => handleCopy(schema)} disabled={!schema}>
                   <Copy className="h-3 w-3 mr-1" /> Copy
@@ -107,18 +122,24 @@ export default function JsonSchemaValidatorPage() {
                 <button onClick={() => setSchema("")} className="text-xs text-muted-foreground hover:text-foreground">Clear</button>
               </div>
             </div>
-            <textarea
-              value={schema}
-              onChange={e => setSchema(e.target.value)}
-              placeholder="Paste your JSON Schema here…"
-              className="w-full h-[350px] border border-border bg-background px-3 py-2 text-xs font-mono resize-none focus:outline-none focus:ring-1 focus:ring-primary"
-              spellCheck={false}
-            />
+            <div className="relative">
+              <textarea
+                value={schema}
+                onChange={e => setSchema(e.target.value)}
+                placeholder="Paste your JSON Schema here…"
+                className="w-full h-[350px] border border-border bg-background px-3 py-2 text-xs font-mono resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+                spellCheck={false}
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">JSON Document</label>
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">JSON Document</label>
+                {docValid === true && <CheckCircle2 className="h-3.5 w-3.5 text-primary" />}
+                {docValid === false && <XCircle className="h-3.5 w-3.5 text-destructive" />}
+              </div>
               <div className="flex items-center gap-2">
                 <Button variant="ghost" size="sm" onClick={() => handleCopy(document)} disabled={!document}>
                   <Copy className="h-3 w-3 mr-1" /> Copy
@@ -126,13 +147,15 @@ export default function JsonSchemaValidatorPage() {
                 <button onClick={() => setDocument("")} className="text-xs text-muted-foreground hover:text-foreground">Clear</button>
               </div>
             </div>
-            <textarea
-              value={document}
-              onChange={e => setDocument(e.target.value)}
-              placeholder="Paste your JSON document here…"
-              className="w-full h-[350px] border border-border bg-background px-3 py-2 text-xs font-mono resize-none focus:outline-none focus:ring-1 focus:ring-primary"
-              spellCheck={false}
-            />
+            <div className="relative">
+              <textarea
+                value={document}
+                onChange={e => setDocument(e.target.value)}
+                placeholder="Paste your JSON document here…"
+                className="w-full h-[350px] border border-border bg-background px-3 py-2 text-xs font-mono resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+                spellCheck={false}
+              />
+            </div>
           </div>
         </div>
 
@@ -156,6 +179,7 @@ export default function JsonSchemaValidatorPage() {
               <div className="space-y-1">
                 {result.errors.map((err, i) => (
                   <div key={i} className="flex items-start gap-2 text-xs">
+                    <span className="text-muted-foreground w-6 shrink-0 text-right font-mono">{i + 1}.</span>
                     <span className="font-mono text-destructive shrink-0">{err.path}</span>
                     <span className="text-muted-foreground">{err.message}</span>
                   </div>

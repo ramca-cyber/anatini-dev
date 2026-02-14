@@ -5,6 +5,7 @@ import { Database, ArrowRightLeft, Download, Copy, Check, CheckCircle2, ChevronD
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { RawPreview } from "@/components/shared/RawPreview";
+import { highlightSql } from "@/components/shared/SyntaxHighlight";
 import { DataTable } from "@/components/shared/DataTable";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { PasteInput } from "@/components/shared/PasteInput";
@@ -367,7 +368,14 @@ export default function CsvToSqlPage() {
                     {copied ? "Copied" : "Copy to clipboard"}
                   </Button>
 
-                  <RawPreview content={output} label="Raw Output" fileName={`${tableName}.sql`} onDownload={handleDownload} />
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">SQL Preview</label>
+                    </div>
+                    <pre className="max-h-[500px] overflow-auto border border-border bg-muted/30 px-3 py-2 text-xs font-mono whitespace-pre-wrap">
+                      {highlightSql(output.slice(0, 50_000))}
+                    </pre>
+                  </div>
                 </div>
               )}
 

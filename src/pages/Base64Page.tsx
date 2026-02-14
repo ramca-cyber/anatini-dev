@@ -125,6 +125,14 @@ export default function Base64Page() {
                 <Button variant="ghost" size="sm" onClick={handleCopy} disabled={!output}>
                   <Copy className="h-3 w-3 mr-1" /> Copy
                 </Button>
+                {mode === "encode" && output && (
+                  <Button variant="ghost" size="sm" onClick={() => {
+                    navigator.clipboard.writeText(`data:text/plain;base64,${output}`);
+                    toast({ title: "Copied data URI to clipboard" });
+                  }}>
+                    <Copy className="h-3 w-3 mr-1" /> Data URI
+                  </Button>
+                )}
                 <Button variant="ghost" size="sm" onClick={handleDownload} disabled={!output}>
                   <Download className="h-3 w-3 mr-1" /> Save
                 </Button>

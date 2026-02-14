@@ -231,9 +231,16 @@ export default function JsonFormatterPage() {
             </div>
 
             {view === "formatted" ? (
-              <pre className="min-h-[400px] overflow-auto border-2 border-border bg-card p-4 font-mono text-xs whitespace-pre-wrap">
-                {output ? highlightJson(output) : <span className="text-muted-foreground">Output will appear here...</span>}
-              </pre>
+              <div className="space-y-1">
+                <pre className="min-h-[400px] overflow-auto border-2 border-border bg-card p-4 font-mono text-xs whitespace-pre-wrap">
+                  {output ? highlightJson(output) : <span className="text-muted-foreground">Output will appear here...</span>}
+                </pre>
+                {output && (
+                  <div className="text-xs text-muted-foreground px-1">
+                    {output.split("\n").length} lines · {new Blob([output]).size.toLocaleString()} bytes
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="min-h-[400px] overflow-auto border-2 border-border bg-card p-4">
                 {treeNodes.length > 0 ? treeNodes.map((node, i) => <TreeNode key={`${node.path}-${i}`} node={node} />) : <span className="text-xs text-muted-foreground">Format JSON to see tree view...</span>}

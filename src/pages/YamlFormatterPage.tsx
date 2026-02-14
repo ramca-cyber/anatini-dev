@@ -231,6 +231,11 @@ export default function YamlFormatterPage() {
             >
               {output ? highlightYaml(output) : <span className="text-muted-foreground">Output will appear here…</span>}
             </pre>
+            {output && (
+              <div className="text-xs text-muted-foreground px-1">
+                {output.split("\n").length} lines · {new Blob([output]).size.toLocaleString()} bytes
+              </div>
+            )}
           </div>
         </div>
 
