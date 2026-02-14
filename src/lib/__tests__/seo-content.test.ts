@@ -48,6 +48,7 @@ const ALL_TOOL_IDS = [
   "xml-formatter",
   "yaml-formatter",
   "log-viewer",
+  "hex-viewer",
 ];
 
 describe("SEO content coverage", () => {

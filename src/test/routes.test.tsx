@@ -62,7 +62,7 @@ describe("Page rendering", () => {
 
   it("homepage displays correct tool count", () => {
     renderWithRoute("/", <Index />);
-    expect(screen.getByText(/45 Tools/)).toBeInTheDocument();
+    expect(screen.getByText(/46 Tools/)).toBeInTheDocument();
   });
 
   it("homepage has all 45 tool cards", () => {
@@ -74,6 +74,7 @@ describe("Page rendering", () => {
     expect(screen.getByText("XML Formatter")).toBeInTheDocument();
     expect(screen.getByText("YAML Formatter")).toBeInTheDocument();
     expect(screen.getByText("Log Viewer")).toBeInTheDocument();
+    expect(screen.getByText("Hex Viewer")).toBeInTheDocument();
     expect(screen.getByText("CSV Inspector")).toBeInTheDocument();
     expect(screen.getByText("SQL Playground")).toBeInTheDocument();
     expect(screen.getByText("YAML → JSON")).toBeInTheDocument();
@@ -117,17 +118,17 @@ describe("Homepage consistency", () => {
   it("hero badge, feature card, and meta all reference correct counts", () => {
     renderWithRoute("/", <Index />);
     // Hero badge says "45 Tools"
-    expect(screen.getByText(/45 Tools/)).toBeInTheDocument();
-    // Feature card says "45+ tools"
-    expect(screen.getByText(/45\+ tools/)).toBeInTheDocument();
+    expect(screen.getByText(/46 Tools/)).toBeInTheDocument();
+    // Feature card says "46+ tools"
+    expect(screen.getByText(/46\+ tools/)).toBeInTheDocument();
   });
 
   it("all tool categories have cards", () => {
     renderWithRoute("/", <Index />);
-    // 14 converters + 7 viewers + 3 inspectors + 18 analysis + 3 utilities = 45
+    // 14 converters + 8 viewers + 3 inspectors + 18 analysis + 3 utilities = 46
     const allLinks = screen.getAllByText("Open");
     // Each tool card has an "Open" text that appears on hover
-    expect(allLinks.length).toBe(45);
+    expect(allLinks.length).toBe(46);
   });
 
   it("privacy section is present", () => {

@@ -58,6 +58,7 @@ const ExcelViewerPage = lazy(() => import("./pages/ExcelViewerPage"));
 const XmlFormatterPage = lazy(() => import("./pages/XmlFormatterPage"));
 const YamlFormatterPage = lazy(() => import("./pages/YamlFormatterPage"));
 const LogViewerPage = lazy(() => import("./pages/LogViewerPage"));
+const HexViewerPage = lazy(() => import("./pages/HexViewerPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const BlogIndex = lazy(() => import("./pages/blog/BlogIndex"));
 const HowToConvertCsvToParquet = lazy(() => import("./pages/blog/HowToConvertCsvToParquet"));
@@ -153,6 +154,7 @@ const App = () => (
                   <Route path="/xml-formatter" element={<XmlFormatterPage />} />
                   <Route path="/yaml-formatter" element={<YamlFormatterPage />} />
                   <Route path="/log-viewer" element={<LogViewerPage />} />
+                  <Route path="/hex-viewer" element={<HexViewerPage />} />
 
                   {/* Legacy */}
                   <Route path="/dataset-diff" element={<DiffPage />} />
