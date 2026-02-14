@@ -6,7 +6,7 @@ import {
   FileJson, Table, Eye, Code, FileText, Zap, Lock, Globe, Shield,
   GitCompare, Search, Shuffle, Copy, AlignLeft, Columns3, Merge,
   TableProperties, RefreshCw, Filter, Scissors, Binary, ShieldOff, Hash, Wand2,
-  CheckCircle2,
+  CheckCircle2, Link2, Clock, ScanSearch,
 } from "lucide-react";
 
 const converters = [
@@ -68,13 +68,17 @@ const utilities = [
   { path: "/base64", title: "Base64 Encoder/Decoder", description: "Encode and decode Base64 text or files.", icon: Binary },
   { path: "/hash-generator", title: "Hash Generator", description: "SHA-256, SHA-384, SHA-512 from text or files.", icon: Hash },
   { path: "/json-schema-validator", title: "JSON Schema Validator", description: "Validate JSON against schema definitions.", icon: CheckCircle2 },
+  { path: "/json-diff", title: "JSON Diff", description: "Compare two JSON documents side-by-side.", icon: GitCompare },
+  { path: "/url-encoder", title: "URL Encoder / Decoder", description: "Encode or decode URLs and query strings.", icon: Link2 },
+  { path: "/cron-parser", title: "Cron Parser", description: "Explain cron expressions in plain English.", icon: Clock },
+  { path: "/encoding-detector", title: "Encoding Detector", description: "Detect charset, BOM, and line endings.", icon: ScanSearch },
 ];
 
 const features = [
   { icon: Zap, title: "WebAssembly Speed", description: "DuckDB compiled to WASM — analytical queries in milliseconds, not seconds." },
   { icon: Lock, title: "Zero Data Leaks", description: "No uploads. No servers. No tracking. Your files never leave your machine." },
   { icon: Globe, title: "No Install Needed", description: "Works in any modern browser. No extensions, no CLI, no accounts required." },
-  { icon: Shield, title: "Free Forever", description: "All 46+ tools, no paywalls. Open source philosophy, closed-source simplicity." },
+  { icon: Shield, title: "Free Forever", description: "All 50 tools, no paywalls. Open source philosophy, closed-source simplicity." },
 ];
 
 const jsonLd = {
@@ -86,7 +90,7 @@ const jsonLd = {
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "Any",
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-  "featureList": "CSV to Parquet, Parquet to CSV, CSV to JSON, JSON to CSV, JSON to Parquet, Parquet to JSON, Excel to CSV, CSV to Excel, YAML to JSON, JSON to YAML, XML to JSON, JSON to XML, TOML to JSON, JSON to TOML, Delimited Viewer, Parquet Viewer, Excel Viewer, JSON Formatter, XML Formatter, YAML Formatter, Log Viewer, Hex Viewer, CSV Inspector, JSON Inspector, Parquet Inspector, SQL Playground, Data Profiler, JSON Flattener, Schema Generator, CSV to SQL, Dataset Diff, Data Sampler, Deduplicator, SQL Formatter, Markdown Table, Column Editor, Data Merge, Pivot Table, Chart Builder, Regex Filter, CSV Splitter, Base64 Encoder/Decoder, Data Anonymizer, Hash Generator, Data Generator, JSON Schema Validator",
+  "featureList": "CSV to Parquet, Parquet to CSV, CSV to JSON, JSON to CSV, JSON to Parquet, Parquet to JSON, Excel to CSV, CSV to Excel, YAML to JSON, JSON to YAML, XML to JSON, JSON to XML, TOML to JSON, JSON to TOML, Delimited Viewer, Parquet Viewer, Excel Viewer, JSON Formatter, XML Formatter, YAML Formatter, Log Viewer, Hex Viewer, CSV Inspector, JSON Inspector, Parquet Inspector, SQL Playground, Data Profiler, JSON Flattener, Schema Generator, CSV to SQL, Dataset Diff, Data Sampler, Deduplicator, SQL Formatter, Markdown Table, Column Editor, Data Merge, Pivot Table, Chart Builder, Regex Filter, CSV Splitter, Base64 Encoder/Decoder, Data Anonymizer, Hash Generator, Data Generator, JSON Schema Validator, JSON Diff, URL Encoder/Decoder, Cron Parser, Encoding Detector",
 };
 
 function ToolCard({ path, title, description, icon: Icon }: { path: string; title: string; description: string; icon: React.ElementType }) {
@@ -134,7 +138,7 @@ export default function Index() {
     <>
       <PageMeta
         title="Anatini.dev — Free, Offline Data Tools for Developers"
-        description="46+ free, offline data tools powered by DuckDB-WASM. Convert CSV, Parquet, JSON, Excel, XML, TOML. Query with SQL. Profile datasets. All in your browser."
+        description="50 free, offline data tools powered by DuckDB-WASM. Convert CSV, Parquet, JSON, Excel, XML, TOML. Query with SQL. Profile datasets. All in your browser."
       />
 
 
@@ -149,7 +153,7 @@ export default function Index() {
         <div className="container py-12 md:py-20 lg:py-28">
           <div className="mx-auto max-w-3xl">
             <div className="inline-block border-2 border-border bg-secondary px-3 py-1 text-xs font-bold uppercase tracking-widest mb-6">
-             46 Tools · 100% Offline · Zero Tracking
+             50 Tools · 100% Offline · Zero Tracking
             </div>
             <h1 className="text-4xl font-bold leading-[1.1] tracking-tight md:text-5xl lg:text-6xl">
               Data tools that run

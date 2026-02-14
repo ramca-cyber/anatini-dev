@@ -47,6 +47,10 @@
   <url><loc>https://anatini.dev/yaml-formatter</loc><lastmod>2026-02-13</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://anatini.dev/log-viewer</loc><lastmod>2026-02-13</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://anatini.dev/hex-viewer</loc><lastmod>2026-02-14</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://anatini.dev/json-diff</loc><lastmod>2026-02-14</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://anatini.dev/url-encoder</loc><lastmod>2026-02-14</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://anatini.dev/cron-parser</loc><lastmod>2026-02-14</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://anatini.dev/encoding-detector</loc><lastmod>2026-02-14</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://anatini.dev/about</loc><lastmod>2026-02-11</lastmod><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://anatini.dev/blog</loc><lastmod>2026-02-11</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
   <url><loc>https://anatini.dev/blog/how-to-convert-csv-to-parquet</loc><lastmod>2026-02-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>

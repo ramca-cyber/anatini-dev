@@ -57,6 +57,10 @@ const toolGrid = {
     { label: "Base64 Encoder/Decoder", path: "/base64" },
     { label: "Hash Generator", path: "/hash-generator" },
     { label: "JSON Schema Validator", path: "/json-schema-validator" },
+    { label: "JSON Diff", path: "/json-diff" },
+    { label: "URL Encoder/Decoder", path: "/url-encoder" },
+    { label: "Cron Parser", path: "/cron-parser" },
+    { label: "Encoding Detector", path: "/encoding-detector" },
   ],
 };
 

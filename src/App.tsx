@@ -59,6 +59,10 @@ const XmlFormatterPage = lazy(() => import("./pages/XmlFormatterPage"));
 const YamlFormatterPage = lazy(() => import("./pages/YamlFormatterPage"));
 const LogViewerPage = lazy(() => import("./pages/LogViewerPage"));
 const HexViewerPage = lazy(() => import("./pages/HexViewerPage"));
+const JsonDiffPage = lazy(() => import("./pages/JsonDiffPage"));
+const UrlEncoderPage = lazy(() => import("./pages/UrlEncoderPage"));
+const CronParserPage = lazy(() => import("./pages/CronParserPage"));
+const EncodingDetectorPage = lazy(() => import("./pages/EncodingDetectorPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const BlogIndex = lazy(() => import("./pages/blog/BlogIndex"));
 const HowToConvertCsvToParquet = lazy(() => import("./pages/blog/HowToConvertCsvToParquet"));
@@ -155,6 +159,12 @@ const App = () => (
                   <Route path="/yaml-formatter" element={<YamlFormatterPage />} />
                   <Route path="/log-viewer" element={<LogViewerPage />} />
                   <Route path="/hex-viewer" element={<HexViewerPage />} />
+
+                  {/* New Utilities */}
+                  <Route path="/json-diff" element={<JsonDiffPage />} />
+                  <Route path="/url-encoder" element={<UrlEncoderPage />} />
+                  <Route path="/cron-parser" element={<CronParserPage />} />
+                  <Route path="/encoding-detector" element={<EncodingDetectorPage />} />
 
                   {/* Legacy */}
                   <Route path="/dataset-diff" element={<DiffPage />} />
