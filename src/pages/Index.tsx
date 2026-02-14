@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { PageMeta } from "@/components/shared/PageMeta";
 import {
@@ -107,6 +108,28 @@ function ToolCard({ path, title, description, icon: Icon }: { path: string; titl
 }
 
 export default function Index() {
+  const [search, setSearch] = useState("");
+  const lowerSearch = search.toLowerCase();
+
+  const allCategories = [
+    { label: "Converters", items: converters },
+    { label: "Viewers & Formatters", items: viewers },
+    { label: "Inspectors", items: inspectors },
+    { label: "Analysis & SQL", items: analysis },
+    { label: "Utilities", items: utilities },
+  ];
+
+  const filteredCategories = allCategories
+    .map((cat) => ({
+      ...cat,
+      items: cat.items.filter(
+        (t) =>
+          t.title.toLowerCase().includes(lowerSearch) ||
+          t.description.toLowerCase().includes(lowerSearch)
+      ),
+    }))
+    .filter((cat) => cat.items.length > 0);
+
   return (
     <>
       <PageMeta
@@ -158,50 +181,48 @@ export default function Index() {
       {/* Tools */}
       <section id="tools" className="border-b-2 border-border">
         <div className="container py-16">
-          {/* Converters */}
-          <div className="mb-12">
-            <h2 className="mb-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">Converters</h2>
-            <div className="mb-4 h-0.5 w-12 bg-foreground" />
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {converters.map((t) => <ToolCard key={t.path} {...t} />)}
+          {/* Search bar */}
+          <div className="mb-8 flex items-center gap-3">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Filter tools… (or press ⌘K)"
+                className="w-full border-2 border-border bg-background pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  ✕
+                </button>
+              )}
             </div>
+            {search && (
+              <span className="text-xs text-muted-foreground">
+                {filteredCategories.reduce((s, c) => s + c.items.length, 0)} results
+              </span>
+            )}
           </div>
 
-          {/* Viewers & Formatters */}
-          <div className="mb-12">
-            <h2 className="mb-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">Viewers & Formatters</h2>
-            <div className="mb-4 h-0.5 w-12 bg-foreground" />
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {viewers.map((t) => <ToolCard key={t.path} {...t} />)}
+          {filteredCategories.map((cat, i) => (
+            <div key={cat.label} className={i < filteredCategories.length - 1 ? "mb-12" : ""}>
+              <h2 className="mb-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">{cat.label}</h2>
+              <div className="mb-4 h-0.5 w-12 bg-foreground" />
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {cat.items.map((t) => <ToolCard key={t.path} {...t} />)}
+              </div>
             </div>
-          </div>
+          ))}
 
-          {/* Inspectors */}
-          <div className="mb-12">
-            <h2 className="mb-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">Inspectors</h2>
-            <div className="mb-4 h-0.5 w-12 bg-foreground" />
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {inspectors.map((t) => <ToolCard key={t.path} {...t} />)}
+          {filteredCategories.length === 0 && (
+            <div className="py-12 text-center text-muted-foreground text-sm">
+              No tools match "{search}"
             </div>
-          </div>
-
-          {/* Analysis & SQL */}
-          <div className="mb-12">
-            <h2 className="mb-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">Analysis & SQL</h2>
-            <div className="mb-4 h-0.5 w-12 bg-foreground" />
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {analysis.map((t) => <ToolCard key={t.path} {...t} />)}
-            </div>
-          </div>
-
-          {/* Utilities */}
-          <div>
-            <h2 className="mb-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">Utilities</h2>
-            <div className="mb-4 h-0.5 w-12 bg-foreground" />
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {utilities.map((t) => <ToolCard key={t.path} {...t} />)}
-            </div>
-          </div>
+          )}
         </div>
       </section>
 

@@ -178,6 +178,11 @@ export default function SqlFormatterPage() {
             <pre className="min-h-[400px] overflow-auto border-2 border-border bg-card p-4 font-mono text-xs whitespace-pre-wrap">
               {output ? highlightSql(output) : <span className="text-muted-foreground">Formatted SQL will appear here...</span>}
             </pre>
+            {output && (
+              <div className="text-xs text-muted-foreground px-1">
+                {output.split("\n").length} lines · {new Blob([output]).size.toLocaleString()} bytes
+              </div>
+            )}
           </div>
         </div>
       </div>

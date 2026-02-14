@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import { Navbar } from "./Navbar";
 import { Footer } from "./Footer";
+import { CommandPalette } from "@/components/shared/CommandPalette";
 
 export function Layout() {
   return (
@@ -12,6 +13,7 @@ export function Layout() {
       >
         Skip to content
       </a>
+      <CommandPalette />
       <Navbar />
       <main id="main-content" className="flex-1">
         <Outlet />
