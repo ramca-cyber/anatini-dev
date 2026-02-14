@@ -72,6 +72,10 @@ const toolGroups = [
       { path: "/base64", label: "Base64 Encoder/Decoder" },
       { path: "/hash-generator", label: "Hash Generator" },
       { path: "/json-schema-validator", label: "JSON Schema Validator" },
+      { path: "/json-diff", label: "JSON Diff" },
+      { path: "/url-encoder", label: "URL Encoder/Decoder" },
+      { path: "/cron-parser", label: "Cron Parser" },
+      { path: "/encoding-detector", label: "Encoding Detector" },
     ],
   },
   {
