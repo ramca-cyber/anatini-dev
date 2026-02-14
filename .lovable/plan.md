@@ -1,125 +1,110 @@
 
-# Color Coding and Polish Refinement
+# Polish & Improvements Plan
 
 ## Overview
-Add syntax highlighting and color coding across all tools that display structured output, matching the quality of the Log Viewer's level-based coloring. This covers 7 tools that currently render plain monochrome text.
+After auditing all 46 tools, the codebase is well-structured but has several areas for refinement across UX, performance, accessibility, and missing features.
 
 ---
 
-## 1. Dataset Diff — Color-Coded Rows in DataTable
+## 1. Homepage Search / Filter Bar
+**Problem**: With 46 tools, users have to scroll to find what they need. The navbar dropdown is also long.
 
-**Problem**: The diff tool filters by added/removed/modified but the DataTable rows are all the same color. The `_status` column exists in the data but isn't visually differentiated.
+**Solution**: Add a search/filter input at the top of the `#tools` section on the Index page. Typing filters tool cards in real-time across all categories. Uses `cmdk`-style fuzzy matching (already installed as a dependency).
 
-**Solution**: Add a `rowClassName` callback prop to the shared `DataTable` component so any consumer can provide per-row styling.
-
-- **DataTable.tsx**: Add optional `rowClassName?: (row: any[], index: number) => string` prop. Apply it to `<tr>` alongside existing classes.
-- **DiffPage.tsx**: Pass a `rowClassName` that checks the `_status` column (index 0):
-  - `added` → `bg-green-50 dark:bg-green-950/20` (green tint)
-  - `removed` → `bg-red-50 dark:bg-red-950/20` (red tint)
-  - `modified` → `bg-yellow-50 dark:bg-yellow-950/20` (yellow tint)
-- Also color-code the `_status` cell text itself (green/red/yellow) with a small badge-like span.
-
-## 2. JSON Formatter — Syntax-Colored Output
-
-**Problem**: The formatted JSON output is plain monochrome `<pre>` text.
-
-**Solution**: Create a lightweight `SyntaxHighlightedJson` component that tokenizes JSON output and wraps tokens in colored spans:
-- **Keys**: `text-foreground font-medium`
-- **Strings**: `text-green-600 dark:text-green-400`
-- **Numbers**: `text-blue-600 dark:text-blue-400`
-- **Booleans**: `text-purple-600 dark:text-purple-400`
-- **Null**: `text-red-500 dark:text-red-400`
-- **Brackets/braces**: `text-muted-foreground`
-
-Replace the `<pre>{output}</pre>` with the highlighted version when output exists.
-
-## 3. XML Formatter — Syntax-Colored Output
-
-**Problem**: Same as JSON — plain monochrome output textarea.
-
-**Solution**: Replace the output `<textarea>` with a `<pre>` using XML-aware tokenization:
-- **Tags** (`<tag>`, `</tag>`): `text-blue-600 dark:text-blue-400`
-- **Attributes**: `text-orange-600 dark:text-orange-400`
-- **Attribute values**: `text-green-600 dark:text-green-400`
-- **Comments**: `text-muted-foreground italic`
-- **Processing instructions** (`<?xml ...?>`): `text-purple-600 dark:text-purple-400`
-- **Text content**: `text-foreground`
-
-## 4. YAML Formatter — Syntax-Colored Output
-
-**Problem**: Plain monochrome output textarea.
-
-**Solution**: Replace output `<textarea>` with highlighted `<pre>`:
-- **Keys** (before `:`): `text-blue-600 dark:text-blue-400 font-medium`
-- **Strings**: `text-green-600 dark:text-green-400`
-- **Numbers**: `text-purple-600 dark:text-purple-400`
-- **Booleans** (`true`/`false`): `text-orange-600 dark:text-orange-400`
-- **Comments** (`#`): `text-muted-foreground italic`
-- **List markers** (`-`): `text-muted-foreground`
-
-## 5. SQL Formatter / CSV-to-SQL — Syntax-Colored SQL Output
-
-**Problem**: SQL output is monochrome `<pre>` or `<textarea>`.
-
-**Solution**: Create a shared `highlightSql` function that tokenizes SQL and applies colors:
-- **Keywords** (`SELECT`, `FROM`, `WHERE`, `CREATE TABLE`, `INSERT INTO`, etc.): `text-blue-600 dark:text-blue-400 font-bold`
-- **Strings** (single-quoted): `text-green-600 dark:text-green-400`
-- **Numbers**: `text-purple-600 dark:text-purple-400`
-- **Comments**: `text-muted-foreground italic`
-- **Operators**: `text-orange-600 dark:text-orange-400`
-- **Identifiers**: `text-foreground`
-
-Apply to: `SqlFormatterPage.tsx` output pane and `CsvToSqlPage.tsx` output pane.
-
-## 6. Hex Viewer — Byte Category Coloring
-
-**Problem**: All hex bytes are the same color. Professional hex editors color-code byte categories.
-
-**Solution**: Color individual bytes by category in the hex dump:
-- **Null bytes** (0x00): `text-muted-foreground/40`
-- **Printable ASCII** (0x20-0x7E): `text-foreground` (default)
-- **Control characters** (0x01-0x1F, 0x7F): `text-red-500 dark:text-red-400`
-- **High bytes** (0x80-0xFF): `text-blue-600 dark:text-blue-400`
-- **Whitespace** (0x09, 0x0A, 0x0D, 0x20): `text-green-600 dark:text-green-400`
-
-Render each byte as an individual `<span>` instead of joining into a single string.
-
-## 7. JSON Schema Validator — Color-Coded Error Paths
-
-**Problem**: Validation errors show paths in red but could be more visually structured.
-
-**Solution**: Minor polish — already has color coding. Add line numbers to error listing and a green checkmark icon per valid field when valid.
+**Files**: `src/pages/Index.tsx`
 
 ---
 
-## Technical Implementation
+## 2. Keyboard Shortcuts (Cmd+K Command Palette)
+**Problem**: No quick way to jump between tools without navigating manually.
 
-### New Shared Component: `src/components/shared/SyntaxHighlight.tsx`
-A single file containing highlight functions for JSON, XML, YAML, and SQL. Each function returns `ReactNode[]` with colored spans. This avoids duplicating tokenization logic across pages.
+**Solution**: Add a global `Cmd+K` / `Ctrl+K` command palette using the already-installed `cmdk` package. Lists all 46 tools, blog posts, and pages. Searching narrows results, Enter navigates.
+
+**Files**: Create `src/components/shared/CommandPalette.tsx`, update `src/components/layout/Layout.tsx`
+
+---
+
+## 3. CSV-to-SQL Missing Syntax Highlighting
+**Problem**: The plan called for adding `highlightSql` to `CsvToSqlPage.tsx` but it was not implemented -- the output still uses `RawPreview` (plain text).
+
+**Solution**: Add a syntax-highlighted SQL preview using `highlightSql` in the output section, similar to `SqlFormatterPage.tsx`.
+
+**Files**: `src/pages/CsvToSqlPage.tsx`
+
+---
+
+## 4. JSON Schema Validator -- Syntax Highlighting for Inputs
+**Problem**: Both textarea inputs (schema + document) are plain monochrome. This is the only JSON-focused tool without colored output.
+
+**Solution**: Replace the read-only display with syntax-highlighted JSON preview using `highlightJson`. Add a "valid" green checkmark badge next to the schema label when schema parses correctly.
+
+**Files**: `src/pages/JsonSchemaValidatorPage.tsx`
+
+---
+
+## 5. "Copy as cURL" / Share Output Links
+**Problem**: Several tools (Base64, Hash, JSON Formatter) have no way to share or reproduce results.
+
+**Solution**: Add a "Copy as data URI" button for Base64 output. Add output character/byte count badges to formatters that don't have them (XML, YAML formatters).
+
+**Files**: `src/pages/Base64Page.tsx`, `src/pages/XmlFormatterPage.tsx`, `src/pages/YamlFormatterPage.tsx`
+
+---
+
+## 6. Accessibility: Missing aria-labels and Focus Indicators
+**Problem**: Several interactive elements lack `aria-label` attributes. The `ToggleButton` component has no `role="group"` or radio semantics.
+
+**Solution**:
+- Add `role="radiogroup"` to `ToggleButton` wrapper, `role="radio"` + `aria-checked` to each option
+- Add `aria-label` to icon-only buttons (theme toggle, mobile menu)
+- Ensure all `textarea` elements have associated labels (some use visual labels without `htmlFor`)
+
+**Files**: `src/components/shared/ToggleButton.tsx`, `src/components/shared/ThemeToggle.tsx`, `src/components/layout/Navbar.tsx`
+
+---
+
+## 7. Output Stats Badges (Consistency)
+**Problem**: Some tools show output stats (size, duration) and others don't. For example, JSON Formatter shows nothing about output size; SQL Formatter doesn't show formatted line count.
+
+**Solution**: Add a small stats bar below the output in:
+- **JSON Formatter**: "X keys, Y lines, Z bytes"
+- **SQL Formatter**: "X lines, Y bytes"  
+- **XML Formatter**: "X lines, Y bytes"
+- **YAML Formatter**: "X lines, Y bytes"
+
+**Files**: `src/pages/JsonFormatterPage.tsx`, `src/pages/SqlFormatterPage.tsx`, `src/pages/XmlFormatterPage.tsx`, `src/pages/YamlFormatterPage.tsx`
+
+---
+
+## 8. Lazy Route Loading (Performance)
+**Problem**: All 46 tool pages are imported eagerly in `App.tsx`, meaning the initial bundle includes all page code even though users typically visit 1-2 tools per session.
+
+**Solution**: Convert all route imports to `React.lazy()` with `Suspense` fallback. This splits each tool into its own chunk, reducing initial load by ~60%.
+
+**Files**: `src/App.tsx`
+
+---
+
+## Technical Summary
 
 ```text
-SyntaxHighlight.tsx
-  - highlightJson(text: string): ReactNode
-  - highlightXml(text: string): ReactNode  
-  - highlightYaml(text: string): ReactNode
-  - highlightSql(text: string): ReactNode
+Files to Create:
+  - src/components/shared/CommandPalette.tsx
+
+Files to Modify:
+  - src/App.tsx (lazy loading)
+  - src/pages/Index.tsx (search filter)
+  - src/components/layout/Layout.tsx (command palette)
+  - src/pages/CsvToSqlPage.tsx (SQL highlighting)
+  - src/pages/JsonSchemaValidatorPage.tsx (JSON highlighting)
+  - src/pages/Base64Page.tsx (data URI copy)
+  - src/pages/JsonFormatterPage.tsx (output stats)
+  - src/pages/SqlFormatterPage.tsx (output stats)
+  - src/pages/XmlFormatterPage.tsx (output stats)
+  - src/pages/YamlFormatterPage.tsx (output stats)
+  - src/components/shared/ToggleButton.tsx (a11y)
+  - src/components/shared/ThemeToggle.tsx (a11y)
+  - src/components/layout/Navbar.tsx (a11y)
+
+No new dependencies needed.
 ```
-
-### DataTable Enhancement
-Add `rowClassName` prop — minimal, backward-compatible change.
-
-### Files to Create
-- `src/components/shared/SyntaxHighlight.tsx`
-
-### Files to Modify
-- `src/components/shared/DataTable.tsx` — add `rowClassName` prop
-- `src/pages/DiffPage.tsx` — pass row coloring callback + badge the status cell
-- `src/pages/JsonFormatterPage.tsx` — use `highlightJson` for output
-- `src/pages/XmlFormatterPage.tsx` — replace output textarea with highlighted pre
-- `src/pages/YamlFormatterPage.tsx` — replace output textarea with highlighted pre
-- `src/pages/SqlFormatterPage.tsx` — use `highlightSql` for output
-- `src/pages/CsvToSqlPage.tsx` — use `highlightSql` for SQL preview
-- `src/pages/HexViewerPage.tsx` — per-byte category coloring
-
-### No Dependencies Added
-All highlighting is done with simple regex tokenizers and Tailwind classes — no external syntax highlighting libraries needed. Keeps the bundle lean.
