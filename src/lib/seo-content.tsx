@@ -461,6 +461,16 @@ const seoData: Record<string, { whatIs: { title: string; content: string }; howT
       { question: "Is my data uploaded?", answer: "No — everything runs locally in your browser. No data is sent to any server." },
     ],
   },
+  "hex-viewer": {
+    metaDescription: "Inspect binary files with hex and ASCII columns. Navigate by offset, paginate large files. Free, offline browser tool.",
+    whatIs: { title: "What is a Hex Viewer?", content: "A hex viewer displays the raw bytes of any file in hexadecimal format alongside their ASCII representation. This is essential for inspecting binary file formats, debugging encodings, analyzing file headers, and reverse-engineering data structures." },
+    howToUse: "Drop any file onto the viewer. Navigate through the hex dump using page controls or jump to a specific byte offset. Each row shows 16 bytes in hex with their ASCII equivalents on the right.",
+    faqs: [
+      { question: "What file types can I view?", answer: "Any file — images, executables, Parquet files, ZIP archives, or any binary format. The viewer shows raw bytes regardless of file type." },
+      { question: "Is there a file size limit?", answer: "Files up to 100MB are supported. The viewer paginates in 4KB pages so even large files remain responsive." },
+      { question: "Is my data uploaded?", answer: "No — the file is read entirely in your browser. Nothing is sent to any server." },
+    ],
+  },
   "xml-formatter": {
     metaDescription: "Format, minify, and validate XML documents in your browser. Pretty-print with configurable indentation. Free, offline.",
     whatIs: { title: "What is an XML Formatter?", content: "An XML formatter takes raw or minified XML and displays it with proper indentation and line breaks for human readability. It can also minify XML (remove whitespace), validate syntax, and help you spot structural issues in your documents." },

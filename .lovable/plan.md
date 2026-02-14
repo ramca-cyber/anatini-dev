@@ -10,5 +10,5 @@
 - `/yaml-formatter` — Validate, format, syntax-highlighted YAML output
 - `/log-viewer` — Level filtering (ERROR/WARN/INFO/DEBUG), regex search, line numbers
 
-### Phase 3: Hex Viewer
+### Phase 3: Hex Viewer ✅ DONE
 - `/hex-viewer` — Binary file inspection with hex + ASCII columns, offset navigation
