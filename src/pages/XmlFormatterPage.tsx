@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
+import { highlightXml } from "@/components/shared/SyntaxHighlight";
 import { ErrorAlert } from "@/components/shared/ErrorAlert";
 import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
@@ -274,13 +275,11 @@ export default function XmlFormatterPage() {
                 </Button>
               </div>
             </div>
-            <textarea
-              value={output}
-              readOnly
-              placeholder="Output will appear here…"
-              className="w-full h-[400px] border border-border bg-muted/30 px-3 py-2 text-xs font-mono resize-none"
-              spellCheck={false}
-            />
+            <pre
+              className="w-full h-[400px] overflow-auto border border-border bg-muted/30 px-3 py-2 text-xs font-mono whitespace-pre-wrap"
+            >
+              {output ? highlightXml(output) : <span className="text-muted-foreground">Output will appear here…</span>}
+            </pre>
           </div>
         </div>
 

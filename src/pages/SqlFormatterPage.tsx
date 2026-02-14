@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Code, Check, Copy, Download } from "lucide-react";
+import { highlightSql } from "@/components/shared/SyntaxHighlight";
 import { format as formatSql } from "sql-formatter";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
@@ -175,7 +176,7 @@ export default function SqlFormatterPage() {
               </div>
             </div>
             <pre className="min-h-[400px] overflow-auto border-2 border-border bg-card p-4 font-mono text-xs whitespace-pre-wrap">
-              {output || <span className="text-muted-foreground">Formatted SQL will appear here...</span>}
+              {output ? highlightSql(output) : <span className="text-muted-foreground">Formatted SQL will appear here...</span>}
             </pre>
           </div>
         </div>

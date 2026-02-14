@@ -373,7 +373,18 @@ export default function DiffPage() {
             </div>
 
             {diffRows && diffRows.rows.length > 0 && (
-              <DataTable columns={diffRows.columns} rows={diffRows.rows} className="max-h-[500px]" />
+              <DataTable
+                columns={diffRows.columns}
+                rows={diffRows.rows}
+                className="max-h-[500px]"
+                rowClassName={(row) => {
+                  const status = row[0];
+                  if (status === "added") return "bg-green-50 dark:bg-green-950/20";
+                  if (status === "removed") return "bg-red-50 dark:bg-red-950/20";
+                  if (status === "modified") return "bg-yellow-50 dark:bg-yellow-950/20";
+                  return "";
+                }}
+              />
             )}
 
             <Button variant="outline" onClick={reset}>Reset</Button>
