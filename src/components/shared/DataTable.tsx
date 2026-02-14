@@ -27,9 +27,10 @@ interface DataTableProps {
   types?: string[];
   maxRows?: number;
   className?: string;
+  rowClassName?: (row: any[], index: number) => string;
 }
 
-export function DataTable({ columns, rows, types, maxRows = 100, className }: DataTableProps) {
+export function DataTable({ columns, rows, types, maxRows = 100, className, rowClassName }: DataTableProps) {
   const [page, setPage] = useState(0);
   const [sortCol, setSortCol] = useState<number | null>(null);
   const [sortAsc, setSortAsc] = useState(true);
@@ -104,7 +105,7 @@ export function DataTable({ columns, rows, types, maxRows = 100, className }: Da
         </thead>
         <tbody>
           {displayRows.map((row, i) => (
-            <tr key={i} className="border-b border-border/50 transition-colors hover:bg-muted/30 even:bg-muted/20">
+            <tr key={i} className={cn("border-b border-border/50 transition-colors hover:bg-muted/30 even:bg-muted/20", rowClassName?.(row, i))}>
               {row.map((val, j) => (
                 <td key={j} className={cn(
                   "px-3 py-1.5 whitespace-nowrap font-mono text-xs",

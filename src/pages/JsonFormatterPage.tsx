@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { highlightJson } from "@/components/shared/SyntaxHighlight";
 import { ErrorAlert } from "@/components/shared/ErrorAlert";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { Code, Copy, Check, ChevronRight, ChevronDown } from "lucide-react";
@@ -231,7 +232,7 @@ export default function JsonFormatterPage() {
 
             {view === "formatted" ? (
               <pre className="min-h-[400px] overflow-auto border-2 border-border bg-card p-4 font-mono text-xs whitespace-pre-wrap">
-                {output || <span className="text-muted-foreground">Output will appear here...</span>}
+                {output ? highlightJson(output) : <span className="text-muted-foreground">Output will appear here...</span>}
               </pre>
             ) : (
               <div className="min-h-[400px] overflow-auto border-2 border-border bg-card p-4">

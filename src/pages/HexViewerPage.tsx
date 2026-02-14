@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, type ReactNode } from "react";
 import { Binary } from "lucide-react";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
@@ -41,33 +41,44 @@ interface HexRowProps {
   highlightByte: number | null;
 }
 
+function byteClass(byte: number): string {
+  if (byte === 0x00) return "text-muted-foreground/40";
+  if (byte === 0x09 || byte === 0x0a || byte === 0x0d || byte === 0x20) return "text-green-600 dark:text-green-400";
+  if (byte >= 0x01 && byte <= 0x1f || byte === 0x7f) return "text-red-500 dark:text-red-400";
+  if (byte >= 0x80) return "text-blue-600 dark:text-blue-400";
+  return "text-foreground";
+}
+
 function HexRow({ offset, bytes, offsetWidth, highlightByte }: HexRowProps) {
-  const hexParts: string[] = [];
-  const asciiParts: string[] = [];
+  const hexLeft: ReactNode[] = [];
+  const hexRight: ReactNode[] = [];
+  const asciiParts: ReactNode[] = [];
 
   for (let i = 0; i < BYTES_PER_ROW; i++) {
     if (i < bytes.length) {
-      hexParts.push(toHex(bytes[i]));
-      asciiParts.push(toAscii(bytes[i]));
+      const cls = byteClass(bytes[i]);
+      const hex = toHex(bytes[i]);
+      const target = i < 8 ? hexLeft : hexRight;
+      target.push(<span key={i} className={cls}>{hex}</span>);
+      if (i < BYTES_PER_ROW - 1 && i !== 7) target.push(<span key={`s${i}`}> </span>);
+      asciiParts.push(<span key={i} className={cls}>{toAscii(bytes[i])}</span>);
     } else {
-      hexParts.push("  ");
-      asciiParts.push(" ");
+      const target = i < 8 ? hexLeft : hexRight;
+      target.push(<span key={i}>{"  "}</span>);
+      if (i < BYTES_PER_ROW - 1 && i !== 7) target.push(<span key={`s${i}`}> </span>);
+      asciiParts.push(<span key={i}> </span>);
     }
   }
-
-  // Group hex in pairs of 8 with extra spacing
-  const left = hexParts.slice(0, 8).join(" ");
-  const right = hexParts.slice(8).join(" ");
 
   return (
     <div className="flex font-mono text-xs leading-5 hover:bg-muted/50 transition-colors">
       <span className="text-muted-foreground select-none w-[8ch] shrink-0 text-right pr-3">
         {offsetStr(offset, offsetWidth)}
       </span>
-      <span className="text-foreground pr-2">{left}</span>
-      <span className="text-foreground pr-4">{right}</span>
-      <span className="text-primary/80 select-none border-l border-border pl-3">
-        {asciiParts.join("")}
+      <span className="pr-2">{hexLeft}</span>
+      <span className="pr-4">{hexRight}</span>
+      <span className="select-none border-l border-border pl-3">
+        {asciiParts}
       </span>
     </div>
   );
