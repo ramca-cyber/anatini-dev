@@ -11,7 +11,7 @@ const NotFound = () => {
 
   return (
     <>
-    <PageMeta title="Page Not Found — Anatini.dev" description="The page you're looking for doesn't exist. Browse 30+ free offline data tools at Anatini.dev." />
+    <PageMeta title="Page Not Found — Anatini.dev" description="The page you're looking for doesn't exist. Browse 50 free offline data tools at Anatini.dev." />
     <div className="container flex items-center justify-center py-32">
       <div className="text-center">
         <h1 className="mb-4 text-6xl font-bold">404</h1>
