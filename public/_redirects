@@ -1,0 +1,8 @@
+/excel-csv-converter  /excel-to-csv  301
+/yaml-json            /yaml-to-json  301
+/diff                 /dataset-diff  301
+/convert              /csv-to-parquet  301
+/flatten              /json-flattener  301
+/sql                  /sql-playground  301
+/profiler             /data-profiler  301
+/schema               /schema-generator  301
