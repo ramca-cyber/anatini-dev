@@ -166,11 +166,13 @@ export default function CsvViewerPage() {
     try {
       let sql = `SELECT * FROM "${tableName}"`;
       if (search) {
+        // Escape SQL special chars: single quotes, and LIKE wildcards (%, _)
+        const escaped = search.replace(/'/g, "''").replace(/%/g, "\\%").replace(/_/g, "\\_");
         if (searchCol === "__all__") {
-          const conditions = meta.columns.map(c => `"${c}"::VARCHAR ILIKE '%${search.replace(/'/g, "''")}%'`);
+          const conditions = meta.columns.map(c => `"${c}"::VARCHAR ILIKE '%${escaped}%' ESCAPE '\\'`);
           sql += ` WHERE ${conditions.join(" OR ")}`;
         } else {
-          sql += ` WHERE "${searchCol}"::VARCHAR ILIKE '%${search.replace(/'/g, "''")}%'`;
+          sql += ` WHERE "${searchCol}"::VARCHAR ILIKE '%${escaped}%' ESCAPE '\\'`;
         }
       }
       const csv = await exportToCSV(db, sql);
