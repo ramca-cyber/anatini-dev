@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { useFileStore } from "@/contexts/FileStoreContext";
 import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
+import { escapeSqlString } from "@/lib/duckdb-helpers";
 
 type Alignment = "left" | "center" | "right";
 
@@ -81,11 +82,12 @@ export default function MarkdownTablePage() {
         const buf = await file.arrayBuffer();
         await db.registerFileBuffer(file.name, new Uint8Array(buf));
 
+        const safeName = escapeSqlString(file.name);
         const readFn = fmt === "parquet"
-          ? `read_parquet('${file.name}')`
+          ? `read_parquet('${safeName}')`
           : fmt === "json"
-          ? `read_json_auto('${file.name}')`
-          : `read_csv_auto('${file.name}')`;
+          ? `read_json_auto('${safeName}')`
+          : `read_csv_auto('${safeName}')`;
 
         const colResult = await conn.query(`SELECT * FROM ${readFn} LIMIT 0`);
         const columns = colResult.schema.fields.map((f: any) => f.name);

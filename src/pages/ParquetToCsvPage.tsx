@@ -17,7 +17,7 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/component
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { useFileStore } from "@/contexts/FileStoreContext";
 import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
-import { registerFile, runQuery, exportToCSV, downloadBlob, formatBytes, sanitizeTableName, warnLargeFile } from "@/lib/duckdb-helpers";
+import { registerFile, runQuery, exportToCSV, downloadBlob, formatBytes, sanitizeTableName, warnLargeFile, escapeSqlString } from "@/lib/duckdb-helpers";
 import { generateSampleParquet } from "@/lib/sample-data";
 import { toast } from "@/hooks/use-toast";
 
@@ -77,7 +77,7 @@ export default function ParquetToCsvPage() {
       const result = await runQuery(db, `SELECT * FROM "${tableName}" LIMIT 100`);
       setPreview(result);
       try {
-        const metaRes = await runQuery(db, `SELECT COUNT(DISTINCT row_group_id) as rg, MAX(compression)::VARCHAR as comp FROM parquet_metadata('${f.name}')`);
+        const metaRes = await runQuery(db, `SELECT COUNT(DISTINCT row_group_id) as rg, MAX(compression)::VARCHAR as comp FROM parquet_metadata('${escapeSqlString(f.name)}')`);
         if (metaRes.rows[0]) {
           setParquetInfo({ rowGroups: Number(metaRes.rows[0][0]), compression: String(metaRes.rows[0][1] ?? "unknown") });
         }
