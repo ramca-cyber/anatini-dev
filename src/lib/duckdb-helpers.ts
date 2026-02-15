@@ -54,7 +54,7 @@ export async function registerFile(
 ): Promise<{ columns: string[]; rowCount: number; types: string[] }> {
   await db.registerFileHandle(file.name, file, duckdb.DuckDBDataProtocol.BROWSER_FILEREADER, true);
 
-  const safeName = file.name.replace(/'/g, "''");
+  const safeName = escapeSqlString(file.name);
   const ext = file.name.split(".").pop()?.toLowerCase();
   const conn = await db.connect();
   try {
@@ -174,4 +174,14 @@ export function formatBytes(bytes: number): string {
 
 export function sanitizeTableName(filename: string): string {
   return filename.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9_]/g, "_");
+}
+
+/** Escape a string for use inside SQL single quotes. */
+export function escapeSqlString(value: string): string {
+  return value.replace(/'/g, "''");
+}
+
+/** Escape a string for use in a SQL LIKE pattern (also escapes single quotes). */
+export function escapeSqlLike(value: string): string {
+  return value.replace(/'/g, "''").replace(/%/g, "\\%").replace(/_/g, "\\_");
 }

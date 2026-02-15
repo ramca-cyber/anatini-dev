@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { useFileStore } from "@/contexts/FileStoreContext";
 import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
-import { registerFile, runQuery, exportToCSV, downloadBlob, formatBytes, sanitizeTableName, warnLargeFile } from "@/lib/duckdb-helpers";
+import { registerFile, runQuery, exportToCSV, downloadBlob, formatBytes, sanitizeTableName, warnLargeFile, escapeSqlString } from "@/lib/duckdb-helpers";
 import { generateSampleParquet } from "@/lib/sample-data";
 import { toast } from "@/hooks/use-toast";
 
@@ -67,7 +67,7 @@ export default function ParquetViewerPage() {
       await loadPage(tName, 0);
 
       try {
-        const metaResult = await runQuery(db, `SELECT * FROM parquet_metadata('${f.name}')`);
+        const metaResult = await runQuery(db, `SELECT * FROM parquet_metadata('${escapeSqlString(f.name)}')`);
         setParquetMeta({ columns: metaResult.columns, rows: metaResult.rows });
       } catch { setParquetMeta(null); }
     } catch (e) {

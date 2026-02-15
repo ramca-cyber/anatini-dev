@@ -15,7 +15,7 @@ import { ToggleButton } from "@/components/shared/ToggleButton";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { useFileStore } from "@/contexts/FileStoreContext";
-import { registerFile, runQuery, formatBytes, sanitizeTableName } from "@/lib/duckdb-helpers";
+import { registerFile, runQuery, formatBytes, sanitizeTableName, escapeSqlString } from "@/lib/duckdb-helpers";
 import { getSampleCSV } from "@/lib/sample-data";
 
 interface FileIdentity {
@@ -156,7 +156,7 @@ export default function CsvInspectorPage() {
       let delimLabel = "Auto-detected";
       let quoteChar = '"';
       try {
-        const sniff = await runQuery(db, `SELECT * FROM sniff_csv('${f.name}')`);
+        const sniff = await runQuery(db, `SELECT * FROM sniff_csv('${escapeSqlString(f.name)}')`);
         const dIdx = sniff.columns.indexOf("Delimiter");
         const qIdx = sniff.columns.indexOf("Quote");
         if (dIdx >= 0 && sniff.rows[0]) {

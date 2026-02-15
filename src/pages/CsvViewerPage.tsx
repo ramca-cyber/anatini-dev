@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { useFileStore } from "@/contexts/FileStoreContext";
 import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
-import { registerFile, runQuery, exportToCSV, downloadBlob, formatBytes, sanitizeTableName, warnLargeFile } from "@/lib/duckdb-helpers";
+import { registerFile, runQuery, exportToCSV, downloadBlob, formatBytes, sanitizeTableName, warnLargeFile, escapeSqlString, escapeSqlLike } from "@/lib/duckdb-helpers";
 import { getSampleCSV } from "@/lib/sample-data";
 import { Link } from "react-router-dom";
 
@@ -105,9 +105,9 @@ export default function CsvViewerPage() {
         // Register file first, then create table with explicit delimiter
         await db.registerFileHandle(f.name, f, 2, true);
         const conn = await db.connect();
-        const escapedDelim = delimiter.replace(/'/g, "''");
+        const escapedDelim = escapeSqlString(delimiter);
         await conn.query(`DROP TABLE IF EXISTS "${tName}"`);
-        await conn.query(`CREATE TABLE "${tName}" AS SELECT * FROM read_csv('${f.name}', delim='${escapedDelim}', header=true, auto_detect=true)`);
+        await conn.query(`CREATE TABLE "${tName}" AS SELECT * FROM read_csv('${escapeSqlString(f.name)}', delim='${escapedDelim}', header=true, auto_detect=true)`);
 
         const countRes = await conn.query(`SELECT COUNT(*) FROM "${tName}"`);
         const rowCount = Number(countRes.toArray()[0][0]);
@@ -167,7 +167,7 @@ export default function CsvViewerPage() {
       let sql = `SELECT * FROM "${tableName}"`;
       if (search) {
         // Escape SQL special chars: single quotes, and LIKE wildcards (%, _)
-        const escaped = search.replace(/'/g, "''").replace(/%/g, "\\%").replace(/_/g, "\\_");
+        const escaped = escapeSqlLike(search);
         if (searchCol === "__all__") {
           const conditions = meta.columns.map(c => `"${c}"::VARCHAR ILIKE '%${escaped}%' ESCAPE '\\'`);
           sql += ` WHERE ${conditions.join(" OR ")}`;

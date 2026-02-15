@@ -14,7 +14,7 @@ import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
 import { Button } from "@/components/ui/button";
 import { useDuckDB } from "@/contexts/DuckDBContext";
 import { useFileStore } from "@/contexts/FileStoreContext";
-import { registerFile, runQuery, formatBytes, sanitizeTableName } from "@/lib/duckdb-helpers";
+import { registerFile, runQuery, formatBytes, sanitizeTableName, escapeSqlString } from "@/lib/duckdb-helpers";
 import { generateSampleParquet } from "@/lib/sample-data";
 
 interface FileOverview {
@@ -78,6 +78,7 @@ export default function ParquetInspectorPage() {
     setOverview(null); setSchemaData(null); setRowGroups([]); setKvMeta([]); setPreview(null); setColumnDetails([]); setParquetWarnings([]); setTab("overview");
     try {
       const tableName = sanitizeTableName(f.name);
+      const safeName = escapeSqlString(f.name);
       const info = await registerFile(db, f, tableName);
 
       // File-level metadata
@@ -86,7 +87,7 @@ export default function ParquetInspectorPage() {
       let createdBy = "Unknown";
       let parquetVersion: string | undefined;
       try {
-        const fileMeta = await runQuery(db, `SELECT * FROM parquet_file_metadata('${f.name}')`);
+        const fileMeta = await runQuery(db, `SELECT * FROM parquet_file_metadata('${safeName}')`);
         if (fileMeta.rows[0]) {
           const createdIdx = fileMeta.columns.indexOf("created_by");
           const rgIdx = fileMeta.columns.indexOf("num_row_groups");
@@ -100,7 +101,7 @@ export default function ParquetInspectorPage() {
       // Row group details
       const rgs: RowGroupInfo[] = [];
       try {
-        const meta = await runQuery(db, `SELECT * FROM parquet_metadata('${f.name}')`);
+        const meta = await runQuery(db, `SELECT * FROM parquet_metadata('${safeName}')`);
         const compIdx = meta.columns.indexOf("compression");
         const compressedIdx = meta.columns.indexOf("total_compressed_size");
         const uncompIdx = meta.columns.indexOf("total_uncompressed_size");
@@ -133,7 +134,7 @@ export default function ParquetInspectorPage() {
       // Build enriched column details from parquet_metadata
       const colDetails: ColumnDetail[] = [];
       try {
-        const meta = await runQuery(db, `SELECT * FROM parquet_metadata('${f.name}')`);
+        const meta = await runQuery(db, `SELECT * FROM parquet_metadata('${safeName}')`);
         const nameIdx = meta.columns.indexOf("path_in_schema");
         const encIdx = meta.columns.indexOf("encoding");
         const compIdx = meta.columns.indexOf("compression");
@@ -177,13 +178,13 @@ export default function ParquetInspectorPage() {
 
       // Schema
       try {
-        const schema = await runQuery(db, `SELECT * FROM parquet_schema('${f.name}')`);
+        const schema = await runQuery(db, `SELECT * FROM parquet_schema('${safeName}')`);
         setSchemaData({ columns: schema.columns, rows: schema.rows });
       } catch {}
 
       // KV metadata
       try {
-        const fileMeta = await runQuery(db, `SELECT * FROM parquet_file_metadata('${f.name}')`);
+        const fileMeta = await runQuery(db, `SELECT * FROM parquet_file_metadata('${safeName}')`);
         const kvIdx = fileMeta.columns.indexOf("key_value_metadata");
         if (kvIdx >= 0 && fileMeta.rows[0]) {
           const raw = fileMeta.rows[0][kvIdx];
