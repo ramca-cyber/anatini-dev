@@ -1,44 +1,53 @@
 
 
-# Fix "Page with redirect" Google Search Console Issue
+# Search Index Compliance Audit
 
-## Problem
-Google is flagging 8 legacy redirect URLs because they use client-side JavaScript redirects (`<Navigate>`) instead of HTTP 301 redirects. Google crawls the page, gets an HTML shell, then JavaScript redirects it -- which Google treats as a soft redirect and refuses to index.
+## Status: Mostly Compliant -- 3 Issues Found
 
-## Solution
-Two changes are needed:
+### Issue 1: `<link>` tag outside `<head>` in index.html (HIGH)
 
-### 1. Remove redirect URLs from any internal links
-Search the entire codebase for any `<a>` or `<Link>` references to the old URLs (`/convert`, `/flatten`, `/sql`, `/profiler`, `/schema`, `/diff`, `/yaml-json`, `/excel-csv-converter`). If any exist, update them to point to the canonical destination directly. This prevents Google from rediscovering these URLs.
+The favicon `<link>` tag on line 26 of `index.html` is placed between `</head>` and `<body>`, which is invalid HTML. Search engines and validators may flag this. It should be moved inside the `<head>` element.
 
-### 2. Add server-side redirect rules
-Since this is a Vite SPA deployed on Lovable, we need to add a `public/_redirects` file (supported by most static hosting platforms including Netlify-style hosting) to handle 301 redirects at the server level before JavaScript loads:
+**Fix:** Move `<link rel="icon" type="image/png" href="/favicon.png" />` from line 26 into the `<head>` block (e.g., after line 11).
 
-```
-/excel-csv-converter  /excel-to-csv  301
-/yaml-json            /yaml-to-json  301
-/diff                 /dataset-diff  301
-/convert              /csv-to-parquet  301
-/flatten              /json-flattener  301
-/sql                  /sql-playground  301
-/profiler             /data-profiler  301
-/schema               /schema-generator  301
-```
+---
 
-The client-side `<Navigate>` routes in `App.tsx` should remain as a fallback for users with JavaScript enabled, but the `_redirects` file ensures Google gets a proper 301 before any HTML is served.
+### Issue 2: Stale "30+" count in NotFound page (LOW)
 
-## Technical Details
+`src/pages/NotFound.tsx` line 14 says "Browse 30+ free offline data tools" but the site now has 50 tools. The meta description should say "50".
 
-### Files to create
-- `public/_redirects` -- server-side 301 redirect rules
+Similarly, `index.html` line 7 meta description says "30+" -- should be updated to "50".
 
-### Files to check/modify
-- Search all `.tsx` files for links to old redirect paths and update them to canonical paths
-- `src/App.tsx` -- keep existing `<Navigate>` routes as fallback (no change needed)
+**Fix:** Update both references from "30+" to "50".
 
-### Why this works
-- Google's crawler will receive an HTTP 301 response, which it understands natively
-- Google will transfer link equity from old URLs to new ones
-- The "Page with redirect" warning will resolve after Google re-crawls
-- Client-side redirects remain as a safety net for direct browser navigation
+---
+
+### Issue 3: index.html meta tags still say "30+" (LOW)
+
+The `<meta name="description">` and `<meta property="og:description">` in `index.html` reference "30+" tools. These are the default fallback tags seen by crawlers before JavaScript loads, so they should reflect the current count.
+
+**Fix:** Update lines 7, 14, and 22 in `index.html` from "30+" to "50".
+
+---
+
+## What Passed
+
+- **Sitemap**: All 50 tool routes + homepage + about + blog (55 URLs total) are listed. No legacy redirect URLs are in the sitemap. No missing routes.
+- **robots.txt**: Correctly allows all bots and points to sitemap.
+- **Server-side redirects**: All 8 legacy paths have proper 301 rules in `_redirects`.
+- **Client-side redirects**: Matching `<Navigate>` fallbacks remain in `App.tsx`.
+- **Internal links**: No `<Link>` or `<a>` tags point to legacy redirect paths anywhere in the codebase.
+- **PageMeta / ToolPage**: All 50 tool pages use `ToolPage` (which includes `PageMeta`), providing unique titles, descriptions, canonical URLs, and JSON-LD structured data.
+- **Canonical URLs**: `PageMeta` dynamically sets `<link rel="canonical">` to `https://anatini.dev{pathname}`.
+- **OG / Twitter tags**: Dynamically updated per page via `PageMeta`.
+- **JSON-LD**: Each tool page emits `SoftwareApplication` schema; blog posts and About page have their own structured data.
+
+## Technical Changes
+
+### index.html
+1. Move `<link rel="icon">` from line 26 into `<head>` (after line 11)
+2. Update "30+" to "50" in meta description (line 7), og:description (line 14), and twitter:description (line 22)
+
+### src/pages/NotFound.tsx
+1. Update "30+" to "50" in the PageMeta description (line 14)
 
