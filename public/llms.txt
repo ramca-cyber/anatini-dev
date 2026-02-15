@@ -1,0 +1,79 @@
+# Anatini.dev
+
+> 50+ free, offline data tools for developers — powered by DuckDB-WASM. All processing happens in your browser. No uploads, no servers, no tracking.
+
+## About
+
+Anatini.dev is a collection of browser-based data tools built on DuckDB-WASM. Every tool runs 100% client-side — your files never leave your machine. The site is free, requires no sign-up, and works offline after first load.
+
+## Tools
+
+### Converters
+- [CSV → Parquet](https://anatini.dev/csv-to-parquet): Convert CSV files to Apache Parquet format
+- [Parquet → CSV](https://anatini.dev/parquet-to-csv): Convert Parquet files to CSV
+- [CSV → JSON](https://anatini.dev/csv-to-json): Convert CSV to JSON arrays or objects
+- [JSON → CSV](https://anatini.dev/json-to-csv): Flatten JSON into CSV format
+- [JSON → Parquet](https://anatini.dev/json-to-parquet): Convert JSON to Parquet
+- [Parquet → JSON](https://anatini.dev/parquet-to-json): Convert Parquet to JSON
+- [Excel → CSV](https://anatini.dev/excel-to-csv): Convert Excel (.xlsx/.xls) to CSV
+- [CSV → Excel](https://anatini.dev/csv-to-excel): Convert CSV to Excel (.xlsx)
+- [YAML → JSON](https://anatini.dev/yaml-to-json): Convert YAML to JSON
+- [JSON → YAML](https://anatini.dev/json-to-yaml): Convert JSON to YAML
+- [XML → JSON](https://anatini.dev/xml-to-json): Convert XML to JSON
+- [JSON → XML](https://anatini.dev/json-to-xml): Convert JSON to XML
+- [TOML → JSON](https://anatini.dev/toml-to-json): Convert TOML to JSON
+- [JSON → TOML](https://anatini.dev/json-to-toml): Convert JSON to TOML
+
+### Viewers & Formatters
+- [Delimited Viewer](https://anatini.dev/csv-viewer): View and explore CSV/TSV files with sorting and filtering
+- [Parquet Viewer](https://anatini.dev/parquet-viewer): Browse Parquet files interactively
+- [Excel Viewer](https://anatini.dev/excel-viewer): View Excel spreadsheets in the browser
+- [JSON Formatter](https://anatini.dev/json-formatter): Pretty-print and format JSON
+- [XML Formatter](https://anatini.dev/xml-formatter): Format and indent XML documents
+- [YAML Formatter](https://anatini.dev/yaml-formatter): Format YAML documents
+- [Log Viewer](https://anatini.dev/log-viewer): Parse and explore log files
+- [Hex Viewer](https://anatini.dev/hex-viewer): View binary files in hexadecimal
+
+### Inspectors
+- [CSV Inspector](https://anatini.dev/csv-inspector): Analyze CSV structure, types, and quality
+- [JSON Inspector](https://anatini.dev/json-inspector): Explore JSON structure and paths
+- [Parquet Inspector](https://anatini.dev/parquet-inspector): Inspect Parquet metadata, schema, and row groups
+
+### Analysis & SQL
+- [SQL Playground](https://anatini.dev/sql-playground): Query any file with SQL using DuckDB
+- [Data Profiler](https://anatini.dev/data-profiler): Generate data quality reports with statistics
+- [JSON Flattener](https://anatini.dev/json-flattener): Flatten nested JSON into tabular format
+- [Schema Generator](https://anatini.dev/schema-generator): Generate SQL DDL or JSON Schema from data
+- [CSV → SQL](https://anatini.dev/csv-to-sql): Generate SQL INSERT statements from CSV
+- [Dataset Diff](https://anatini.dev/dataset-diff): Compare two datasets and find differences
+- [Data Sampler](https://anatini.dev/data-sampler): Take random or stratified samples from datasets
+- [Deduplicator](https://anatini.dev/deduplicator): Find and remove duplicate rows
+- [SQL Formatter](https://anatini.dev/sql-formatter): Format and beautify SQL queries
+- [Markdown Table](https://anatini.dev/markdown-table): Convert data to Markdown tables
+- [Column Editor](https://anatini.dev/column-editor): Rename, reorder, and transform columns
+- [Data Merge](https://anatini.dev/data-merge): Join and merge multiple datasets
+- [Pivot Table](https://anatini.dev/pivot-table): Create pivot tables from data
+- [Chart Builder](https://anatini.dev/chart-builder): Build charts and visualizations from data
+- [Regex Filter](https://anatini.dev/regex-filter): Filter rows using regular expressions
+- [CSV Splitter](https://anatini.dev/csv-splitter): Split large CSV files into smaller chunks
+- [Data Anonymizer](https://anatini.dev/data-anonymizer): Anonymize sensitive columns in datasets
+- [Data Generator](https://anatini.dev/data-generator): Generate synthetic test data
+
+### Utilities
+- [Base64 Encoder/Decoder](https://anatini.dev/base64): Encode and decode Base64 strings
+- [Hash Generator](https://anatini.dev/hash-generator): Generate MD5, SHA-1, SHA-256 hashes
+- [JSON Schema Validator](https://anatini.dev/json-schema-validator): Validate JSON against a schema
+- [JSON Diff](https://anatini.dev/json-diff): Compare two JSON documents
+- [URL Encoder/Decoder](https://anatini.dev/url-encoder): Encode and decode URLs
+- [Cron Parser](https://anatini.dev/cron-parser): Parse and explain cron expressions
+- [Encoding Detector](https://anatini.dev/encoding-detector): Detect file character encoding
+
+## Key Facts
+- All tools are 100% free with no usage limits
+- No data leaves the browser — fully offline after first load
+- Powered by DuckDB-WASM for SQL-grade performance
+- No sign-up, no cookies, no tracking
+- Works with CSV, JSON, Parquet, Excel, YAML, XML, TOML, and more
+
+## Sitemap
+Full URL list: https://anatini.dev/sitemap.xml
