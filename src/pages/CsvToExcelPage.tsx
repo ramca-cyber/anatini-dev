@@ -6,6 +6,7 @@ import { useFileStore } from "@/contexts/FileStoreContext";
 import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
 import { getSampleCSV } from "@/lib/sample-data";
 import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
+import { ConfirmNewDialog } from "@/components/shared/ConfirmNewDialog";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { UrlInput } from "@/components/shared/UrlInput";
 import { ToggleButton } from "@/components/shared/ToggleButton";
@@ -60,6 +61,7 @@ export default function CsvToExcelPage() {
         const rows = data.slice(1, 201).map((row: any[]) => columns.map((_, i) => row[i] ?? null));
         setPreview({ columns, rows });
       }
+      setShowDataPreview(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load file");
     } finally {
@@ -128,7 +130,7 @@ export default function CsvToExcelPage() {
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <FileInfo name={file.name} size={formatBytes(file.size)} extras={[{ label: "Sheets", value: csvFiles.length }]} />
-              <Button variant="outline" onClick={resetAll}>New file</Button>
+              <ConfirmNewDialog onConfirm={resetAll} hasOutput={!!preview} />
             </div>
 
             <div className="border border-border bg-muted/30 px-4 py-3 space-y-2">

@@ -10,20 +10,27 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { FilePlus } from "lucide-react";
 
 interface ConfirmNewDialogProps {
   onConfirm: () => void;
   disabled?: boolean;
+  hasOutput?: boolean;
 }
 
-export function ConfirmNewDialog({ onConfirm, disabled }: ConfirmNewDialogProps) {
+export function ConfirmNewDialog({ onConfirm, disabled, hasOutput = false }: ConfirmNewDialogProps) {
+  if (!hasOutput) {
+    return (
+      <Button variant="outline" disabled={disabled} onClick={onConfirm}>
+        New file
+      </Button>
+    );
+  }
+
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button variant="outline" size="sm" disabled={disabled}>
-          <FilePlus className="h-3.5 w-3.5 mr-1.5" />
-          New File
+        <Button variant="outline" disabled={disabled}>
+          New file
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>

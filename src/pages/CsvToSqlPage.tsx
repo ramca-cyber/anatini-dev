@@ -12,6 +12,7 @@ import { PasteInput } from "@/components/shared/PasteInput";
 import { UrlInput } from "@/components/shared/UrlInput";
 import { DuckDBGate } from "@/components/shared/DuckDBGate";
 import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
+import { ConfirmNewDialog } from "@/components/shared/ConfirmNewDialog";
 import { InspectLink } from "@/components/shared/InspectLink";
 import { ToggleButton } from "@/components/shared/ToggleButton";
 import { Button } from "@/components/ui/button";
@@ -200,6 +201,7 @@ export default function CsvToSqlPage() {
       const outputSize = new Blob([sql]).size;
       const durationMs = Math.round(performance.now() - start);
       setConversionResult({ durationMs, outputSize });
+      setShowInputPreview(false);
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Generation failed");
@@ -273,7 +275,7 @@ export default function CsvToSqlPage() {
                   <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
                   {storedFileId && <InspectLink fileId={storedFileId} format="csv" />}
                 </div>
-                <Button variant="outline" onClick={resetAll}>New file</Button>
+                <ConfirmNewDialog onConfirm={resetAll} hasOutput={!!conversionResult} />
               </div>
 
               {/* 2. Options + Convert row */}

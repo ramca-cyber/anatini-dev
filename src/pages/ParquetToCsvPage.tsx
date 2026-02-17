@@ -10,6 +10,7 @@ import { DataTable } from "@/components/shared/DataTable";
 import { RawPreview } from "@/components/shared/RawPreview";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
+import { ConfirmNewDialog } from "@/components/shared/ConfirmNewDialog";
 import { InspectLink } from "@/components/shared/InspectLink";
 import { ToggleButton } from "@/components/shared/ToggleButton";
 import { Button } from "@/components/ui/button";
@@ -112,6 +113,7 @@ export default function ParquetToCsvPage() {
       const outPreview = await runQuery(db, `SELECT * FROM "${tableName}" LIMIT 100`);
       setOutputPreview(outPreview);
       setOutputView("table");
+      setShowInputPreview(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Conversion failed");
     } finally {
@@ -174,7 +176,7 @@ export default function ParquetToCsvPage() {
                 <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} extras={fileInfoExtras} />
                 {storedFileId && <InspectLink fileId={storedFileId} format="parquet" />}
               </div>
-              <Button variant="outline" onClick={resetAll}>New file</Button>
+              <ConfirmNewDialog onConfirm={resetAll} hasOutput={!!conversionResult} />
             </div>
 
             {/* 2. Options + Convert row */}

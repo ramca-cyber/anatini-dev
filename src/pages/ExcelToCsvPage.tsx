@@ -5,6 +5,7 @@ import { FileText, Download, Check, CheckCircle2, ChevronDown, ChevronUp } from 
 import { useFileStore } from "@/contexts/FileStoreContext";
 import { useAutoLoadFile } from "@/hooks/useAutoLoadFile";
 import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
+import { ConfirmNewDialog } from "@/components/shared/ConfirmNewDialog";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { UrlInput } from "@/components/shared/UrlInput";
 import { ToggleButton } from "@/components/shared/ToggleButton";
@@ -66,6 +67,7 @@ export default function ExcelToCsvPage() {
       loadSheet(wb, wb.SheetNames[0], XLSX);
       const ws = wb.Sheets[wb.SheetNames[0]];
       setCsvOutput(XLSX.utils.sheet_to_csv(ws));
+      setShowDataPreview(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load file");
     } finally {
@@ -152,7 +154,7 @@ export default function ExcelToCsvPage() {
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <FileInfo name={file.name} size={formatBytes(file.size)} extras={[{ label: "Sheets", value: sheets.length }]} />
-              <Button variant="outline" onClick={resetAll}>New file</Button>
+              <ConfirmNewDialog onConfirm={resetAll} hasOutput={!!csvOutput} />
             </div>
 
             {sheets.length > 0 && (
