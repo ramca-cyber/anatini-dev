@@ -47,6 +47,7 @@ function formatValue(val: any, type?: string): string {
   if (typeof val === "object") {
     // Handle Date objects (Arrow may parse dates as Date objects)
     if (val instanceof Date) {
+      if (isNaN(val.getTime())) return String(val);
       if (isDateType(type)) return val.toISOString().slice(0, 10);
       return val.toISOString().replace("T", " ").replace("Z", "");
     }
