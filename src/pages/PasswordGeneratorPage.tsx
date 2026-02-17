@@ -97,7 +97,7 @@ export default function PasswordGeneratorPage() {
           </div>
           <pre className="bg-muted/30 border border-border p-3 text-sm font-mono break-all select-all whitespace-pre-wrap">{password}</pre>
           <div className="flex items-center gap-3">
-            <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden">
+            <div className="flex-1 h-2 bg-secondary overflow-hidden">
               <div className={`h-full ${strength.color} transition-all`} style={{ width: `${strength.percent}%` }} />
             </div>
             <span className="text-xs font-bold text-muted-foreground">{strength.label}</span>

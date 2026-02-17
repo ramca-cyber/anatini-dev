@@ -62,7 +62,7 @@ function ColumnCard({ col, totalRows }: { col: ColumnProfile; totalRows: number 
   const distinctPct = totalRows > 0 ? Math.min((col.distinctCount / totalRows) * 100, 100) : 0;
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4 space-y-3 hover:border-primary/30 transition-colors">
+    <div className="border border-border bg-card p-4 space-y-3 hover:border-primary/30 transition-colors">
       <div className="flex items-start justify-between gap-2">
         <div>
           <h4 className="font-mono text-sm font-semibold truncate" title={col.name}>{col.name}</h4>
@@ -78,8 +78,8 @@ function ColumnCard({ col, totalRows }: { col: ColumnProfile; totalRows: number 
             <span className="text-muted-foreground">Completeness</span>
             <span className="font-mono">{(100 - col.nullPct).toFixed(1)}%</span>
           </div>
-          <div className="h-1.5 w-full rounded-full bg-muted/40 overflow-hidden">
-            <div className={`h-full rounded-full transition-all ${col.nullPct > 50 ? "bg-destructive" : col.nullPct > 10 ? "bg-warning" : "bg-primary"}`} style={{ width: `${100 - nullBarPct}%` }} />
+          <div className="h-1.5 w-full bg-muted/40 overflow-hidden">
+            <div className={`h-full transition-all ${col.nullPct > 50 ? "bg-destructive" : col.nullPct > 10 ? "bg-warning" : "bg-primary"}`} style={{ width: `${100 - nullBarPct}%` }} />
           </div>
         </div>
         <div>
@@ -87,8 +87,8 @@ function ColumnCard({ col, totalRows }: { col: ColumnProfile; totalRows: number 
             <span className="text-muted-foreground">Uniqueness</span>
             <span className="font-mono">{distinctPct.toFixed(1)}%</span>
           </div>
-          <div className="h-1.5 w-full rounded-full bg-muted/40 overflow-hidden">
-            <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${distinctPct}%` }} />
+          <div className="h-1.5 w-full bg-muted/40 overflow-hidden">
+            <div className="h-full bg-accent transition-all" style={{ width: `${distinctPct}%` }} />
           </div>
         </div>
       </div>
@@ -107,7 +107,7 @@ function ColumnCard({ col, totalRows }: { col: ColumnProfile; totalRows: number 
         <div className="space-y-1">
           <div className="text-[11px] text-muted-foreground">Boolean Distribution</div>
           <div className="flex items-center gap-2">
-            <div className="flex-1 h-4 bg-muted/30 rounded overflow-hidden flex">
+            <div className="flex-1 h-4 bg-muted/30 overflow-hidden flex">
               <div className="h-full bg-primary/70" style={{ width: `${(col.boolTrue / Math.max(col.boolTrue + col.boolFalse, 1)) * 100}%` }} />
               <div className="h-full bg-destructive/50" style={{ width: `${(col.boolFalse / Math.max(col.boolTrue + col.boolFalse, 1)) * 100}%` }} />
             </div>
@@ -177,8 +177,8 @@ function ColumnCard({ col, totalRows }: { col: ColumnProfile; totalRows: number 
           {col.topValues.slice(0, 4).map((tv, i) => (
             <div key={i} className="flex items-center gap-2">
               <span className="w-20 truncate text-[11px] font-mono" title={tv.value}>{tv.value}</span>
-              <div className="flex-1 h-3 bg-muted/30 rounded overflow-hidden">
-                <div className="h-full bg-primary/50 rounded transition-all" style={{ width: `${(tv.count / maxCount) * 100}%` }} />
+              <div className="flex-1 h-3 bg-muted/30 overflow-hidden">
+                <div className="h-full bg-primary/50 transition-all" style={{ width: `${(tv.count / maxCount) * 100}%` }} />
               </div>
               <span className="text-[10px] font-mono text-muted-foreground w-6 text-right">{tv.count}</span>
             </div>
@@ -200,7 +200,7 @@ function QualityScoreBadge({ score }: { score: number }) {
   const color = score >= 80 ? "text-green-500" : score >= 50 ? "text-warning" : "text-destructive";
   const bg = score >= 80 ? "bg-green-500/10 border-green-500/30" : score >= 50 ? "bg-warning/10 border-warning/30" : "bg-destructive/10 border-destructive/30";
   return (
-    <div className={`rounded-lg border ${bg} p-4 text-center`}>
+    <div className={`border ${bg} p-4 text-center`}>
       <div className="text-xs text-muted-foreground">Data Quality Score</div>
       <div className={`mt-1 text-3xl font-bold ${color}`}>{score}</div>
       <div className="text-[11px] text-muted-foreground">out of 100</div>
@@ -579,7 +579,7 @@ ${findings.length === 0 ? "<p>No findings — data looks clean!</p>" : findings.
                     { label: "Duplicates", value: overview.duplicateRows.toLocaleString() },
                     { label: "Empty Rows", value: overview.emptyRows.toLocaleString() },
                   ].map((s) => (
-                    <div key={s.label} className="rounded-lg border border-border bg-card p-4">
+                    <div key={s.label} className="border border-border bg-card p-4">
                       <div className="text-xs text-muted-foreground">{s.label}</div>
                       <div className="mt-1 text-2xl font-bold">{s.value}</div>
                     </div>
@@ -587,14 +587,14 @@ ${findings.length === 0 ? "<p>No findings — data looks clean!</p>" : findings.
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2">
-                  <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+                  <div className="border border-border bg-card p-4 space-y-3">
                     <h4 className="text-sm font-medium text-muted-foreground">Column Type Distribution</h4>
                     <div className="space-y-2">
                       {Object.entries(typeDistribution).sort((a, b) => b[1] - a[1]).map(([type, count]) => (
                         <div key={type} className="flex items-center gap-3">
                           <span className="w-20 text-xs font-mono text-muted-foreground truncate">{type}</span>
-                          <div className="flex-1 h-5 bg-muted/30 rounded overflow-hidden">
-                            <div className="h-full bg-primary/60 rounded transition-all" style={{ width: `${(count / maxTypeCount) * 100}%` }} />
+                          <div className="flex-1 h-5 bg-muted/30 overflow-hidden">
+                            <div className="h-full bg-primary/60 transition-all" style={{ width: `${(count / maxTypeCount) * 100}%` }} />
                           </div>
                           <span className="text-xs font-medium w-6 text-right">{count}</span>
                         </div>
@@ -602,7 +602,7 @@ ${findings.length === 0 ? "<p>No findings — data looks clean!</p>" : findings.
                     </div>
                   </div>
 
-                  <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+                  <div className="border border-border bg-card p-4 space-y-3">
                     <h4 className="text-sm font-medium text-muted-foreground">Dataset Info</h4>
                     <div className="space-y-2 text-xs">
                       <div className="flex justify-between"><span className="text-muted-foreground">Memory estimate</span><span className="font-mono">{overview.memoryEstimate}</span></div>
@@ -613,7 +613,7 @@ ${findings.length === 0 ? "<p>No findings — data looks clean!</p>" : findings.
                 </div>
 
                 {findings.length > 0 && (
-                  <div className="rounded-lg border border-border bg-card p-4 space-y-2">
+                  <div className="border border-border bg-card p-4 space-y-2">
                     <h4 className="text-sm font-medium text-muted-foreground">Top Issues</h4>
                     {findings.slice(0, 3).map((f, i) => {
                       const Icon = levelIcon[f.level];
@@ -640,7 +640,7 @@ ${findings.length === 0 ? "<p>No findings — data looks clean!</p>" : findings.
                 <div className="flex gap-2">
                   {(["all", "critical", "warning", "info"] as const).map((level) => (
                     <button key={level} onClick={() => setFindingFilter(level)}
-                      className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${findingFilter === level ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-secondary/80"}`}>
+                      className={`px-3 py-1 text-xs font-medium transition-colors ${findingFilter === level ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-secondary/80"}`}>
                       {level === "all" ? `All (${findings.length})` : `${level.charAt(0).toUpperCase() + level.slice(1)} (${findings.filter(f => f.level === level).length})`}
                     </button>
                   ))}

@@ -185,7 +185,7 @@ export default function ParquetToCsvPage() {
                   <ToggleButton options={DELIMITERS} value={delimiter} onChange={setDelimiter} />
                 </div>
                 <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
-                  <input type="checkbox" checked={includeHeader} onChange={(e) => setIncludeHeader(e.target.checked)} className="rounded" />
+                  <input type="checkbox" checked={includeHeader} onChange={(e) => setIncludeHeader(e.target.checked)} className="accent-primary" />
                   <span className="font-bold">Include header</span>
                 </label>
                 <div className="flex items-center gap-2">

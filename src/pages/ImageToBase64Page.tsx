@@ -60,7 +60,7 @@ export default function ImageToBase64Page() {
           <>
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border border-border bg-muted/30 px-4 py-3">
               <div className="flex items-center gap-3">
-                <img src={preview} alt="Preview" className="h-10 w-10 rounded border border-border object-cover" />
+                <img src={preview} alt="Preview" className="h-10 w-10 border border-border object-cover" />
                 <div className="text-sm">
                   <p className="font-medium">{fileInfo?.name}</p>
                   <p className="text-xs text-muted-foreground">
