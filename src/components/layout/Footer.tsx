@@ -50,6 +50,14 @@ export function Footer() {
               Powered by DuckDB <ExternalLink className="h-3 w-3" />
             </a>
             <span className="text-border">·</span>
+            <Link to="/blog" className="hover:text-foreground transition-colors">
+              Blog
+            </Link>
+            <span className="text-border">·</span>
+            <Link to="/about" className="hover:text-foreground transition-colors">
+              About
+            </Link>
+            <span className="text-border">·</span>
             <Link to="/privacy" className="hover:text-foreground transition-colors">
               Privacy
             </Link>
