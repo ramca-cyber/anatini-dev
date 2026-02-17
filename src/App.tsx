@@ -78,6 +78,16 @@ const CssFormatterPage = lazy(() => import("./pages/CssFormatterPage"));
 const JsFormatterPage = lazy(() => import("./pages/JsFormatterPage"));
 const ImageToBase64Page = lazy(() => import("./pages/ImageToBase64Page"));
 const MarkdownEditorPage = lazy(() => import("./pages/MarkdownEditorPage"));
+const MetaTagPage = lazy(() => import("./pages/MetaTagPage"));
+const RobotsTxtPage = lazy(() => import("./pages/RobotsTxtPage"));
+const ChmodCalculatorPage = lazy(() => import("./pages/ChmodCalculatorPage"));
+const JsonToTypescriptPage = lazy(() => import("./pages/JsonToTypescriptPage"));
+const LoremIpsumPage = lazy(() => import("./pages/LoremIpsumPage"));
+const HtmlEntityPage = lazy(() => import("./pages/HtmlEntityPage"));
+const SlugGeneratorPage = lazy(() => import("./pages/SlugGeneratorPage"));
+const WordCounterPage = lazy(() => import("./pages/WordCounterPage"));
+const GitignoreGeneratorPage = lazy(() => import("./pages/GitignoreGeneratorPage"));
+const SitemapGeneratorPage = lazy(() => import("./pages/SitemapGeneratorPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const BlogIndex = lazy(() => import("./pages/blog/BlogIndex"));
 const HowToConvertCsvToParquet = lazy(() => import("./pages/blog/HowToConvertCsvToParquet"));
@@ -195,6 +205,16 @@ const App = () => (
                   <Route path="/js-formatter" element={<JsFormatterPage />} />
                   <Route path="/image-to-base64" element={<ImageToBase64Page />} />
                   <Route path="/markdown-editor" element={<MarkdownEditorPage />} />
+                  <Route path="/meta-tag-generator" element={<MetaTagPage />} />
+                  <Route path="/robots-txt-generator" element={<RobotsTxtPage />} />
+                  <Route path="/chmod-calculator" element={<ChmodCalculatorPage />} />
+                  <Route path="/json-to-typescript" element={<JsonToTypescriptPage />} />
+                  <Route path="/lorem-ipsum" element={<LoremIpsumPage />} />
+                  <Route path="/html-entity-encoder" element={<HtmlEntityPage />} />
+                  <Route path="/slug-generator" element={<SlugGeneratorPage />} />
+                  <Route path="/word-counter" element={<WordCounterPage />} />
+                  <Route path="/gitignore-generator" element={<GitignoreGeneratorPage />} />
+                  <Route path="/sitemap-generator" element={<SitemapGeneratorPage />} />
 
                   {/* Legacy */}
                   <Route path="/dataset-diff" element={<DiffPage />} />

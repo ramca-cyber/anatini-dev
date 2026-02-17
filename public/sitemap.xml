@@ -66,6 +66,16 @@
   <url><loc>https://anatini.dev/js-formatter</loc><lastmod>2026-02-17</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://anatini.dev/image-to-base64</loc><lastmod>2026-02-17</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://anatini.dev/markdown-editor</loc><lastmod>2026-02-17</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://anatini.dev/meta-tag-generator</loc><lastmod>2026-02-17</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://anatini.dev/robots-txt-generator</loc><lastmod>2026-02-17</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://anatini.dev/chmod-calculator</loc><lastmod>2026-02-17</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://anatini.dev/json-to-typescript</loc><lastmod>2026-02-17</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://anatini.dev/lorem-ipsum</loc><lastmod>2026-02-17</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://anatini.dev/html-entity-encoder</loc><lastmod>2026-02-17</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://anatini.dev/slug-generator</loc><lastmod>2026-02-17</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://anatini.dev/word-counter</loc><lastmod>2026-02-17</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://anatini.dev/gitignore-generator</loc><lastmod>2026-02-17</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://anatini.dev/sitemap-generator</loc><lastmod>2026-02-17</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://anatini.dev/about</loc><lastmod>2026-02-11</lastmod><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://anatini.dev/blog</loc><lastmod>2026-02-11</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
   <url><loc>https://anatini.dev/blog/how-to-convert-csv-to-parquet</loc><lastmod>2026-02-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
