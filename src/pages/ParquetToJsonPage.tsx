@@ -9,6 +9,7 @@ import { DataTable } from "@/components/shared/DataTable";
 import { RawPreview } from "@/components/shared/RawPreview";
 import { FileInfo, LoadingState } from "@/components/shared/FileInfo";
 import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
+import { ConfirmNewDialog } from "@/components/shared/ConfirmNewDialog";
 import { InspectLink } from "@/components/shared/InspectLink";
 import { DuckDBGate } from "@/components/shared/DuckDBGate";
 import { ToggleButton } from "@/components/shared/ToggleButton";
@@ -99,6 +100,7 @@ export default function ParquetToJsonPage() {
       const outPreview = await runQuery(db, `SELECT * FROM "${tableName}" LIMIT 100`);
       setOutputPreview(outPreview);
       setOutputView("table");
+      setShowInputPreview(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Conversion failed");
     } finally {
@@ -158,7 +160,7 @@ export default function ParquetToJsonPage() {
                 <FileInfo name={file.name} size={formatBytes(file.size)} rows={meta.rowCount} columns={meta.columns.length} />
                 {storedFileId && <InspectLink fileId={storedFileId} format="parquet" />}
               </div>
-              <Button variant="outline" onClick={resetAll}>New file</Button>
+              <ConfirmNewDialog onConfirm={resetAll} hasOutput={!!result} />
             </div>
 
             {/* 2. Options + Convert row */}

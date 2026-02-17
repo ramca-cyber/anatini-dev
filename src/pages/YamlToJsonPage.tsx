@@ -99,10 +99,10 @@ features:
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">JSON Output</label>
               <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" onClick={handleCopy} disabled={!output}>
+                <Button variant="default" size="sm" onClick={handleCopy} disabled={!output}>
                   <Copy className="h-3 w-3 mr-1" /> Copy
                 </Button>
-                <Button variant="ghost" size="sm" onClick={handleDownload} disabled={!output}>
+                <Button variant="default" size="sm" onClick={handleDownload} disabled={!output}>
                   <Download className="h-3 w-3 mr-1" /> Save
                 </Button>
               </div>

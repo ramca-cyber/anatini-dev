@@ -9,7 +9,7 @@ const jsonLd = {
   "@type": "WebApplication",
   "name": "Anatini.dev",
   "url": "https://anatini.dev",
-  "description": `Free, offline browser-powered data tools. Convert, query, profile and transform datasets using DuckDB-WASM.`,
+  "description": `Free, offline browser-powered developer tools. Convert, format, encode, and transform data — all in your browser.`,
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "Any",
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
@@ -46,8 +46,8 @@ export default function Index() {
   return (
     <>
       <PageMeta
-        title="Anatini.dev — Free, Offline Data Tools for Developers"
-        description={`${toolCount} free, offline data tools powered by DuckDB-WASM. Convert CSV, Parquet, JSON, Excel, XML, TOML. Query with SQL. Profile datasets. All in your browser.`}
+        title="Anatini.dev — Free, Offline Developer Tools"
+        description={`${toolCount} free, offline developer tools. Convert data formats, generate codes, encode, hash, format, and more — all in your browser. No uploads, no servers.`}
       />
 
       <script
@@ -63,26 +63,26 @@ export default function Index() {
               {toolCount} Tools · 100% Offline · Zero Tracking
             </div>
             <h1 className="text-3xl font-bold leading-tight tracking-tight md:text-4xl lg:text-5xl">
-              Data tools that run{" "}
+              Developer tools that run{" "}
               <span className="border-b-4 border-foreground">in your browser.</span>
             </h1>
             <p className="mt-4 max-w-xl text-sm text-muted-foreground md:text-base leading-relaxed">
-              Convert, query, profile and transform datasets with DuckDB-WASM.
+              {toolCount} browser-powered tools to convert, format, encode, hash, and transform data.
               No uploads, no servers, no accounts.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <Link
-                to="/sql-playground"
-                className="inline-flex items-center gap-2 border-2 border-border bg-foreground px-4 py-2 text-sm font-bold text-background transition-all hover:shadow-xs active:shadow-none"
-              >
-                SQL Playground <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
               <a
                 href="#tools"
+                className="inline-flex items-center gap-2 border-2 border-border bg-foreground px-4 py-2 text-sm font-bold text-background transition-all hover:shadow-xs active:shadow-none"
+              >
+                Browse All Tools <ArrowRight className="h-3.5 w-3.5" />
+              </a>
+              <Link
+                to="/sql-playground"
                 className="inline-flex items-center gap-2 border-2 border-border bg-background px-4 py-2 text-sm font-bold text-foreground transition-all hover:shadow-xs active:shadow-none"
               >
-                Browse Tools
-              </a>
+                SQL Playground
+              </Link>
             </div>
           </div>
         </div>

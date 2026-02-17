@@ -128,7 +128,7 @@ export default function JsonToTypescriptPage() {
           </div>
           <div className="space-y-2">
             <div className="flex justify-between"><label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">TypeScript Output</label>
-              <Button variant="ghost" size="sm" onClick={() => { navigator.clipboard.writeText(output); toast({ title: "Copied" }); }} disabled={!output}><Copy className="h-3 w-3 mr-1" /> Copy</Button></div>
+              <Button variant="default" size="sm" onClick={() => { navigator.clipboard.writeText(output); toast({ title: "Copied" }); }} disabled={!output}><Copy className="h-3 w-3 mr-1" /> Copy</Button></div>
             <textarea value={output} readOnly placeholder="TypeScript will appear…" className="w-full h-[400px] border border-border bg-muted/30 px-3 py-2 text-xs font-mono resize-none" spellCheck={false} />
           </div>
         </div>
