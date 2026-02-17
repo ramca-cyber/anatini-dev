@@ -71,7 +71,7 @@ function getSampleQueries(tables: LoadedTable[]): { label: string; sql: string }
 
 /** Parse an Excel file into multiple CSV Files, one per sheet */
 async function excelToSheetFiles(file: File): Promise<{ name: string; file: File }[]> {
-  const { read, utils } = await import("xlsx");
+  const { read, utils } = await import("@e965/xlsx");
   const buf = await file.arrayBuffer();
   const wb = read(buf);
   const results: { name: string; file: File }[] = [];

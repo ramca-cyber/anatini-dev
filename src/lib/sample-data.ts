@@ -159,7 +159,7 @@ export async function generateSampleParquet(db: import("@duckdb/duckdb-wasm").As
  * Generate a sample Excel file using SheetJS (xlsx).
  */
 export async function generateSampleExcel(): Promise<File> {
-  const XLSX = await import("xlsx");
+  const XLSX = await import("@e965/xlsx");
   const data = [
     ["id", "name", "email", "age", "city", "salary"],
     [1, "Alice Johnson", "alice@example.com", 32, "New York", 85000],
