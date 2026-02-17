@@ -36,7 +36,7 @@ export default function ExcelToCsvPage() {
 
   async function loadXlsx() {
     if (xlsxMod) return xlsxMod;
-    const mod = await import("xlsx");
+    const mod = await import("@e965/xlsx");
     setXlsxMod(mod);
     return mod;
   }
