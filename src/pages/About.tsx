@@ -1,5 +1,7 @@
+import { Link } from "react-router-dom";
 import { Bird, Shield, Code, Cpu } from "lucide-react";
 import { PageMeta } from "@/components/shared/PageMeta";
+import { toolCount } from "@/lib/tool-registry";
 
 const orgJsonLd = {
   "@context": "https://schema.org",
@@ -15,7 +17,7 @@ export default function About() {
     <>
       <PageMeta
         title="About — Anatini.dev"
-        description="Anatini.dev is a collection of free, offline browser-based data tools. No data ever leaves your machine — everything runs via WebAssembly."
+        description={`Anatini.dev is a collection of ${toolCount} free, offline browser-based data tools. No data ever leaves your machine — everything runs via WebAssembly.`}
       />
       <script
         type="application/ld+json"
@@ -34,9 +36,10 @@ export default function About() {
               <h2 className="text-xl font-semibold">Privacy First</h2>
             </div>
             <p className="text-muted-foreground leading-relaxed">
-              Anatini.dev is a collection of browser-based data tools that process everything locally. 
-              No data ever leaves your machine — there's no backend, no analytics, no tracking. 
+              Anatini.dev is a suite of {toolCount} browser-based data tools that process everything locally.
+              No data ever leaves your machine — there's no backend, no analytics, no tracking.
               Every computation happens via WebAssembly right in your browser tab.
+              Read our <Link to="/privacy" className="text-primary hover:underline font-medium">Privacy Policy</Link> for full details.
             </p>
           </section>
 
@@ -60,7 +63,7 @@ export default function About() {
               <h2 className="text-xl font-semibold">Open Source</h2>
             </div>
             <p className="text-muted-foreground leading-relaxed">
-              Built with open-source technologies. All processing is transparent and verifiable — 
+              Built with open-source technologies. All processing is transparent and verifiable —
               the code does exactly what it says, nothing more.
             </p>
           </section>
