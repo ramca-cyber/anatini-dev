@@ -3,6 +3,7 @@ import { highlightJson } from "@/components/shared/SyntaxHighlight";
 import { ErrorAlert } from "@/components/shared/ErrorAlert";
 import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 import { Code, Copy, Check, ChevronRight, ChevronDown } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 import { ToolPage } from "@/components/shared/ToolPage";
 import { DropZone } from "@/components/shared/DropZone";
 import { CrossToolLinks } from "@/components/shared/CrossToolLinks";
@@ -41,22 +42,40 @@ function countKeys(obj: unknown): number {
   return Object.keys(obj).reduce((sum, k) => sum + 1 + countKeys((obj as any)[k]), 0);
 }
 
+function typeBadge(value: unknown): { label: string; className: string } {
+  if (value === null) return { label: "null", className: "bg-muted text-muted-foreground" };
+  if (Array.isArray(value)) return { label: "array", className: "bg-blue-500/20 text-blue-600 dark:text-blue-400" };
+  if (typeof value === "object") return { label: "object", className: "bg-purple-500/20 text-purple-600 dark:text-purple-400" };
+  if (typeof value === "number") return { label: "number", className: "bg-green-500/20 text-green-600 dark:text-green-400" };
+  if (typeof value === "boolean") return { label: "bool", className: "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400" };
+  return { label: "string", className: "bg-primary/10 text-primary" };
+}
+
 function TreeNode({ node }: { node: JsonNode }) {
   const [open, setOpen] = useState(true);
   const isExpandable = node.value && typeof node.value === "object";
   const display = isExpandable
-    ? Array.isArray(node.value) ? `Array(${(node.value as unknown[]).length})` : `Object`
+    ? Array.isArray(node.value) ? `Array(${(node.value as unknown[]).length})` : `Object{${Object.keys(node.value as object).length}}`
     : JSON.stringify(node.value);
+  const badge = typeBadge(node.value);
 
   return (
-    <div style={{ paddingLeft: node.depth * 16 }} className="flex items-center gap-1 py-0.5 text-xs font-mono">
+    <div style={{ paddingLeft: node.depth * 16 }} className="flex items-center gap-1.5 py-0.5 text-xs font-mono group">
       {isExpandable ? (
         <button onClick={() => setOpen(!open)} className="text-muted-foreground hover:text-foreground">
           {open ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
         </button>
       ) : <span className="w-3" />}
-      <span className="text-foreground font-medium">{node.key}:</span>
+      <span className="text-foreground font-medium">{node.key}</span>
+      <span className={`px-1 py-0 rounded text-[10px] font-sans ${badge.className}`}>{badge.label}</span>
       <span className={isExpandable ? "text-muted-foreground" : "text-primary"}>{display}</span>
+      <button
+        onClick={() => { navigator.clipboard.writeText(node.path); toast({ title: `Copied: ${node.path}` }); }}
+        className="opacity-0 group-hover:opacity-100 transition-opacity ml-1"
+        title={`Copy path: ${node.path}`}
+      >
+        <Copy className="h-3 w-3 text-muted-foreground hover:text-primary" />
+      </button>
     </div>
   );
 }

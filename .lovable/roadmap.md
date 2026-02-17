@@ -73,10 +73,10 @@
 
 | # | Item | Status |
 |---|------|--------|
-| 4.1 | JSON Formatter — tree view + copy path | ⬚ |
-| 4.2 | Cron Parser — upgrade to visual generator | ⬚ |
-| 4.3 | Hash Generator — add MD5 + SHA-1 | ⬚ |
-| 4.4 | Data Profiler — quality score + export | ⬚ |
+| 4.1 | JSON Formatter — tree view + copy path | ✅ |
+| 4.2 | Cron Parser — upgrade to visual generator | ✅ |
+| 4.3 | Hash Generator — add MD5 + SHA-1 | ✅ |
+| 4.4 | Data Profiler — quality score + export | ✅ |
 
 ## Phase 5: Infrastructure
 
