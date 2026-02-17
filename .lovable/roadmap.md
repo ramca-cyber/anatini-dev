@@ -78,16 +78,7 @@
 | 4.3 | Hash Generator — add MD5 + SHA-1 | ✅ |
 | 4.4 | Data Profiler — quality score + export | ✅ |
 
-## Phase 5: Infrastructure
-
-| Item | Status |
-|------|--------|
-| Cloudflare Web Analytics | ⬚ |
-| AdSense (after 10K visits) | ⬚ |
-| Sitemap auto-generation from registry | ⬚ |
-| robots.txt AI crawler rules | ⬚ |
-
-## Phase 6: SEO & Content
+## Phase 5: SEO & Content
 
 | Item | Status |
 |------|--------|
@@ -102,7 +93,7 @@
 
 ## Implementation Order
 
-1. Phase 1 (Fixes) → 2. Phase 2 (UI/UX) → 3. Phase 4 (Enhancements) → 4. Phase 3 (New Tools, Tier 1 first) → 5. Phase 5+6 (Infra + SEO)
+1. Phase 1 (Fixes) → 2. Phase 2 (UI/UX) → 3. Phase 4 (Enhancements) → 4. Phase 3 (New Tools, Tier 1 first) → 5. Phase 5 (SEO)
 
 ## Removed (Not Feasible)
 - Astro migration (Lovable = Vite SPA only)
