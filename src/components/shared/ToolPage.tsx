@@ -1,7 +1,8 @@
 import { type ReactNode } from "react";
 import { type LucideIcon, Lock, ChevronRight, Home } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { PageMeta } from "@/components/shared/PageMeta";
+import { useToolSeo } from "@/hooks/useToolSeo";
 
 interface ToolPageProps {
   icon: LucideIcon;
@@ -11,11 +12,18 @@ interface ToolPageProps {
   metaDescription?: string;
   children: ReactNode;
   seoContent?: ReactNode;
+  toolId?: string;
 }
 
-export function ToolPage({ icon: Icon, title, description, pageTitle, metaDescription, children, seoContent }: ToolPageProps) {
+export function ToolPage({ icon: Icon, title, description, pageTitle, metaDescription, children, seoContent, toolId }: ToolPageProps) {
+  const { pathname } = useLocation();
+  const derivedToolId = toolId ?? pathname.replace(/^\//, "");
+  const lazy = useToolSeo(derivedToolId);
+  const resolvedSeoContent = seoContent || lazy.seoContent;
+  const resolvedMeta = metaDescription || lazy.metaDescription;
+
   const fullTitle = pageTitle ?? `${title} — Free, Offline | Anatini.dev`;
-  const fullDescription = metaDescription ?? description;
+  const fullDescription = resolvedMeta ?? description;
 
   // SoftwareApplication JSON-LD for each tool
   const toolJsonLd = {
@@ -75,7 +83,7 @@ export function ToolPage({ icon: Icon, title, description, pageTitle, metaDescri
         </div>
       </div>
       {children}
-      {seoContent && <aside aria-label="Learn more" className="mt-12">{seoContent}</aside>}
+      {resolvedSeoContent && <aside aria-label="Learn more" className="mt-12">{resolvedSeoContent}</aside>}
     </div>
   );
 }
