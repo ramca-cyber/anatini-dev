@@ -89,12 +89,16 @@ const WordCounterPage = lazy(() => import("./pages/WordCounterPage"));
 const GitignoreGeneratorPage = lazy(() => import("./pages/GitignoreGeneratorPage"));
 const SitemapGeneratorPage = lazy(() => import("./pages/SitemapGeneratorPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Privacy = lazy(() => import("./pages/Privacy"));
 const BlogIndex = lazy(() => import("./pages/blog/BlogIndex"));
 const HowToConvertCsvToParquet = lazy(() => import("./pages/blog/HowToConvertCsvToParquet"));
 const HowToQueryCsvWithSql = lazy(() => import("./pages/blog/HowToQueryCsvWithSql"));
 const OfflineDataQualityProfiler = lazy(() => import("./pages/blog/OfflineDataQualityProfiler"));
 const JsonVsCsvVsParquet = lazy(() => import("./pages/blog/JsonVsCsvVsParquet"));
 const HowToGenerateSqlFromCsv = lazy(() => import("./pages/blog/HowToGenerateSqlFromCsv"));
+const WhyJsonFormatterLeakData = lazy(() => import("./pages/blog/WhyJsonFormatterLeakData"));
+const DecodeJwtWithoutServer = lazy(() => import("./pages/blog/DecodeJwtWithoutServer"));
+const ClientSideVsServerSideTools = lazy(() => import("./pages/blog/ClientSideVsServerSideTools"));
 
 const queryClient = new QueryClient();
 
@@ -228,6 +232,7 @@ const App = () => (
                   <Route path="/schema" element={<Navigate to="/schema-generator" replace />} />
 
                   <Route path="/about" element={<About />} />
+                  <Route path="/privacy" element={<Privacy />} />
 
                   {/* Blog */}
                   <Route path="/blog" element={<BlogIndex />} />
@@ -236,6 +241,9 @@ const App = () => (
                   <Route path="/blog/offline-data-quality-profiler" element={<OfflineDataQualityProfiler />} />
                   <Route path="/blog/json-vs-csv-vs-parquet" element={<JsonVsCsvVsParquet />} />
                   <Route path="/blog/how-to-generate-sql-from-csv" element={<HowToGenerateSqlFromCsv />} />
+                  <Route path="/blog/why-json-formatter-leak-data" element={<WhyJsonFormatterLeakData />} />
+                  <Route path="/blog/decode-jwt-without-server" element={<DecodeJwtWithoutServer />} />
+                  <Route path="/blog/client-side-vs-server-side-tools" element={<ClientSideVsServerSideTools />} />
                 </Route>
                 <Route element={<Layout />}>
                   <Route path="*" element={<NotFound />} />
