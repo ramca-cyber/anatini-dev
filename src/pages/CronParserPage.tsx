@@ -4,6 +4,7 @@ import { ToolPage } from "@/components/shared/ToolPage";
 import { ErrorAlert } from "@/components/shared/ErrorAlert";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
+import { getToolSeo, getToolMetaDescription } from "@/lib/seo-content";
 
 const FIELD_NAMES = ["Minute", "Hour", "Day of Month", "Month", "Day of Week"] as const;
 const MONTH_NAMES = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -42,12 +43,8 @@ function parseCron(expr: string): { fields: string[]; description: string; nextR
     throw new Error(`Expected 5 fields (minute hour day month weekday), got ${parts.length}. Six-field (with seconds) is not standard cron.`);
   }
   const fields = parts.slice(0, 5);
-
-  // Build human description
   const descriptions = fields.map((f, i) => describeField(f, i));
   let human = "Runs ";
-
-  // Time
   const [min, hour] = fields;
   if (min !== "*" && hour !== "*" && !min.includes("/") && !hour.includes("/")) {
     human += `at ${hour.padStart(2, "0")}:${min.padStart(2, "0")}`;
@@ -55,17 +52,11 @@ function parseCron(expr: string): { fields: string[]; description: string; nextR
     human += descriptions[0].startsWith("every") ? descriptions[0] : `at minute ${descriptions[0]}`;
     human += `, ${descriptions[1].startsWith("every") ? descriptions[1] : `at hour ${descriptions[1]}`}`;
   }
-
-  // Day/Month/Weekday
   if (fields[2] !== "*") human += `, on day-of-month ${descriptions[2]}`;
   if (fields[3] !== "*") human += `, in ${descriptions[3]}`;
   if (fields[4] !== "*") human += `, on ${descriptions[4]}`;
-
   human += ".";
-
-  // Compute next N runs (simple simulation)
   const nextRuns = computeNextRuns(fields, 5);
-
   return { fields, description: human, nextRuns };
 }
 
@@ -75,7 +66,6 @@ function computeNextRuns(fields: string[], count: number): string[] {
   const d = new Date(now);
   d.setSeconds(0, 0);
   d.setMinutes(d.getMinutes() + 1);
-
   for (let i = 0; i < 525600 && results.length < count; i++) {
     if (matchesCron(d, fields)) {
       results.push(d.toLocaleString("en-US", { weekday: "short", year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }));
@@ -117,10 +107,36 @@ const presets = [
   { label: "Weekdays at 8:30am", value: "30 8 * * 1-5" },
 ];
 
+// Visual builder config
+const MINUTE_OPTIONS = ["*", "0", "15", "30", "45", "*/5", "*/10", "*/15", "*/30"];
+const HOUR_OPTIONS = ["*", "0", "1", "6", "8", "9", "12", "17", "18", "*/2", "*/4", "*/6"];
+const DOM_OPTIONS = ["*", "1", "15", "1,15"];
+const MONTH_OPTIONS = ["*", "1", "3", "6", "12", "1,4,7,10"];
+const DOW_OPTIONS = [
+  { label: "Every day", value: "*" },
+  { label: "Mon–Fri", value: "1-5" },
+  { label: "Sat–Sun", value: "0,6" },
+  { label: "Mon", value: "1" },
+  { label: "Wed", value: "3" },
+  { label: "Fri", value: "5" },
+];
+
 export default function CronParserPage() {
   const [input, setInput] = useState("0 9 * * 1-5");
   const [result, setResult] = useState<{ fields: string[]; description: string; nextRuns: string[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showBuilder, setShowBuilder] = useState(false);
+
+  // Builder state — derived from input when opened
+  const fields = input.trim().split(/\s+/);
+  const [bMin, bHour, bDom, bMonth, bDow] = fields.length >= 5 ? fields : ["*", "*", "*", "*", "*"];
+
+  function setField(idx: number, val: string) {
+    const f = input.trim().split(/\s+/);
+    while (f.length < 5) f.push("*");
+    f[idx] = val;
+    setInput(f.slice(0, 5).join(" "));
+  }
 
   const parse = useCallback(() => {
     setError(null);
@@ -138,38 +154,82 @@ export default function CronParserPage() {
   return (
     <ToolPage
       icon={Clock}
-      title="Cron Parser"
-      description="Parse cron expressions into plain English with next scheduled runs."
-      pageTitle="Cron Parser — Explain Cron Schedules | Anatini.dev"
-      metaDescription="Parse and explain cron expressions in plain English. See next scheduled runs, validate syntax. Free, offline, no data leaves your browser."
+      title="Cron Parser & Generator"
+      description="Parse, explain, and build cron expressions with a visual editor."
+      pageTitle="Cron Parser & Generator — Free, Offline | Anatini.dev"
+      metaDescription={getToolMetaDescription("cron-parser") ?? "Parse, explain, and build cron expressions. Visual generator with next run times. Free, offline, no data leaves your browser."}
+      seoContent={getToolSeo("cron-parser")}
     >
       <div className="space-y-4">
         <div className="flex flex-wrap items-center gap-2 border border-border bg-muted/30 px-4 py-3">
           <span className="text-xs text-muted-foreground mr-1">Presets:</span>
           {presets.map(p => (
-            <button
-              key={p.value}
-              onClick={() => setInput(p.value)}
-              className="border border-border px-2 py-1 text-xs font-mono hover:bg-secondary transition-colors"
-            >
-              {p.label}
-            </button>
+            <button key={p.value} onClick={() => setInput(p.value)} className="border border-border px-2 py-1 text-xs font-mono hover:bg-secondary transition-colors">{p.label}</button>
           ))}
+          <button onClick={() => setShowBuilder(!showBuilder)} className={`ml-auto border px-2 py-1 text-xs transition-colors ${showBuilder ? "border-primary bg-primary/10 text-primary" : "border-border hover:bg-secondary"}`}>
+            {showBuilder ? "Hide Builder" : "Visual Builder"}
+          </button>
         </div>
+
+        {/* Visual Builder */}
+        {showBuilder && (
+          <div className="border border-border bg-card p-4 space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Visual Builder</h3>
+            <div className="grid gap-3 sm:grid-cols-5">
+              {/* Minute */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-muted-foreground">Minute</label>
+                <div className="flex flex-wrap gap-1">
+                  {MINUTE_OPTIONS.map(opt => (
+                    <button key={opt} onClick={() => setField(0, opt)} className={`px-2 py-1 text-xs font-mono border transition-colors ${bMin === opt ? "border-primary bg-primary/10 text-primary" : "border-border hover:bg-secondary"}`}>{opt}</button>
+                  ))}
+                </div>
+              </div>
+              {/* Hour */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-muted-foreground">Hour</label>
+                <div className="flex flex-wrap gap-1">
+                  {HOUR_OPTIONS.map(opt => (
+                    <button key={opt} onClick={() => setField(1, opt)} className={`px-2 py-1 text-xs font-mono border transition-colors ${bHour === opt ? "border-primary bg-primary/10 text-primary" : "border-border hover:bg-secondary"}`}>{opt}</button>
+                  ))}
+                </div>
+              </div>
+              {/* Day of Month */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-muted-foreground">Day of Month</label>
+                <div className="flex flex-wrap gap-1">
+                  {DOM_OPTIONS.map(opt => (
+                    <button key={opt} onClick={() => setField(2, opt)} className={`px-2 py-1 text-xs font-mono border transition-colors ${bDom === opt ? "border-primary bg-primary/10 text-primary" : "border-border hover:bg-secondary"}`}>{opt}</button>
+                  ))}
+                </div>
+              </div>
+              {/* Month */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-muted-foreground">Month</label>
+                <div className="flex flex-wrap gap-1">
+                  {MONTH_OPTIONS.map(opt => (
+                    <button key={opt} onClick={() => setField(3, opt)} className={`px-2 py-1 text-xs font-mono border transition-colors ${bMonth === opt ? "border-primary bg-primary/10 text-primary" : "border-border hover:bg-secondary"}`}>{opt}</button>
+                  ))}
+                </div>
+              </div>
+              {/* Day of Week */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-muted-foreground">Day of Week</label>
+                <div className="flex flex-wrap gap-1">
+                  {DOW_OPTIONS.map(opt => (
+                    <button key={opt.value} onClick={() => setField(4, opt.value)} className={`px-2 py-1 text-xs font-mono border transition-colors ${bDow === opt.value ? "border-primary bg-primary/10 text-primary" : "border-border hover:bg-secondary"}`}>{opt.label}</button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="space-y-2">
           <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Cron Expression</label>
           <div className="flex gap-2">
-            <input
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              placeholder="* * * * *"
-              className="flex-1 border border-border bg-background px-3 py-2 text-lg font-mono tracking-widest focus:outline-none focus:ring-1 focus:ring-primary"
-              spellCheck={false}
-            />
-            <Button variant="outline" size="sm" onClick={() => {
-              if (result) { navigator.clipboard.writeText(result.description); toast({ title: "Description copied" }); }
-            }} disabled={!result}>
+            <input value={input} onChange={e => setInput(e.target.value)} placeholder="* * * * *" className="flex-1 border border-border bg-background px-3 py-2 text-lg font-mono tracking-widest focus:outline-none focus:ring-1 focus:ring-primary" spellCheck={false} />
+            <Button variant="outline" size="sm" onClick={() => { if (result) { navigator.clipboard.writeText(result.description); toast({ title: "Description copied" }); } }} disabled={!result}>
               <Copy className="h-3 w-3 mr-1" /> Copy
             </Button>
           </div>
@@ -184,13 +244,11 @@ export default function CronParserPage() {
 
         {result && (
           <div className="space-y-4">
-            {/* Description */}
             <div className="border border-border bg-card p-4">
               <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Human Description</div>
               <p className="text-sm font-medium">{result.description}</p>
             </div>
 
-            {/* Field breakdown */}
             <div className="border border-border bg-card p-4">
               <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Field Breakdown</div>
               <div className="grid gap-1">
@@ -204,7 +262,6 @@ export default function CronParserPage() {
               </div>
             </div>
 
-            {/* Next runs */}
             {result.nextRuns.length > 0 && (
               <div className="border border-border bg-card p-4">
                 <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Next {result.nextRuns.length} Runs</div>
