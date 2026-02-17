@@ -4,6 +4,21 @@ import { ArrowRight } from "lucide-react";
 
 const posts = [
   {
+    slug: "/blog/why-json-formatter-leak-data",
+    title: "Why Your JSON Formatter Might Be Leaking Your Data",
+    description: "Most online JSON formatters send your data to a server. Learn why client-side tools are safer and how to verify where your data goes.",
+  },
+  {
+    slug: "/blog/decode-jwt-without-server",
+    title: "How to Decode a JWT Without a Server",
+    description: "Learn how JWTs work and decode them entirely in your browser using base64url decoding. No server needed.",
+  },
+  {
+    slug: "/blog/client-side-vs-server-side-tools",
+    title: "Client-Side vs Server-Side Developer Tools: Privacy, Speed & Trade-offs",
+    description: "A detailed comparison of browser-based and server-based developer tools covering privacy, performance, and when to use each.",
+  },
+  {
     slug: "/blog/how-to-convert-csv-to-parquet",
     title: "How to Convert CSV to Parquet Online (Free, No Upload)",
     description: "Step-by-step guide to converting CSV files to Apache Parquet with compression options. 100% in your browser.",
