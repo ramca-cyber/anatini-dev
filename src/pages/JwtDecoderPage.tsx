@@ -65,7 +65,7 @@ export default function JwtDecoderPage() {
           <Button variant="outline" size="sm" onClick={() => setInput(SAMPLE)}>Load Sample</Button>
           <button onClick={() => { setInput(""); setDecoded(null); setError(null); }} className="text-xs text-muted-foreground hover:text-foreground">Clear</button>
           {isExpired !== null && (
-            <span className={`ml-auto px-2 py-1 text-xs font-bold rounded ${isExpired ? "bg-destructive/20 text-destructive" : "bg-green-500/20 text-green-700"}`}>
+            <span className={`ml-auto px-2 py-1 text-xs font-bold ${isExpired ? "bg-destructive/20 text-destructive" : "bg-green-500/20 text-green-700"}`}>
               {isExpired ? "Expired" : "Valid (not expired)"}
             </span>
           )}

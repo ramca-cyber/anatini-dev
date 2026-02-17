@@ -67,7 +67,7 @@ function TreeNode({ node }: { node: JsonNode }) {
         </button>
       ) : <span className="w-3" />}
       <span className="text-foreground font-medium">{node.key}</span>
-      <span className={`px-1 py-0 rounded text-[10px] font-sans ${badge.className}`}>{badge.label}</span>
+      <span className={`px-1 py-0 text-[10px] font-sans ${badge.className}`}>{badge.label}</span>
       <span className={isExpandable ? "text-muted-foreground" : "text-primary"}>{display}</span>
       <button
         onClick={() => { navigator.clipboard.writeText(node.path); toast({ title: `Copied: ${node.path}` }); }}
@@ -199,7 +199,7 @@ export default function JsonFormatterPage() {
         )}
 
         {stats && (
-          <div className="border-2 border-primary/30 bg-primary/5 px-3 py-2 text-xs text-primary font-medium rounded">
+          <div className="border-2 border-primary/30 bg-primary/5 px-3 py-2 text-xs text-primary font-medium">
             {stats}
           </div>
         )}

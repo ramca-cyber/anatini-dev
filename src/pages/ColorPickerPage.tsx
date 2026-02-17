@@ -132,7 +132,7 @@ export default function ColorPickerPage() {
                     </button>
                   </div>
                 ))}
-                <div className="h-16 rounded border border-border" style={{ backgroundColor: color.hex }} />
+                <div className="h-16 border border-border" style={{ backgroundColor: color.hex }} />
               </div>
             )}
           </div>
@@ -158,7 +158,7 @@ export default function ColorPickerPage() {
                     </button>
                   </div>
                 ))}
-                <div className="h-16 rounded border border-border" style={{ backgroundColor: color2.hex }} />
+                <div className="h-16 border border-border" style={{ backgroundColor: color2.hex }} />
               </div>
             )}
           </div>
@@ -170,15 +170,15 @@ export default function ColorPickerPage() {
             <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">WCAG Contrast</h3>
             <div className="flex items-center gap-6">
               <span className="text-2xl font-bold font-mono">{ratio.toFixed(2)}:1</span>
-              <span className={`px-2 py-1 text-xs font-bold rounded ${wcagAAA ? "bg-green-500/20 text-green-700" : wcagAA ? "bg-yellow-500/20 text-yellow-700" : "bg-destructive/20 text-destructive"}`}>
+              <span className={`px-2 py-1 text-xs font-bold ${wcagAAA ? "bg-green-500/20 text-green-700" : wcagAA ? "bg-yellow-500/20 text-yellow-700" : "bg-destructive/20 text-destructive"}`}>
                 {wcagAAA ? "AAA Pass" : wcagAA ? "AA Pass" : "Fail"}
               </span>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 rounded border border-border text-center text-sm font-bold" style={{ backgroundColor: color.hex, color: color2.hex }}>
+              <div className="p-4 border border-border text-center text-sm font-bold" style={{ backgroundColor: color.hex, color: color2.hex }}>
                 Text Preview
               </div>
-              <div className="p-4 rounded border border-border text-center text-sm font-bold" style={{ backgroundColor: color2.hex, color: color.hex }}>
+              <div className="p-4 border border-border text-center text-sm font-bold" style={{ backgroundColor: color2.hex, color: color.hex }}>
                 Text Preview
               </div>
             </div>

@@ -69,7 +69,7 @@ export function ToolPage({ icon: Icon, title, description, pageTitle, metaDescri
           <h1 className="text-2xl font-bold">{title}</h1>
           <p className="text-sm text-muted-foreground">{description}</p>
         </div>
-        <div className="ml-auto hidden items-center gap-1.5 rounded-full border border-border bg-secondary px-3 py-1 text-xs text-muted-foreground sm:flex">
+        <div className="ml-auto hidden items-center gap-1.5 border border-border bg-secondary px-3 py-1 text-xs text-muted-foreground sm:flex">
           <Lock className="h-3 w-3" />
           <span>Your data never leaves your browser</span>
         </div>

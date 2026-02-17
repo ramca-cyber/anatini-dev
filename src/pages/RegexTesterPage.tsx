@@ -108,7 +108,7 @@ export default function RegexTesterPage() {
             <p className="text-sm font-mono leading-relaxed whitespace-pre-wrap">
               {highlighted.map((part, i) =>
                 part.isMatch ? (
-                  <mark key={i} className="bg-primary/20 text-primary font-bold px-0.5 rounded">{part.text}</mark>
+                  <mark key={i} className="bg-primary/20 text-primary font-bold px-0.5">{part.text}</mark>
                 ) : (
                   <span key={i}>{part.text}</span>
                 )

@@ -86,7 +86,7 @@ export default function FaviconGeneratorPage() {
           <>
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border border-border bg-muted/30 px-4 py-3">
               <div className="flex items-center gap-3">
-                <img src={sourceUrl} alt="Source" className="h-10 w-10 rounded border border-border object-cover" />
+                <img src={sourceUrl} alt="Source" className="h-10 w-10 border border-border object-cover" />
                 <span className="text-sm font-medium">Source image loaded</span>
               </div>
               <div className="flex gap-2">
