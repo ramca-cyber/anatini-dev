@@ -30,7 +30,7 @@ function formatValue(val: any, type?: string): string {
     if (isDateType(type)) {
       // DuckDB DATE is days since epoch
       const d = new Date(val * 86400000);
-      return d.toISOString().slice(0, 10);
+      return isNaN(d.getTime()) ? String(val) : d.toISOString().slice(0, 10);
     }
     if (isTimestampType(type)) {
       // DuckDB timestamps: could be seconds, milliseconds, or microseconds
@@ -39,7 +39,7 @@ function formatValue(val: any, type?: string): string {
       else if (Math.abs(val) > 1e12) ms = val / 1000; // microseconds → ms
       else if (Math.abs(val) < 1e10) ms = val * 1000; // seconds → ms
       const d = new Date(ms);
-      return d.toISOString().replace("T", " ").replace("Z", "");
+      return isNaN(d.getTime()) ? String(val) : d.toISOString().replace("T", " ").replace("Z", "");
     }
     if (Number.isInteger(val) && Math.abs(val) >= 1000) return val.toLocaleString();
     return String(val);

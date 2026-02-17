@@ -68,20 +68,20 @@ describe("Page rendering", () => {
 
   it(`homepage has all ${toolCount} tool cards`, () => {
     renderWithRoute("/", <Index />);
-    // Check a tool from each category
-    expect(screen.getByText("CSV → Parquet")).toBeInTheDocument();
-    expect(screen.getByText("Delimited Viewer")).toBeInTheDocument();
-    expect(screen.getByText("Excel Viewer")).toBeInTheDocument();
-    expect(screen.getByText("XML Formatter")).toBeInTheDocument();
-    expect(screen.getByText("YAML Formatter")).toBeInTheDocument();
-    expect(screen.getByText("Log Viewer")).toBeInTheDocument();
-    expect(screen.getByText("Hex Viewer")).toBeInTheDocument();
-    expect(screen.getByText("CSV Inspector")).toBeInTheDocument();
-    expect(screen.getByText("SQL Playground")).toBeInTheDocument();
-    expect(screen.getByText("YAML → JSON")).toBeInTheDocument();
-    expect(screen.getByText("JSON → YAML")).toBeInTheDocument();
-    expect(screen.getByText("Regex Filter")).toBeInTheDocument();
-    expect(screen.getByText("Chart Builder")).toBeInTheDocument();
+    // Check a tool from each category using getAllByText to handle hero CTA duplicates
+    expect(screen.getAllByText("CSV → Parquet").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Delimited Viewer").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Excel Viewer").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("XML Formatter").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("YAML Formatter").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Log Viewer").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Hex Viewer").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("CSV Inspector").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("SQL Playground").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("YAML → JSON").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("JSON → YAML").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Regex Filter").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Chart Builder").length).toBeGreaterThanOrEqual(1);
   });
 
   it("renders NotFound page", () => {
@@ -116,16 +116,16 @@ describe("Page rendering", () => {
 });
 
 describe("Homepage consistency", () => {
-  it("hero badge, feature card, and meta all reference correct counts", () => {
+  it("hero badge and meta reference correct counts", () => {
     renderWithRoute("/", <Index />);
     expect(screen.getByText(new RegExp(`${toolCount} Tools`))).toBeInTheDocument();
-    expect(screen.getByText(new RegExp(`${toolCount} tools`))).toBeInTheDocument();
   });
 
-  it("all tool categories have cards", () => {
+  it("all tool categories have tool rows", () => {
     renderWithRoute("/", <Index />);
-    const allLinks = screen.getAllByText("Open");
-    expect(allLinks.length).toBe(toolCount);
+    // Each tool renders as a link with a truncated span — count them
+    const toolLinks = screen.getAllByRole("link").filter(el => el.getAttribute("href")?.startsWith("/") && el.querySelector(".truncate"));
+    expect(toolLinks.length).toBe(toolCount);
   });
 
   it("privacy section is present", () => {
