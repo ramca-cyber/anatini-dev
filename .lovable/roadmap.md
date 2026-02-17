@@ -21,13 +21,13 @@
 
 | # | Item | Status |
 |---|------|--------|
-| 2.1 | Apply converter UI philosophy to all 14 pages | ⬚ |
-| 2.2 | Auto-convert on file load (all converters) | ⬚ |
+| 2.1 | Apply converter UI philosophy to all 14 pages | ✅ (already compliant) |
+| 2.2 | Auto-convert on file load (all converters) | ✅ (already compliant) |
 | 2.3 | CrossToolLinks as quiet text | ✅ |
-| 2.4 | Loading overlay (absolute positioned) | ⬚ |
+| 2.4 | Loading overlay (absolute positioned) | ✅ (already compliant) |
 | 2.5 | "New file" confirmation dialog | ⬚ |
-| 2.6 | Navbar mega-menu redesign | ⬚ |
-| 2.7 | Footer condensed (top 5 per category) | ⬚ |
+| 2.6 | Navbar mega-menu redesign | ✅ |
+| 2.7 | Footer condensed (top 5 per category) | ✅ |
 
 ## Phase 3: New Tools
 
