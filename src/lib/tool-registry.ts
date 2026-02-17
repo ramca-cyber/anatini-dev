@@ -4,6 +4,7 @@ import {
   GitCompare, Search, Shuffle, Copy, AlignLeft, Columns3, Merge,
   TableProperties, RefreshCw, Filter, Scissors, Binary, ShieldOff, Hash, Wand2,
   CheckCircle2, Link2, Clock, ScanSearch,
+  QrCode, ImageDown, KeyRound, Regex, Palette, Fingerprint,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -94,6 +95,15 @@ export const toolCategories: ToolCategory[] = [
       { id: "url-encoder", path: "/url-encoder", label: "URL Encoder / Decoder", description: "Encode or decode URLs and query strings.", icon: Link2 },
       { id: "cron-parser", path: "/cron-parser", label: "Cron Parser", description: "Explain cron expressions in plain English.", icon: Clock },
       { id: "encoding-detector", path: "/encoding-detector", label: "Encoding Detector", description: "Detect charset, BOM, and line endings.", icon: ScanSearch },
+      { id: "qr-code", path: "/qr-code", label: "QR Code Generator", description: "Generate QR codes from text or URLs.", icon: QrCode },
+      { id: "image-compressor", path: "/image-compressor", label: "Image Compressor", description: "Compress images with quality control.", icon: ImageDown },
+      { id: "password-generator", path: "/password-generator", label: "Password Generator", description: "Cryptographically secure passwords.", icon: KeyRound },
+      { id: "regex-tester", path: "/regex-tester", label: "Regex Tester", description: "Test regex with match highlighting.", icon: Regex },
+      { id: "color-picker", path: "/color-picker", label: "Color Picker", description: "Hex/RGB/HSL converter & WCAG contrast.", icon: Palette },
+      { id: "text-diff", path: "/text-diff", label: "Text Diff", description: "Compare text blocks side-by-side.", icon: GitCompare },
+      { id: "uuid-generator", path: "/uuid-generator", label: "UUID Generator", description: "Generate v4 and v7 UUIDs.", icon: Fingerprint },
+      { id: "timestamp-converter", path: "/timestamp-converter", label: "Timestamp Converter", description: "Unix epoch ↔ human-readable dates.", icon: Clock },
+      { id: "jwt-decoder", path: "/jwt-decoder", label: "JWT Decoder", description: "Decode JWT header and payload.", icon: Shield },
     ],
   },
 ];
