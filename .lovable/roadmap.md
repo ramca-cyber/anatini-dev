@@ -25,7 +25,7 @@
 | 2.2 | Auto-convert on file load (all converters) | ✅ (already compliant) |
 | 2.3 | CrossToolLinks as quiet text | ✅ |
 | 2.4 | Loading overlay (absolute positioned) | ✅ (already compliant) |
-| 2.5 | "New file" confirmation dialog | ⬚ |
+| 2.5 | "New file" confirmation dialog | ✅ |
 | 2.6 | Navbar mega-menu redesign | ✅ |
 | 2.7 | Footer condensed (top 5 per category) | ✅ |
 
@@ -58,16 +58,16 @@
 ### Tier 3 — Niche
 | Tool | Status |
 |------|--------|
-| Meta Tag Generator | ⬚ |
-| robots.txt Generator | ⬚ |
-| Chmod Calculator | ⬚ |
-| JSON to TypeScript | ⬚ |
-| Lorem Ipsum Generator | ⬚ |
-| HTML Entity Encoder | ⬚ |
-| Slug Generator | ⬚ |
-| Word/Character Counter | ⬚ |
-| .gitignore Generator | ⬚ |
-| Sitemap Generator | ⬚ |
+| Meta Tag Generator | ✅ |
+| robots.txt Generator | ✅ |
+| Chmod Calculator | ✅ |
+| JSON to TypeScript | ✅ |
+| Lorem Ipsum Generator | ✅ |
+| HTML Entity Encoder | ✅ |
+| Slug Generator | ✅ |
+| Word/Character Counter | ✅ |
+| .gitignore Generator | ✅ |
+| Sitemap Generator | ✅ |
 
 ## Phase 4: Enhancements
 

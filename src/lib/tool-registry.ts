@@ -5,7 +5,8 @@ import {
   TableProperties, RefreshCw, Filter, Scissors, Binary, ShieldOff, Hash, Wand2,
   CheckCircle2, Link2, Clock, ScanSearch,
   QrCode, ImageDown, KeyRound, Regex, Palette, Fingerprint,
-  Image, FileCode,
+  Image, FileCode, Tags, Bot, ShieldCheck, FileCode2, Type, Code2,
+  Link as LinkIcon, FileText as FileTextAlt, GitBranch, Map,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -111,6 +112,16 @@ export const toolCategories: ToolCategory[] = [
       { id: "js-formatter", path: "/js-formatter", label: "JS Formatter", description: "Format or minify JavaScript code.", icon: FileCode },
       { id: "image-to-base64", path: "/image-to-base64", label: "Image to Base64", description: "Convert images to Base64 data URIs.", icon: Binary },
       { id: "markdown-editor", path: "/markdown-editor", label: "Markdown Editor", description: "Write and preview Markdown live.", icon: FileText },
+      { id: "meta-tag-generator", path: "/meta-tag-generator", label: "Meta Tag Generator", description: "Generate SEO, OG, and Twitter meta tags.", icon: Tags },
+      { id: "robots-txt-generator", path: "/robots-txt-generator", label: "robots.txt Generator", description: "Generate robots.txt with AI crawler rules.", icon: Bot },
+      { id: "chmod-calculator", path: "/chmod-calculator", label: "Chmod Calculator", description: "Calculate Unix file permissions.", icon: ShieldCheck },
+      { id: "json-to-typescript", path: "/json-to-typescript", label: "JSON to TypeScript", description: "Generate TS interfaces from JSON.", icon: FileCode2 },
+      { id: "lorem-ipsum", path: "/lorem-ipsum", label: "Lorem Ipsum Generator", description: "Generate placeholder text.", icon: Type },
+      { id: "html-entity-encoder", path: "/html-entity-encoder", label: "HTML Entity Encoder", description: "Encode and decode HTML entities.", icon: Code2 },
+      { id: "slug-generator", path: "/slug-generator", label: "Slug Generator", description: "Generate URL-friendly slugs.", icon: LinkIcon },
+      { id: "word-counter", path: "/word-counter", label: "Word & Character Counter", description: "Count words, chars, reading time.", icon: FileTextAlt },
+      { id: "gitignore-generator", path: "/gitignore-generator", label: ".gitignore Generator", description: "Generate .gitignore from templates.", icon: GitBranch },
+      { id: "sitemap-generator", path: "/sitemap-generator", label: "Sitemap Generator", description: "Build XML sitemaps visually.", icon: Map },
     ],
   },
 ];

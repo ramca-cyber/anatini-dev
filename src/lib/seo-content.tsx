@@ -671,6 +671,106 @@ const seoData: Record<string, { whatIs: { title: string; content: string }; howT
       { question: "Is my data uploaded?", answer: "No — all rendering uses the marked library in your browser." },
     ],
   },
+  "meta-tag-generator": {
+    metaDescription: "Generate HTML meta tags for SEO, Open Graph, and Twitter Cards. Preview and copy. Free, offline browser tool.",
+    whatIs: { title: "What are Meta Tags?", content: "Meta tags are HTML elements that provide metadata about a web page. They help search engines understand your content, control social media previews (Open Graph, Twitter Cards), and set browser behavior like viewport and charset." },
+    howToUse: "Fill in the form fields — title, description, URL, OG image, etc. The generated meta tags update live in the output panel. Copy or download the HTML snippet to paste into your page's <head>.",
+    faqs: [
+      { question: "What's the ideal title length?", answer: "Keep titles under 60 characters to avoid truncation in search results." },
+      { question: "What's the ideal description length?", answer: "Keep meta descriptions under 160 characters for best display in search results." },
+      { question: "Is my data uploaded?", answer: "No — all generation happens in your browser." },
+    ],
+  },
+  "robots-txt-generator": {
+    metaDescription: "Generate robots.txt files with presets for AI crawlers, search engines, and custom rules. Free, offline browser tool.",
+    whatIs: { title: "What is robots.txt?", content: "robots.txt is a text file placed at the root of a website that tells search engine crawlers which pages they can or cannot access. It's part of the Robots Exclusion Protocol and is the first file crawlers check before indexing." },
+    howToUse: "Choose a preset (Allow All, Block All, Block AI Crawlers, Standard) or build custom rules. Add user-agent directives, allow/disallow paths, sitemap URL, and crawl delay. Copy or download the result.",
+    faqs: [
+      { question: "Does robots.txt block indexing?", answer: "No — it only suggests crawlers not to access pages. To prevent indexing, use a noindex meta tag." },
+      { question: "How do I block AI crawlers?", answer: "Use the 'Block AI Crawlers' preset to add rules for GPTBot, CCBot, anthropic-ai, and Google-Extended." },
+      { question: "Is my data uploaded?", answer: "No — all generation happens in your browser." },
+    ],
+  },
+  "chmod-calculator": {
+    metaDescription: "Calculate Unix file permissions in octal and symbolic notation. Visual chmod calculator. Free, offline browser tool.",
+    whatIs: { title: "What is chmod?", content: "chmod (change mode) is a Unix command that sets file permissions. Permissions control read (r), write (w), and execute (x) access for the file owner, group, and others. Permissions are expressed in octal (e.g., 755) or symbolic (e.g., rwxr-xr-x) notation." },
+    howToUse: "Click permission checkboxes for Owner, Group, and Others. The octal and symbolic values update instantly. Use presets for common patterns like 644 (files) or 755 (directories). Copy the chmod command.",
+    faqs: [
+      { question: "What does 755 mean?", answer: "Owner can read/write/execute, group and others can read/execute. Common for directories and scripts." },
+      { question: "What does 644 mean?", answer: "Owner can read/write, group and others can only read. Common for regular files." },
+      { question: "Is my data uploaded?", answer: "No — all calculation happens in your browser." },
+    ],
+  },
+  "json-to-typescript": {
+    metaDescription: "Generate TypeScript interfaces or type aliases from JSON data. Free, offline browser tool.",
+    whatIs: { title: "What is JSON to TypeScript?", content: "This tool analyzes JSON data and generates TypeScript type definitions — either interfaces or type aliases. It infers types from values, handles nested objects and arrays, and creates sub-types for complex structures." },
+    howToUse: "Paste JSON in the input. Choose between interface or type alias style and set the root type name. TypeScript definitions generate automatically. Copy the output for your codebase.",
+    faqs: [
+      { question: "Does it handle nested objects?", answer: "Yes — nested objects are extracted as separate interfaces/types and referenced by name." },
+      { question: "Does it handle arrays?", answer: "Yes — array types are inferred from their contents. Mixed-type arrays use union types." },
+      { question: "Is my data uploaded?", answer: "No — all inference runs in your browser." },
+    ],
+  },
+  "lorem-ipsum": {
+    metaDescription: "Generate Lorem Ipsum placeholder text by paragraphs, sentences, or words. Free, offline browser tool.",
+    whatIs: { title: "What is Lorem Ipsum?", content: "Lorem Ipsum is dummy text used in design and typesetting since the 1500s. It provides realistic-looking text without meaningful content, helping designers focus on visual layout rather than reading the copy." },
+    howToUse: "Set the count and unit (paragraphs, sentences, or words). Toggle whether to start with the classic 'Lorem ipsum' opening. Copy the generated text for your mockups.",
+    faqs: [
+      { question: "Is it real Latin?", answer: "It's derived from a 1st-century BC text by Cicero, but scrambled and modified. It's not grammatically correct Latin." },
+      { question: "Can I generate plain sentences?", answer: "Yes — switch the unit to 'Sentences' or 'Words' for shorter text blocks." },
+      { question: "Is my data uploaded?", answer: "No — text is generated entirely in your browser." },
+    ],
+  },
+  "html-entity-encoder": {
+    metaDescription: "Encode and decode HTML entities, special characters, and Unicode. Reference table included. Free, offline browser tool.",
+    whatIs: { title: "What are HTML Entities?", content: "HTML entities are special codes used to represent characters that have special meaning in HTML (like < and >) or aren't on a standard keyboard (like © or €). They start with & and end with ; — e.g., &amp; for &." },
+    howToUse: "Paste text and choose Encode or Decode. In encode mode, choose 'Special Only' (just HTML-special chars) or 'All Non-ASCII' (every non-ASCII character). Use the reference table to copy common entities.",
+    faqs: [
+      { question: "When should I encode HTML entities?", answer: "When displaying user input in HTML to prevent XSS attacks, or when you need special characters in HTML source code." },
+      { question: "What's the difference between named and numeric entities?", answer: "Named entities (like &amp;) are human-readable. Numeric entities (like &#38;) work for any Unicode character." },
+      { question: "Is my data uploaded?", answer: "No — all encoding runs in your browser." },
+    ],
+  },
+  "slug-generator": {
+    metaDescription: "Generate URL-friendly slugs from text with custom separators and length limits. Free, offline browser tool.",
+    whatIs: { title: "What is a URL Slug?", content: "A slug is the URL-friendly version of a title or name. It typically uses lowercase letters, numbers, and hyphens — removing special characters, diacritics, and spaces. Good slugs are readable, short, and SEO-friendly." },
+    howToUse: "Type or paste titles (one per line). Choose separator (hyphen, underscore, dot), toggle lowercase, and set max length. Slugs generate automatically. Copy the results.",
+    faqs: [
+      { question: "How are accented characters handled?", answer: "Diacritics are stripped using Unicode normalization (NFD). 'café' becomes 'cafe'." },
+      { question: "Can I process multiple titles at once?", answer: "Yes — enter one title per line and all slugs generate simultaneously." },
+      { question: "Is my data uploaded?", answer: "No — all processing runs in your browser." },
+    ],
+  },
+  "word-counter": {
+    metaDescription: "Count words, characters, sentences, paragraphs, and estimate reading time. Free, offline browser tool.",
+    whatIs: { title: "What is a Word Counter?", content: "A word counter analyzes text to provide statistics like word count, character count, sentence count, paragraph count, and estimated reading/speaking time. Essential for writers, students, and content creators working with length requirements." },
+    howToUse: "Type or paste text in the input area. All statistics update in real time — words, characters (with and without spaces), sentences, paragraphs, lines, bytes, reading time, and speaking time. View top word frequency below.",
+    faqs: [
+      { question: "How is reading time calculated?", answer: "Based on an average reading speed of 200 words per minute." },
+      { question: "How is speaking time calculated?", answer: "Based on an average speaking speed of 130 words per minute." },
+      { question: "Is my data uploaded?", answer: "No — all analysis runs in your browser." },
+    ],
+  },
+  "gitignore-generator": {
+    metaDescription: "Generate .gitignore files from templates for Node.js, Python, Go, Rust, Java, and more. Free, offline browser tool.",
+    whatIs: { title: "What is .gitignore?", content: "A .gitignore file tells Git which files and directories to ignore when tracking changes. It prevents build artifacts, dependencies, secrets, and OS-specific files from being committed to version control." },
+    howToUse: "Select one or more templates (Node.js, Python, macOS, IDEs, etc.). Add custom patterns if needed. The .gitignore content generates automatically. Copy or download the file.",
+    faqs: [
+      { question: "Can I combine multiple templates?", answer: "Yes — select as many templates as you need and they'll be combined into one .gitignore file." },
+      { question: "Does it handle already-tracked files?", answer: "No — .gitignore only prevents untracked files from being added. Use 'git rm --cached' to untrack files already committed." },
+      { question: "Is my data uploaded?", answer: "No — all generation happens in your browser." },
+    ],
+  },
+  "sitemap-generator": {
+    metaDescription: "Build XML sitemaps with URLs, priorities, change frequencies, and last modified dates. Free, offline browser tool.",
+    whatIs: { title: "What is a Sitemap?", content: "An XML sitemap lists all important URLs on your website, helping search engines discover and index your content. It includes metadata like last modification date, change frequency, and priority for each URL." },
+    howToUse: "Set your base URL, then add pages with their paths, last modified dates, change frequency, and priority. The XML sitemap generates live. Copy or download the sitemap.xml file.",
+    faqs: [
+      { question: "How many URLs can a sitemap have?", answer: "The protocol allows up to 50,000 URLs per sitemap and 50MB uncompressed. For larger sites, use a sitemap index." },
+      { question: "Where should I put sitemap.xml?", answer: "At the root of your domain (e.g., https://example.com/sitemap.xml) and reference it in your robots.txt." },
+      { question: "Is my data uploaded?", answer: "No — all generation happens in your browser." },
+    ],
+  },
 };
 
 export function getToolSeo(toolId: string) {
