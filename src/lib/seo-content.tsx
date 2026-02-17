@@ -521,6 +521,96 @@ const seoData: Record<string, { whatIs: { title: string; content: string }; howT
       { question: "Is my data uploaded?", answer: "No — all analysis happens locally in your browser. No data is sent to any server." },
     ],
   },
+  "qr-code": {
+    metaDescription: "Generate QR codes from text, URLs, or any data. Customize size and error correction. Download as PNG. Free, offline browser tool.",
+    whatIs: { title: "What is a QR Code?", content: "A QR (Quick Response) code is a two-dimensional barcode that can encode text, URLs, contact info, or any data up to ~4,296 characters. QR codes are widely used for sharing links, payments, and authentication." },
+    howToUse: "Enter text or a URL and a QR code is generated instantly. Adjust the size and error correction level as needed. Download as PNG or copy to clipboard.",
+    faqs: [
+      { question: "What error correction levels are available?", answer: "Low (7%), Medium (15%), Quartile (25%), and High (30%). Higher levels make the code more resilient to damage but increase density." },
+      { question: "What's the maximum data size?", answer: "QR codes can encode up to ~4,296 alphanumeric characters or ~2,953 bytes of binary data." },
+      { question: "Is my data uploaded?", answer: "No — QR codes are generated entirely in your browser using the Canvas API." },
+    ],
+  },
+  "image-compressor": {
+    metaDescription: "Compress images with quality control. Output JPEG, PNG, or WebP. See file size reduction. Free, offline browser tool.",
+    whatIs: { title: "What is Image Compression?", content: "Image compression reduces file size by removing redundant data or reducing quality. Lossy compression (JPEG, WebP) achieves higher ratios by discarding some visual information. This tool uses the browser's Canvas API for fast, private compression." },
+    howToUse: "Upload an image, choose the output format (JPEG, PNG, or WebP) and quality level. The tool instantly compresses and shows a side-by-side comparison with file size reduction percentage. Download the compressed image.",
+    faqs: [
+      { question: "Which format gives the best compression?", answer: "WebP typically offers 25-35% smaller files than JPEG at equivalent quality. JPEG is best for photos, PNG for graphics with transparency." },
+      { question: "What's the maximum image size?", answer: "There's no hard limit, but very large images (50MP+) may be slow due to Canvas API constraints in the browser." },
+      { question: "Is my image uploaded?", answer: "No — compression happens entirely in your browser using the Canvas API. Your images never leave your machine." },
+    ],
+  },
+  "password-generator": {
+    metaDescription: "Generate cryptographically secure passwords with customizable length and character rules. Free, offline browser tool.",
+    whatIs: { title: "What is a Password Generator?", content: "A password generator creates random, unpredictable passwords using a cryptographically secure random number generator. Strong passwords combine uppercase, lowercase, digits, and symbols to resist brute-force attacks." },
+    howToUse: "Adjust the length, character sets, and count. Passwords are generated instantly using crypto.getRandomValues(). Copy individual passwords or all at once. A strength meter shows the security level.",
+    faqs: [
+      { question: "How secure are the passwords?", answer: "Passwords are generated using the Web Crypto API (crypto.getRandomValues), which provides cryptographically secure random numbers — the same standard used by password managers." },
+      { question: "What password length should I use?", answer: "16+ characters with mixed character types is recommended. For high-security accounts, use 20+ characters." },
+      { question: "Are passwords stored anywhere?", answer: "No — passwords are generated in your browser's memory and never stored or transmitted." },
+    ],
+  },
+  "regex-tester": {
+    metaDescription: "Test regular expressions with real-time match highlighting and capture group display. Free, offline browser tool.",
+    whatIs: { title: "What is a Regex Tester?", content: "A regex tester lets you write and test regular expressions against sample text in real time. It highlights matches, shows capture groups, and provides match details — essential for building and debugging patterns." },
+    howToUse: "Enter a regex pattern and flags, then type or paste test text. Matches are highlighted instantly. View capture groups, match positions, and count. Use presets for common patterns like email, URL, or IP addresses.",
+    faqs: [
+      { question: "Which regex flavor does it use?", answer: "JavaScript's built-in RegExp engine, which supports most common features including lookahead, lookbehind, named groups, and Unicode properties." },
+      { question: "Does it support flags?", answer: "Yes — use g (global), i (case-insensitive), m (multiline), s (dotAll), and u (unicode) flags." },
+      { question: "Is my data uploaded?", answer: "No — regex testing happens entirely in your browser. No data is sent to any server." },
+    ],
+  },
+  "color-picker": {
+    metaDescription: "Convert between Hex, RGB, and HSL color formats. Check WCAG contrast ratios. Free, offline browser tool.",
+    whatIs: { title: "What is a Color Picker?", content: "A color picker lets you select, convert, and analyze colors across different formats (Hex, RGB, HSL). It also checks WCAG contrast ratios between color pairs to ensure text readability and accessibility compliance." },
+    howToUse: "Enter a color in any format (hex, RGB, or HSL) or use the native color picker. The tool converts between all formats instantly. Add a second color to check WCAG contrast ratio and see text previews.",
+    faqs: [
+      { question: "What is WCAG contrast?", answer: "WCAG (Web Content Accessibility Guidelines) defines minimum contrast ratios: 4.5:1 for normal text (AA), 7:1 for enhanced (AAA). This ensures text is readable for people with visual impairments." },
+      { question: "What color formats are supported?", answer: "Hex (#3b82f6), RGB (rgb(59, 130, 246)), and HSL (hsl(217, 91%, 60%)) formats." },
+      { question: "Is my data uploaded?", answer: "No — all color conversion is pure math running in your browser." },
+    ],
+  },
+  "text-diff": {
+    metaDescription: "Compare two text blocks with line-by-line diff highlighting. See additions, deletions, and unchanged lines. Free, offline browser tool.",
+    whatIs: { title: "What is Text Diff?", content: "Text diff compares two text blocks line by line, highlighting additions, deletions, and unchanged lines. It's essential for code review, document comparison, and tracking changes between versions." },
+    howToUse: "Paste or type text in both the Original and Modified panels. The diff is computed automatically, showing a unified view with color-coded additions (green) and deletions (red). Copy the diff output in unified format.",
+    faqs: [
+      { question: "What algorithm does it use?", answer: "A Longest Common Subsequence (LCS) algorithm that produces optimal line-by-line diffs, similar to Git's diff output." },
+      { question: "Can I compare files?", answer: "Currently supports pasted text. For file comparison, paste file contents into the text areas." },
+      { question: "Is my data uploaded?", answer: "No — all comparison happens locally in your browser. No data is sent to any server." },
+    ],
+  },
+  "uuid-generator": {
+    metaDescription: "Generate UUID v4 (random) and v7 (timestamp-based) identifiers. Bulk generation up to 100. Free, offline browser tool.",
+    whatIs: { title: "What is a UUID?", content: "A UUID (Universally Unique Identifier) is a 128-bit identifier guaranteed to be unique across time and space. UUIDv4 uses random numbers, while UUIDv7 embeds a timestamp for sortability — ideal for database primary keys." },
+    howToUse: "Select v4 or v7, set the count (1-100), and click Generate. UUIDs are created instantly using crypto.randomUUID(). Copy individual UUIDs or all at once. Toggle uppercase formatting as needed.",
+    faqs: [
+      { question: "What's the difference between v4 and v7?", answer: "UUIDv4 is fully random. UUIDv7 embeds a Unix timestamp in the first 48 bits, making UUIDs sortable by creation time — better for database indexes." },
+      { question: "Are these UUIDs truly unique?", answer: "Yes — with 122 random bits (v4) the probability of collision is astronomically low. You'd need to generate 1 billion UUIDs per second for 85 years to have a 50% chance of one collision." },
+      { question: "Is my data uploaded?", answer: "No — UUIDs are generated using the Web Crypto API entirely in your browser." },
+    ],
+  },
+  "timestamp-converter": {
+    metaDescription: "Convert between Unix epoch timestamps and human-readable dates. Supports seconds and milliseconds. Free, offline browser tool.",
+    whatIs: { title: "What is a Unix Timestamp?", content: "A Unix timestamp (epoch time) counts the number of seconds since January 1, 1970 (UTC). It's the standard way computers represent time internally. This tool converts between epoch numbers and human-readable date formats." },
+    howToUse: "Enter a Unix timestamp (seconds or milliseconds — auto-detected) or an ISO date string to see all date representations. Switch to Date → Epoch mode to convert a date picker value to timestamps. Click 'Now' for the current time.",
+    faqs: [
+      { question: "Does it handle milliseconds?", answer: "Yes — timestamps under 10^12 are treated as seconds, larger values as milliseconds. Both are converted correctly." },
+      { question: "What timezone is used?", answer: "UTC is shown alongside your local timezone. ISO 8601 output is always in UTC (Z suffix)." },
+      { question: "Is my data uploaded?", answer: "No — all conversion uses JavaScript's built-in Date object in your browser." },
+    ],
+  },
+  "jwt-decoder": {
+    metaDescription: "Decode JWT tokens to inspect header, payload, and claims. See expiration status. Free, offline browser tool — no data leaves your machine.",
+    whatIs: { title: "What is a JWT?", content: "A JSON Web Token (JWT) is a compact, URL-safe token format used for authentication and information exchange. It consists of three Base64URL-encoded parts: header (algorithm), payload (claims), and signature. This tool decodes the first two parts without verification." },
+    howToUse: "Paste a JWT token and the header and payload are decoded instantly. Timestamp claims (iat, exp, nbf) are shown as human-readable dates. An expiration badge shows whether the token is still valid.",
+    faqs: [
+      { question: "Does it verify the signature?", answer: "No — this tool only decodes the header and payload. Signature verification requires the secret key or public key, which should never be shared in a browser tool." },
+      { question: "Is it safe to paste my JWT here?", answer: "Yes — the token is decoded entirely in your browser using atob(). Nothing is sent to any server. However, never share JWTs in untrusted online tools." },
+      { question: "What claims are annotated?", answer: "Standard time claims (iat, exp, nbf) are automatically converted to human-readable dates." },
+    ],
+  },
 };
 
 export function getToolSeo(toolId: string) {

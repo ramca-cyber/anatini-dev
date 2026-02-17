@@ -63,6 +63,15 @@ const JsonDiffPage = lazy(() => import("./pages/JsonDiffPage"));
 const UrlEncoderPage = lazy(() => import("./pages/UrlEncoderPage"));
 const CronParserPage = lazy(() => import("./pages/CronParserPage"));
 const EncodingDetectorPage = lazy(() => import("./pages/EncodingDetectorPage"));
+const QrCodePage = lazy(() => import("./pages/QrCodePage"));
+const ImageCompressorPage = lazy(() => import("./pages/ImageCompressorPage"));
+const PasswordGeneratorPage = lazy(() => import("./pages/PasswordGeneratorPage"));
+const RegexTesterPage = lazy(() => import("./pages/RegexTesterPage"));
+const ColorPickerPage = lazy(() => import("./pages/ColorPickerPage"));
+const TextDiffPage = lazy(() => import("./pages/TextDiffPage"));
+const UuidGeneratorPage = lazy(() => import("./pages/UuidGeneratorPage"));
+const TimestampConverterPage = lazy(() => import("./pages/TimestampConverterPage"));
+const JwtDecoderPage = lazy(() => import("./pages/JwtDecoderPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const BlogIndex = lazy(() => import("./pages/blog/BlogIndex"));
 const HowToConvertCsvToParquet = lazy(() => import("./pages/blog/HowToConvertCsvToParquet"));
@@ -165,6 +174,15 @@ const App = () => (
                   <Route path="/url-encoder" element={<UrlEncoderPage />} />
                   <Route path="/cron-parser" element={<CronParserPage />} />
                   <Route path="/encoding-detector" element={<EncodingDetectorPage />} />
+                  <Route path="/qr-code" element={<QrCodePage />} />
+                  <Route path="/image-compressor" element={<ImageCompressorPage />} />
+                  <Route path="/password-generator" element={<PasswordGeneratorPage />} />
+                  <Route path="/regex-tester" element={<RegexTesterPage />} />
+                  <Route path="/color-picker" element={<ColorPickerPage />} />
+                  <Route path="/text-diff" element={<TextDiffPage />} />
+                  <Route path="/uuid-generator" element={<UuidGeneratorPage />} />
+                  <Route path="/timestamp-converter" element={<TimestampConverterPage />} />
+                  <Route path="/jwt-decoder" element={<JwtDecoderPage />} />
 
                   {/* Legacy */}
                   <Route path="/dataset-diff" element={<DiffPage />} />

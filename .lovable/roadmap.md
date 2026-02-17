@@ -34,15 +34,15 @@
 ### Tier 1 — High Priority
 | Tool | Approach | Status |
 |------|----------|--------|
-| QR Code Generator | `qrcode` npm, canvas | ⬚ |
-| Image Compressor | Canvas API, quality slider | ⬚ |
-| Password Generator | `crypto.getRandomValues()` | ⬚ |
-| Regex Tester | Match highlighting, capture groups | ⬚ |
-| Color Picker/Converter | Hex/RGB/HSL, WCAG contrast | ⬚ |
-| Text Diff | `diff` npm, side-by-side | ⬚ |
-| UUID Generator | `crypto.randomUUID()` v4/v7 | ⬚ |
-| Timestamp/Epoch Converter | JS Date, bidirectional | ⬚ |
-| JWT Decoder | `atob()` base64url decode | ⬚ |
+| QR Code Generator | `qrcode` npm, canvas | ✅ |
+| Image Compressor | Canvas API, quality slider | ✅ |
+| Password Generator | `crypto.getRandomValues()` | ✅ |
+| Regex Tester | Match highlighting, capture groups | ✅ |
+| Color Picker/Converter | Hex/RGB/HSL, WCAG contrast | ✅ |
+| Text Diff | LCS diff, side-by-side | ✅ |
+| UUID Generator | `crypto.randomUUID()` v4/v7 | ✅ |
+| Timestamp/Epoch Converter | JS Date, bidirectional | ✅ |
+| JWT Decoder | `atob()` base64url decode | ✅ |
 
 ### Tier 2 — Medium Priority
 | Tool | Approach | Status |
