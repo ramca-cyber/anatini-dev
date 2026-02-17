@@ -1,12 +1,14 @@
 
 
-## Remove Phase 5 from Roadmap
+## Remove `/vs/*` Comparison Pages from Roadmap
 
-A simple update to the roadmap file to remove the Phase 5 (Infrastructure) section entirely, since those items (Cloudflare Analytics, AdSense, sitemap auto-generation, robots.txt AI crawler rules) are not priorities right now.
+The `/vs/*` comparison pages are being dropped as not a good fit for the project.
 
-### Changes
+### Change
 
 **File: `.lovable/roadmap.md`**
-- Delete the entire Phase 5 section (Cloudflare Web Analytics, AdSense, Sitemap auto-generation, robots.txt AI crawler rules)
-- Update the "Implementation Order" line to remove the Phase 5 reference
+- Remove the `/vs/* comparison pages` todo item from Phase 5
+- This makes Phase 5 (SEO & Content) fully complete
+- Update the Phase 5 table so all items show a checkmark
+- The entire roadmap will then be 100% done
 
