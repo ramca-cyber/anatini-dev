@@ -27,8 +27,8 @@ export default {
   				'Noto Sans',
   				'sans-serif'
   			],
-  			mono: [
-  				'Space Mono',
+  		mono: [
+  				'JetBrains Mono',
   				'ui-monospace',
   				'SFMono-Regular',
   				'Menlo',

@@ -3,15 +3,53 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, ArrowUp, ArrowDown } from "lucide-react";
 
-function formatValue(val: any): string {
+const DATE_TYPES = new Set(["DATE", "DATE32", "Date32"]);
+const TIMESTAMP_TYPES = new Set([
+  "TIMESTAMP", "TIMESTAMP_S", "TIMESTAMP_MS", "TIMESTAMP_NS",
+  "TIMESTAMP WITH TIME ZONE", "TIMESTAMP_TZ",
+  "Timestamp(Microsecond, None)", "Timestamp(Millisecond, None)",
+  "Timestamp(Second, None)", "Timestamp(Nanosecond, None)",
+]);
+
+function isDateType(type?: string): boolean {
+  if (!type) return false;
+  return DATE_TYPES.has(type) || type.startsWith("Date");
+}
+
+function isTimestampType(type?: string): boolean {
+  if (!type) return false;
+  return TIMESTAMP_TYPES.has(type) || type.toUpperCase().startsWith("TIMESTAMP");
+}
+
+function formatValue(val: any, type?: string): string {
   if (val === null || val === undefined) return "";
   if (typeof val === "boolean") return val ? "true" : "false";
   if (typeof val === "bigint") return val.toLocaleString();
   if (typeof val === "number") {
+    // Handle DuckDB date/timestamp epoch values
+    if (isDateType(type)) {
+      // DuckDB DATE is days since epoch
+      const d = new Date(val * 86400000);
+      return d.toISOString().slice(0, 10);
+    }
+    if (isTimestampType(type)) {
+      // DuckDB timestamps: could be seconds, milliseconds, or microseconds
+      let ms = val;
+      if (Math.abs(val) > 1e15) ms = val / 1000; // nanoseconds → ms
+      else if (Math.abs(val) > 1e12) ms = val / 1000; // microseconds → ms
+      else if (Math.abs(val) < 1e10) ms = val * 1000; // seconds → ms
+      const d = new Date(ms);
+      return d.toISOString().replace("T", " ").replace("Z", "");
+    }
     if (Number.isInteger(val) && Math.abs(val) >= 1000) return val.toLocaleString();
     return String(val);
   }
   if (typeof val === "object") {
+    // Handle Date objects (Arrow may parse dates as Date objects)
+    if (val instanceof Date) {
+      if (isDateType(type)) return val.toISOString().slice(0, 10);
+      return val.toISOString().replace("T", " ").replace("Z", "");
+    }
     try {
       return JSON.stringify(val, (_key, v) => typeof v === "bigint" ? v.toString() : v);
     } catch {
@@ -115,10 +153,10 @@ export function DataTable({ columns, rows, types, maxRows = 100, className, rowC
                     <span className="text-destructive/40">∅</span>
                   ) : val === "" ? (
                     <span className="text-destructive/40 italic">empty</span>
-                  ) : typeof val === "object" ? (
-                    <span className="max-w-[200px] truncate block text-muted-foreground">{formatValue(val)}</span>
+                  ) : typeof val === "object" && !(val instanceof Date) ? (
+                    <span className="max-w-[200px] truncate block text-muted-foreground">{formatValue(val, types?.[j])}</span>
                   ) : (
-                    <span className="max-w-[300px] truncate block">{formatValue(val)}</span>
+                    <span className="max-w-[300px] truncate block">{formatValue(val, types?.[j])}</span>
                   )}
                 </td>
               ))}

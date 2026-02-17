@@ -1,84 +1,14 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { PageMeta } from "@/components/shared/PageMeta";
-import {
-  ArrowRight, FileSpreadsheet, Braces, Terminal, BarChart3, Database,
-  FileJson, Table, Eye, Code, FileText, Zap, Lock, Globe, Shield,
-  GitCompare, Search, Shuffle, Copy, AlignLeft, Columns3, Merge,
-  TableProperties, RefreshCw, Filter, Scissors, Binary, ShieldOff, Hash, Wand2,
-  CheckCircle2, Link2, Clock, ScanSearch,
-} from "lucide-react";
-
-const converters = [
-  { path: "/csv-to-parquet", title: "CSV → Parquet", description: "Columnar format with compression options.", icon: FileSpreadsheet },
-  { path: "/parquet-to-csv", title: "Parquet → CSV", description: "Export Parquet back to CSV.", icon: FileSpreadsheet },
-  { path: "/csv-to-json", title: "CSV → JSON", description: "Array or NDJSON output format.", icon: FileJson },
-  { path: "/json-to-csv", title: "JSON → CSV", description: "Flatten and convert to CSV.", icon: Table },
-  { path: "/json-to-parquet", title: "JSON → Parquet", description: "Compress JSON into Parquet.", icon: Braces },
-  { path: "/parquet-to-json", title: "Parquet → JSON", description: "Export Parquet to JSON/NDJSON.", icon: Braces },
-  { path: "/excel-to-csv", title: "Excel → CSV", description: "Multi-sheet export to CSV.", icon: FileText },
-  { path: "/csv-to-excel", title: "CSV → Excel", description: "Combine CSVs into a workbook.", icon: FileText },
-  { path: "/yaml-to-json", title: "YAML → JSON", description: "Convert YAML documents to JSON.", icon: RefreshCw },
-  { path: "/json-to-yaml", title: "JSON → YAML", description: "Convert JSON documents to YAML.", icon: RefreshCw },
-  { path: "/xml-to-json", title: "XML → JSON", description: "Convert XML documents to JSON.", icon: RefreshCw },
-  { path: "/json-to-xml", title: "JSON → XML", description: "Convert JSON documents to XML.", icon: RefreshCw },
-  { path: "/toml-to-json", title: "TOML → JSON", description: "Convert TOML config files to JSON.", icon: RefreshCw },
-  { path: "/json-to-toml", title: "JSON → TOML", description: "Convert JSON to TOML config format.", icon: RefreshCw },
-];
-
-const viewers = [
-  { path: "/csv-viewer", title: "Delimited Viewer", description: "View CSV, TSV, DSV with search & stats.", icon: Eye },
-  { path: "/parquet-viewer", title: "Parquet Viewer", description: "Data, schema, and metadata tabs.", icon: Eye },
-  { path: "/excel-viewer", title: "Excel Viewer", description: "Browse XLSX/XLS with multi-sheet tabs.", icon: Eye },
-  { path: "/json-formatter", title: "JSON Formatter", description: "Format, minify, validate with tree view.", icon: Code },
-  { path: "/xml-formatter", title: "XML Formatter", description: "Format, minify, validate XML documents.", icon: Code },
-  { path: "/yaml-formatter", title: "YAML Formatter", description: "Format, minify, validate YAML documents.", icon: Code },
-  { path: "/log-viewer", title: "Log Viewer", description: "Filter logs by level, regex search, line numbers.", icon: FileText },
-  { path: "/hex-viewer", title: "Hex Viewer", description: "Inspect binary files with hex + ASCII columns.", icon: Binary },
-];
-
-const inspectors = [
-  { path: "/csv-inspector", title: "CSV Inspector", description: "Analyze encoding, structure & quality.", icon: Search },
-  { path: "/json-inspector", title: "JSON Inspector", description: "Analyze schema, types & consistency.", icon: Search },
-  { path: "/parquet-inspector", title: "Parquet Inspector", description: "View metadata, row groups & stats.", icon: Search },
-];
-
-const analysis = [
-  { path: "/sql-playground", title: "SQL Playground", description: "Full DuckDB SQL against local files.", icon: Terminal },
-  { path: "/data-profiler", title: "Data Profiler", description: "Nulls, duplicates, outliers, quality.", icon: BarChart3 },
-  { path: "/json-flattener", title: "JSON Flattener", description: "Flatten nested JSON to tabular.", icon: Braces },
-  { path: "/schema-generator", title: "Schema Generator", description: "DDL for Postgres, MySQL, BigQuery.", icon: Database },
-  { path: "/csv-to-sql", title: "CSV → SQL", description: "CREATE TABLE + INSERT statements.", icon: Database },
-  { path: "/dataset-diff", title: "Dataset Diff", description: "Compare two dataset versions.", icon: GitCompare },
-  { path: "/data-sampler", title: "Data Sampler", description: "Random or stratified sampling.", icon: Shuffle },
-  { path: "/deduplicator", title: "Deduplicator", description: "Find and remove duplicate rows.", icon: Copy },
-  { path: "/sql-formatter", title: "SQL Formatter", description: "Beautify and minify SQL queries.", icon: Code },
-  { path: "/markdown-table", title: "Markdown Table", description: "Convert data to Markdown tables.", icon: AlignLeft },
-  { path: "/column-editor", title: "Column Editor", description: "Select, reorder, rename columns.", icon: Columns3 },
-  { path: "/data-merge", title: "Data Merge", description: "Join two datasets visually.", icon: Merge },
-  { path: "/pivot-table", title: "Pivot Table", description: "Build pivot tables with aggregation.", icon: TableProperties },
-  { path: "/chart-builder", title: "Chart Builder", description: "Bar, line, area, pie, scatter charts.", icon: BarChart3 },
-  { path: "/regex-filter", title: "Regex Filter", description: "Filter rows by regex pattern.", icon: Filter },
-  { path: "/csv-splitter", title: "CSV Splitter", description: "Split files by row count or column.", icon: Scissors },
-  { path: "/data-anonymizer", title: "Data Anonymizer", description: "Mask, redact, or fake sensitive columns.", icon: ShieldOff },
-  { path: "/data-generator", title: "Data Generator", description: "Generate realistic sample datasets.", icon: Wand2 },
-];
-
-const utilities = [
-  { path: "/base64", title: "Base64 Encoder/Decoder", description: "Encode and decode Base64 text or files.", icon: Binary },
-  { path: "/hash-generator", title: "Hash Generator", description: "SHA-256, SHA-384, SHA-512 from text or files.", icon: Hash },
-  { path: "/json-schema-validator", title: "JSON Schema Validator", description: "Validate JSON against schema definitions.", icon: CheckCircle2 },
-  { path: "/json-diff", title: "JSON Diff", description: "Compare two JSON documents side-by-side.", icon: GitCompare },
-  { path: "/url-encoder", title: "URL Encoder / Decoder", description: "Encode or decode URLs and query strings.", icon: Link2 },
-  { path: "/cron-parser", title: "Cron Parser", description: "Explain cron expressions in plain English.", icon: Clock },
-  { path: "/encoding-detector", title: "Encoding Detector", description: "Detect charset, BOM, and line endings.", icon: ScanSearch },
-];
+import { ArrowRight, Search, Zap, Lock, Globe, Shield } from "lucide-react";
+import { toolCategories, toolCount, featureListString } from "@/lib/tool-registry";
 
 const features = [
   { icon: Zap, title: "WebAssembly Speed", description: "DuckDB compiled to WASM — analytical queries in milliseconds, not seconds." },
   { icon: Lock, title: "Zero Data Leaks", description: "No uploads. No servers. No tracking. Your files never leave your machine." },
   { icon: Globe, title: "No Install Needed", description: "Works in any modern browser. No extensions, no CLI, no accounts required." },
-  { icon: Shield, title: "Free Forever", description: "All 50 tools, no paywalls. Open source philosophy, closed-source simplicity." },
+  { icon: Shield, title: "Free Forever", description: `All ${toolCount} tools, no paywalls. Open source philosophy, closed-source simplicity.` },
 ];
 
 const jsonLd = {
@@ -86,14 +16,14 @@ const jsonLd = {
   "@type": "WebApplication",
   "name": "Anatini.dev",
   "url": "https://anatini.dev",
-  "description": "Free, offline browser-powered data tools. Convert, query, profile and transform datasets using DuckDB-WASM.",
+  "description": `Free, offline browser-powered data tools. Convert, query, profile and transform datasets using DuckDB-WASM.`,
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "Any",
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-  "featureList": "CSV to Parquet, Parquet to CSV, CSV to JSON, JSON to CSV, JSON to Parquet, Parquet to JSON, Excel to CSV, CSV to Excel, YAML to JSON, JSON to YAML, XML to JSON, JSON to XML, TOML to JSON, JSON to TOML, Delimited Viewer, Parquet Viewer, Excel Viewer, JSON Formatter, XML Formatter, YAML Formatter, Log Viewer, Hex Viewer, CSV Inspector, JSON Inspector, Parquet Inspector, SQL Playground, Data Profiler, JSON Flattener, Schema Generator, CSV to SQL, Dataset Diff, Data Sampler, Deduplicator, SQL Formatter, Markdown Table, Column Editor, Data Merge, Pivot Table, Chart Builder, Regex Filter, CSV Splitter, Base64 Encoder/Decoder, Data Anonymizer, Hash Generator, Data Generator, JSON Schema Validator, JSON Diff, URL Encoder/Decoder, Cron Parser, Encoding Detector",
+  "featureList": featureListString,
 };
 
-function ToolCard({ path, title, description, icon: Icon }: { path: string; title: string; description: string; icon: React.ElementType }) {
+function ToolCard({ path, label, description, icon: Icon }: { path: string; label: string; description: string; icon: React.ElementType }) {
   return (
     <Link
       to={path}
@@ -101,7 +31,7 @@ function ToolCard({ path, title, description, icon: Icon }: { path: string; titl
     >
       <div className="flex items-center gap-2">
         <Icon className="h-5 w-5 text-foreground" />
-        <h3 className="text-sm font-bold tracking-tight">{title}</h3>
+        <h3 className="text-sm font-bold tracking-tight">{label}</h3>
       </div>
       <p className="text-xs text-muted-foreground leading-relaxed">{description}</p>
       <div className="mt-auto flex items-center gap-1 pt-1 text-xs font-bold text-foreground opacity-0 transition-opacity group-hover:opacity-100">
@@ -115,32 +45,23 @@ export default function Index() {
   const [search, setSearch] = useState("");
   const lowerSearch = search.toLowerCase();
 
-  const allCategories = [
-    { label: "Converters", items: converters },
-    { label: "Viewers & Formatters", items: viewers },
-    { label: "Inspectors", items: inspectors },
-    { label: "Analysis & SQL", items: analysis },
-    { label: "Utilities", items: utilities },
-  ];
-
-  const filteredCategories = allCategories
+  const filteredCategories = toolCategories
     .map((cat) => ({
       ...cat,
-      items: cat.items.filter(
+      tools: cat.tools.filter(
         (t) =>
-          t.title.toLowerCase().includes(lowerSearch) ||
+          t.label.toLowerCase().includes(lowerSearch) ||
           t.description.toLowerCase().includes(lowerSearch)
       ),
     }))
-    .filter((cat) => cat.items.length > 0);
+    .filter((cat) => cat.tools.length > 0);
 
   return (
     <>
       <PageMeta
         title="Anatini.dev — Free, Offline Data Tools for Developers"
-        description="50 free, offline data tools powered by DuckDB-WASM. Convert CSV, Parquet, JSON, Excel, XML, TOML. Query with SQL. Profile datasets. All in your browser."
+        description={`${toolCount} free, offline data tools powered by DuckDB-WASM. Convert CSV, Parquet, JSON, Excel, XML, TOML. Query with SQL. Profile datasets. All in your browser.`}
       />
-
 
       {/* JSON-LD */}
       <script
@@ -153,7 +74,7 @@ export default function Index() {
         <div className="container py-12 md:py-20 lg:py-28">
           <div className="mx-auto max-w-3xl">
             <div className="inline-block border-2 border-border bg-secondary px-3 py-1 text-xs font-bold uppercase tracking-widest mb-6">
-             50 Tools · 100% Offline · Zero Tracking
+             {toolCount} Tools · 100% Offline · Zero Tracking
             </div>
             <h1 className="text-4xl font-bold leading-[1.1] tracking-tight md:text-5xl lg:text-6xl">
               Data tools that run
@@ -207,7 +128,7 @@ export default function Index() {
             </div>
             {search && (
               <span className="text-xs text-muted-foreground">
-                {filteredCategories.reduce((s, c) => s + c.items.length, 0)} results
+                {filteredCategories.reduce((s, c) => s + c.tools.length, 0)} results
               </span>
             )}
           </div>
@@ -217,7 +138,7 @@ export default function Index() {
               <h2 className="mb-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">{cat.label}</h2>
               <div className="mb-4 h-0.5 w-12 bg-foreground" />
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {cat.items.map((t) => <ToolCard key={t.path} {...t} />)}
+                {cat.tools.map((t) => <ToolCard key={t.path} {...t} />)}
               </div>
             </div>
           ))}

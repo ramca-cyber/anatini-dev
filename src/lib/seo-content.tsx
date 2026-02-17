@@ -481,6 +481,46 @@ const seoData: Record<string, { whatIs: { title: string; content: string }; howT
       { question: "Is my data uploaded?", answer: "No — everything runs locally in your browser. No data is sent to any server." },
     ],
   },
+  "json-diff": {
+    metaDescription: "Compare two JSON documents side-by-side with inline diff highlighting. Free, offline browser tool. No data leaves your machine.",
+    whatIs: { title: "What is JSON Diff?", content: "JSON Diff compares two JSON documents and highlights added, removed, and changed values. It's useful for debugging API responses, comparing configurations, or reviewing data changes between versions." },
+    howToUse: "Paste or upload two JSON documents in the left and right panels. The tool automatically compares them and highlights differences with color-coded markers. Added values are green, removed are red, and changed values show both old and new.",
+    faqs: [
+      { question: "Does it handle nested objects?", answer: "Yes — the diff engine recursively compares nested objects and arrays, showing differences at every level of the structure." },
+      { question: "Can I compare large JSON files?", answer: "Yes, but very large files (10MB+) may be slow since the comparison runs entirely in your browser." },
+      { question: "Is my data uploaded?", answer: "No — everything runs locally in your browser. No data is sent to any server." },
+    ],
+  },
+  "url-encoder": {
+    metaDescription: "Encode and decode URLs and query strings. Handles special characters, Unicode, and percent-encoding. Free, offline browser tool.",
+    whatIs: { title: "What is URL Encoding?", content: "URL encoding (percent-encoding) converts special characters into a format that can be safely transmitted in URLs. Characters like spaces, ampersands, and Unicode are replaced with percent-encoded equivalents (e.g., space → %20)." },
+    howToUse: "Paste text or a URL in the input area. Click Encode to percent-encode special characters, or Decode to convert percent-encoded text back to readable form. Supports both full URL encoding and component-only encoding.",
+    faqs: [
+      { question: "What's the difference between encodeURI and encodeURIComponent?", answer: "encodeURI preserves URL structure characters like :, /, and ?. encodeURIComponent encodes everything except letters, digits, and a few special characters — use it for query parameter values." },
+      { question: "Does it handle Unicode?", answer: "Yes — Unicode characters are properly encoded using UTF-8 percent-encoding sequences." },
+      { question: "Is my data uploaded?", answer: "No — encoding and decoding happen entirely in your browser using built-in JavaScript functions." },
+    ],
+  },
+  "cron-parser": {
+    metaDescription: "Parse and explain cron expressions in plain English. See next run times and validate syntax. Free, offline browser tool.",
+    whatIs: { title: "What is a Cron Expression?", content: "A cron expression is a string of five or six fields that defines a schedule for recurring tasks. Fields represent minute, hour, day of month, month, and day of week. Cron is used in Unix systems, CI/CD pipelines, and cloud schedulers." },
+    howToUse: "Enter a cron expression (e.g., '0 9 * * 1-5') and the tool instantly explains it in plain English, shows the next scheduled run times, and validates the syntax. Common presets are available for quick reference.",
+    faqs: [
+      { question: "Does it support 6-field cron?", answer: "The tool primarily supports standard 5-field cron expressions. Some extended formats with seconds may be partially supported." },
+      { question: "Can I see future run times?", answer: "Yes — the tool calculates and displays the next several scheduled execution times based on the current date." },
+      { question: "Is my data uploaded?", answer: "No — all parsing happens locally in your browser. No data is sent to any server." },
+    ],
+  },
+  "encoding-detector": {
+    metaDescription: "Detect file character encoding, BOM markers, and line endings. Identify UTF-8, ASCII, ISO-8859, and more. Free, offline browser tool.",
+    whatIs: { title: "What is Encoding Detection?", content: "Character encoding detection identifies how text is stored in a file — whether it's UTF-8, ASCII, ISO-8859-1, or another encoding. It also detects Byte Order Marks (BOM) and line ending styles (LF, CRLF, CR), which are critical for cross-platform compatibility." },
+    howToUse: "Drop or upload any text file. The tool analyzes the raw bytes to detect the character encoding, presence of a BOM marker, and line ending format. Results show confidence levels and recommendations.",
+    faqs: [
+      { question: "How accurate is the detection?", answer: "Detection is heuristic-based and highly accurate for common encodings like UTF-8 and ASCII. Less common encodings may require manual verification." },
+      { question: "What encodings are supported?", answer: "UTF-8, ASCII, ISO-8859-1 (Latin-1), UTF-16 (LE/BE), and Windows-1252 are the most commonly detected. BOM detection covers UTF-8, UTF-16, and UTF-32 variants." },
+      { question: "Is my data uploaded?", answer: "No — all analysis happens locally in your browser. No data is sent to any server." },
+    ],
+  },
 };
 
 export function getToolSeo(toolId: string) {
