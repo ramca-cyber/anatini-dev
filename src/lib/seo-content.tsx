@@ -611,6 +611,66 @@ const seoData: Record<string, { whatIs: { title: string; content: string }; howT
       { question: "What claims are annotated?", answer: "Standard time claims (iat, exp, nbf) are automatically converted to human-readable dates." },
     ],
   },
+  "svg-to-png": {
+    metaDescription: "Convert SVG files to PNG with custom scale (1×–8×) and transparent or colored backgrounds. Free, offline browser tool.",
+    whatIs: { title: "What is SVG to PNG conversion?", content: "SVG (Scalable Vector Graphics) is a vector format that scales without losing quality. Converting SVG to PNG creates a raster image at a specific resolution — useful for sharing, uploading to platforms that don't support SVG, or using as app icons." },
+    howToUse: "Upload an SVG file or paste SVG markup. Adjust the scale (1×–8×), toggle transparent background, and click Re-render. Download the PNG result.",
+    faqs: [
+      { question: "What scale should I use?", answer: "1× gives you the original SVG dimensions. 2× is good for retina displays. 4×–8× for high-resolution print or icons." },
+      { question: "Is quality preserved?", answer: "SVG is vector, so the PNG is pixel-perfect at any scale. Higher scales produce larger, sharper images." },
+      { question: "Is my data uploaded?", answer: "No — rendering happens entirely in your browser using the Canvas API." },
+    ],
+  },
+  "favicon-generator": {
+    metaDescription: "Generate favicons in all standard sizes (16×16 to 512×512) from any image. Free, offline browser tool.",
+    whatIs: { title: "What is a Favicon?", content: "A favicon is the small icon displayed in browser tabs, bookmarks, and mobile home screens. Modern apps need multiple sizes: 16×16 for tabs, 180×180 for Apple Touch, and 512×512 for PWA manifests." },
+    howToUse: "Upload any image (PNG, JPG, SVG, WebP). The tool generates all standard favicon sizes. Download individual sizes or all at once.",
+    faqs: [
+      { question: "What sizes are generated?", answer: "16, 32, 48, 64, 128, 180 (Apple Touch), 192, and 512 (PWA) pixels." },
+      { question: "What format should my source image be?", answer: "Square images work best. PNG or SVG with transparent backgrounds are ideal." },
+      { question: "Is my data uploaded?", answer: "No — all resizing uses the Canvas API in your browser." },
+    ],
+  },
+  "css-formatter": {
+    metaDescription: "Format or minify CSS with proper indentation and structure. Free, offline browser tool.",
+    whatIs: { title: "What is a CSS Formatter?", content: "A CSS formatter takes messy, minified, or inconsistently indented CSS and restructures it with proper indentation, line breaks, and spacing. It can also minify CSS by removing all unnecessary whitespace and comments." },
+    howToUse: "Paste CSS in the input area. Choose Format or Minify mode, select indentation (2 spaces, 4 spaces, or tabs), and the output updates live.",
+    faqs: [
+      { question: "Does it handle nested CSS?", answer: "Yes — it properly indents nested rules including media queries, keyframes, and container queries." },
+      { question: "Are comments preserved?", answer: "Comments are removed during processing for cleaner output." },
+      { question: "Is my data uploaded?", answer: "No — all formatting runs in your browser." },
+    ],
+  },
+  "js-formatter": {
+    metaDescription: "Format or minify JavaScript code with customizable indentation. Free, offline browser tool.",
+    whatIs: { title: "What is a JavaScript Formatter?", content: "A JavaScript formatter restructures code with consistent indentation, line breaks after braces and semicolons, and proper spacing. Minification removes all unnecessary characters to reduce file size." },
+    howToUse: "Paste JavaScript code, choose Format or Minify, select your indentation style, and the output updates live. Copy or download the result.",
+    faqs: [
+      { question: "Does it handle ES6+ syntax?", answer: "It handles braces, brackets, strings (including template literals), and comments. Complex syntax is preserved as-is." },
+      { question: "Is it the same as Prettier?", answer: "This is a lightweight formatter for quick cleanup. For production use, consider Prettier or ESLint." },
+      { question: "Is my data uploaded?", answer: "No — all formatting runs in your browser." },
+    ],
+  },
+  "image-to-base64": {
+    metaDescription: "Convert images to Base64 data URIs for embedding in HTML and CSS. Free, offline browser tool.",
+    whatIs: { title: "What is Image to Base64?", content: "Base64 encoding converts binary image data into ASCII text. Data URIs embed the encoded image directly in HTML or CSS, eliminating HTTP requests. This is useful for small icons, email templates, and single-file HTML pages." },
+    howToUse: "Upload an image (PNG, JPG, GIF, WebP, SVG). The tool generates the Base64 string, data URI, and ready-to-use HTML/CSS snippets. Copy any format with one click.",
+    faqs: [
+      { question: "Will the Base64 be larger than the original?", answer: "Yes — Base64 encoding increases size by ~33%. It's best for small images under 10KB." },
+      { question: "What formats are supported?", answer: "PNG, JPEG, GIF, WebP, SVG, ICO, and BMP." },
+      { question: "Is my data uploaded?", answer: "No — the FileReader API processes everything in your browser." },
+    ],
+  },
+  "markdown-editor": {
+    metaDescription: "Write and preview Markdown with live rendering. Split, edit, and preview modes. Free, offline browser tool.",
+    whatIs: { title: "What is Markdown?", content: "Markdown is a lightweight markup language for formatting text. It uses simple syntax like # for headings, ** for bold, and - for lists. It's widely used in README files, documentation, blogs, and developer tools." },
+    howToUse: "Type or paste Markdown in the editor. The preview updates in real time. Switch between Split, Edit, and Preview modes. Open .md files, copy HTML output, or download the Markdown file.",
+    faqs: [
+      { question: "Does it support GitHub-Flavored Markdown?", answer: "Yes — tables, task lists, strikethrough, and fenced code blocks are all supported via GFM." },
+      { question: "Can I open existing .md files?", answer: "Yes — click 'Open .md' to load a Markdown file from your computer." },
+      { question: "Is my data uploaded?", answer: "No — all rendering uses the marked library in your browser." },
+    ],
+  },
 };
 
 export function getToolSeo(toolId: string) {

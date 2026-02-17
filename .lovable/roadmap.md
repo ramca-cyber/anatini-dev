@@ -47,13 +47,13 @@
 ### Tier 2 — Medium Priority
 | Tool | Approach | Status |
 |------|----------|--------|
-| Cron Generator (upgrade) | Visual toggles, extend existing | ⬚ |
-| SVG to PNG | Canvas `drawImage()` | ⬚ |
-| Favicon Generator | Canvas resize, zip download | ⬚ |
-| CSS Formatter | Lightweight CSS parser | ⬚ |
-| JS Formatter | `prettier` standalone | ⬚ |
-| Image to Base64 | FileReader `readAsDataURL()` | ⬚ |
-| Markdown Editor | `marked` or `markdown-it` | ⬚ |
+| Cron Generator (upgrade) | Visual toggles, extend existing | ✅ |
+| SVG to PNG | Canvas `drawImage()` | ✅ |
+| Favicon Generator | Canvas resize, individual downloads | ✅ |
+| CSS Formatter | Lightweight CSS parser | ✅ |
+| JS Formatter | Brace-aware formatter | ✅ |
+| Image to Base64 | FileReader `readAsDataURL()` | ✅ |
+| Markdown Editor | `marked` library | ✅ |
 
 ### Tier 3 — Niche
 | Tool | Status |

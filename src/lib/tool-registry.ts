@@ -5,6 +5,7 @@ import {
   TableProperties, RefreshCw, Filter, Scissors, Binary, ShieldOff, Hash, Wand2,
   CheckCircle2, Link2, Clock, ScanSearch,
   QrCode, ImageDown, KeyRound, Regex, Palette, Fingerprint,
+  Image, FileCode,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -104,6 +105,12 @@ export const toolCategories: ToolCategory[] = [
       { id: "uuid-generator", path: "/uuid-generator", label: "UUID Generator", description: "Generate v4 and v7 UUIDs.", icon: Fingerprint },
       { id: "timestamp-converter", path: "/timestamp-converter", label: "Timestamp Converter", description: "Unix epoch ↔ human-readable dates.", icon: Clock },
       { id: "jwt-decoder", path: "/jwt-decoder", label: "JWT Decoder", description: "Decode JWT header and payload.", icon: Shield },
+      { id: "svg-to-png", path: "/svg-to-png", label: "SVG to PNG", description: "Convert SVG to PNG with custom scale.", icon: ImageDown },
+      { id: "favicon-generator", path: "/favicon-generator", label: "Favicon Generator", description: "Generate favicons in all standard sizes.", icon: Image },
+      { id: "css-formatter", path: "/css-formatter", label: "CSS Formatter", description: "Format or minify CSS stylesheets.", icon: Code },
+      { id: "js-formatter", path: "/js-formatter", label: "JS Formatter", description: "Format or minify JavaScript code.", icon: FileCode },
+      { id: "image-to-base64", path: "/image-to-base64", label: "Image to Base64", description: "Convert images to Base64 data URIs.", icon: Binary },
+      { id: "markdown-editor", path: "/markdown-editor", label: "Markdown Editor", description: "Write and preview Markdown live.", icon: FileText },
     ],
   },
 ];

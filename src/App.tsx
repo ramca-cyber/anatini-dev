@@ -72,6 +72,12 @@ const TextDiffPage = lazy(() => import("./pages/TextDiffPage"));
 const UuidGeneratorPage = lazy(() => import("./pages/UuidGeneratorPage"));
 const TimestampConverterPage = lazy(() => import("./pages/TimestampConverterPage"));
 const JwtDecoderPage = lazy(() => import("./pages/JwtDecoderPage"));
+const SvgToPngPage = lazy(() => import("./pages/SvgToPngPage"));
+const FaviconGeneratorPage = lazy(() => import("./pages/FaviconGeneratorPage"));
+const CssFormatterPage = lazy(() => import("./pages/CssFormatterPage"));
+const JsFormatterPage = lazy(() => import("./pages/JsFormatterPage"));
+const ImageToBase64Page = lazy(() => import("./pages/ImageToBase64Page"));
+const MarkdownEditorPage = lazy(() => import("./pages/MarkdownEditorPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const BlogIndex = lazy(() => import("./pages/blog/BlogIndex"));
 const HowToConvertCsvToParquet = lazy(() => import("./pages/blog/HowToConvertCsvToParquet"));
@@ -183,6 +189,12 @@ const App = () => (
                   <Route path="/uuid-generator" element={<UuidGeneratorPage />} />
                   <Route path="/timestamp-converter" element={<TimestampConverterPage />} />
                   <Route path="/jwt-decoder" element={<JwtDecoderPage />} />
+                  <Route path="/svg-to-png" element={<SvgToPngPage />} />
+                  <Route path="/favicon-generator" element={<FaviconGeneratorPage />} />
+                  <Route path="/css-formatter" element={<CssFormatterPage />} />
+                  <Route path="/js-formatter" element={<JsFormatterPage />} />
+                  <Route path="/image-to-base64" element={<ImageToBase64Page />} />
+                  <Route path="/markdown-editor" element={<MarkdownEditorPage />} />
 
                   {/* Legacy */}
                   <Route path="/dataset-diff" element={<DiffPage />} />
