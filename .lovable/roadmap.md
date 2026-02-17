@@ -86,7 +86,6 @@
 | Blog: "Decode JWT Without a Server" | ✅ |
 | Blog: "Client-Side vs Server-Side Tools" | ✅ |
 | /privacy page | ✅ |
-| /vs/* comparison pages | ⬚ |
 | FAQ schema on all new tools | ✅ |
 
 ---
