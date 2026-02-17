@@ -1,68 +1,6 @@
 import { Lock, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
-
-const toolGrid = {
-  Converters: [
-    { label: "CSV → Parquet", path: "/csv-to-parquet" },
-    { label: "Parquet → CSV", path: "/parquet-to-csv" },
-    { label: "CSV → JSON", path: "/csv-to-json" },
-    { label: "JSON → CSV", path: "/json-to-csv" },
-    { label: "JSON → Parquet", path: "/json-to-parquet" },
-    { label: "Parquet → JSON", path: "/parquet-to-json" },
-    { label: "Excel → CSV", path: "/excel-to-csv" },
-    { label: "CSV → Excel", path: "/csv-to-excel" },
-    { label: "YAML → JSON", path: "/yaml-to-json" },
-    { label: "JSON → YAML", path: "/json-to-yaml" },
-    { label: "XML → JSON", path: "/xml-to-json" },
-    { label: "JSON → XML", path: "/json-to-xml" },
-    { label: "TOML → JSON", path: "/toml-to-json" },
-    { label: "JSON → TOML", path: "/json-to-toml" },
-  ],
-  "Viewers & Formatters": [
-    { label: "Delimited Viewer", path: "/csv-viewer" },
-    { label: "Parquet Viewer", path: "/parquet-viewer" },
-    { label: "Excel Viewer", path: "/excel-viewer" },
-    { label: "JSON Formatter", path: "/json-formatter" },
-    { label: "XML Formatter", path: "/xml-formatter" },
-    { label: "YAML Formatter", path: "/yaml-formatter" },
-    { label: "Log Viewer", path: "/log-viewer" },
-    { label: "Hex Viewer", path: "/hex-viewer" },
-  ],
-  Inspectors: [
-    { label: "CSV Inspector", path: "/csv-inspector" },
-    { label: "JSON Inspector", path: "/json-inspector" },
-    { label: "Parquet Inspector", path: "/parquet-inspector" },
-  ],
-  "Analysis & SQL": [
-    { label: "SQL Playground", path: "/sql-playground" },
-    { label: "Data Profiler", path: "/data-profiler" },
-    { label: "JSON Flattener", path: "/json-flattener" },
-    { label: "Schema Generator", path: "/schema-generator" },
-    { label: "CSV → SQL", path: "/csv-to-sql" },
-    { label: "Dataset Diff", path: "/dataset-diff" },
-    { label: "Data Sampler", path: "/data-sampler" },
-    { label: "Deduplicator", path: "/deduplicator" },
-    { label: "SQL Formatter", path: "/sql-formatter" },
-    { label: "Markdown Table", path: "/markdown-table" },
-    { label: "Column Editor", path: "/column-editor" },
-    { label: "Data Merge", path: "/data-merge" },
-    { label: "Pivot Table", path: "/pivot-table" },
-    { label: "Chart Builder", path: "/chart-builder" },
-    { label: "Regex Filter", path: "/regex-filter" },
-    { label: "CSV Splitter", path: "/csv-splitter" },
-    { label: "Data Anonymizer", path: "/data-anonymizer" },
-    { label: "Data Generator", path: "/data-generator" },
-  ],
-  Utilities: [
-    { label: "Base64 Encoder/Decoder", path: "/base64" },
-    { label: "Hash Generator", path: "/hash-generator" },
-    { label: "JSON Schema Validator", path: "/json-schema-validator" },
-    { label: "JSON Diff", path: "/json-diff" },
-    { label: "URL Encoder/Decoder", path: "/url-encoder" },
-    { label: "Cron Parser", path: "/cron-parser" },
-    { label: "Encoding Detector", path: "/encoding-detector" },
-  ],
-};
+import { navToolGroups } from "@/lib/tool-registry";
 
 export function Footer() {
   return (
@@ -70,11 +8,11 @@ export function Footer() {
       <div className="container py-10">
         {/* Tool grid */}
         <div className="grid grid-cols-2 gap-6 sm:grid-cols-4 mb-8">
-          {Object.entries(toolGrid).map(([category, tools]) => (
-            <div key={category}>
-              <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">{category}</h4>
+          {navToolGroups.map((group) => (
+            <div key={group.label}>
+              <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">{group.label}</h4>
               <ul className="space-y-1.5">
-                {tools.map((t) => (
+                {group.tools.map((t) => (
                   <li key={t.path}>
                     <Link to={t.path} className="text-xs text-muted-foreground/80 hover:text-foreground transition-colors">
                       {t.label}

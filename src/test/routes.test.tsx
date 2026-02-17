@@ -4,6 +4,7 @@ import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { FileStoreProvider } from "@/contexts/FileStoreContext";
+import { toolCount } from "@/lib/tool-registry";
 
 // Mock DuckDB since it requires WASM which isn't available in jsdom
 vi.mock("@/contexts/DuckDBContext", () => ({
@@ -62,10 +63,10 @@ describe("Page rendering", () => {
 
   it("homepage displays correct tool count", () => {
     renderWithRoute("/", <Index />);
-    expect(screen.getByText(/46 Tools/)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`${toolCount} Tools`))).toBeInTheDocument();
   });
 
-  it("homepage has all 46 tool cards", () => {
+  it(`homepage has all ${toolCount} tool cards`, () => {
     renderWithRoute("/", <Index />);
     // Check a tool from each category
     expect(screen.getByText("CSV → Parquet")).toBeInTheDocument();
@@ -117,18 +118,14 @@ describe("Page rendering", () => {
 describe("Homepage consistency", () => {
   it("hero badge, feature card, and meta all reference correct counts", () => {
     renderWithRoute("/", <Index />);
-    // Hero badge says "45 Tools"
-    expect(screen.getByText(/46 Tools/)).toBeInTheDocument();
-    // Feature card says "46+ tools"
-    expect(screen.getByText(/46\+ tools/)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`${toolCount} Tools`))).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`${toolCount} tools`))).toBeInTheDocument();
   });
 
   it("all tool categories have cards", () => {
     renderWithRoute("/", <Index />);
-    // 14 converters + 8 viewers + 3 inspectors + 18 analysis + 3 utilities = 46
     const allLinks = screen.getAllByText("Open");
-    // Each tool card has an "Open" text that appears on hover
-    expect(allLinks.length).toBe(46);
+    expect(allLinks.length).toBe(toolCount);
   });
 
   it("privacy section is present", () => {
@@ -142,8 +139,8 @@ describe("Homepage consistency", () => {
     expect(scripts.length).toBeGreaterThan(0);
     const jsonLd = JSON.parse(scripts[0].textContent || "{}");
     expect(jsonLd["@type"]).toBe("WebApplication");
-    expect(jsonLd.featureList).toContain("YAML to JSON");
-    expect(jsonLd.featureList).toContain("JSON to YAML");
+    expect(jsonLd.featureList).toContain("YAML → JSON");
+    expect(jsonLd.featureList).toContain("JSON → YAML");
     expect(jsonLd.featureList).toContain("Regex Filter");
   });
 });

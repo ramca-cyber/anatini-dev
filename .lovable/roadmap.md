@@ -11,11 +11,11 @@
 
 | # | Item | Status |
 |---|------|--------|
-| 1.1 | Date/Timestamp display in DataTable | ⬚ |
-| 1.2 | Failing tests (dynamic counts via registry) | ⬚ |
-| 1.3 | Tool registry — single source of truth | ⬚ |
-| 1.4 | Remove Space Mono font remnants | ⬚ |
-| 1.5 | Split seo-content.tsx into per-tool files | ⬚ |
+| 1.1 | Date/Timestamp display in DataTable | ✅ |
+| 1.2 | Failing tests (dynamic counts via registry) | ✅ |
+| 1.3 | Tool registry — single source of truth | ✅ |
+| 1.4 | Remove Space Mono font remnants | ✅ |
+| 1.5 | SEO content — added 4 missing entries, full coverage | ✅ |
 
 ## Phase 2: UI/UX
 
